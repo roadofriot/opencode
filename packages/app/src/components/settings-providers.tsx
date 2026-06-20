@@ -2,9 +2,11 @@ import { Button } from "@opencode-ai/ui/button"
 import { useDialog } from "@opencode-ai/ui/context/dialog"
 import { ProviderIcon } from "@opencode-ai/ui/provider-icon"
 import { Tag } from "@opencode-ai/ui/tag"
+import { TextField } from "@opencode-ai/ui/text-field"
 import { showToast } from "@/utils/toast"
 import { popularProviders, useProviders } from "@/hooks/use-providers"
-import { createMemo, type Component, For, Show } from "solid-js"
+import { createMemo, createSignal, type Component, For, Show } from "solid-js"
+import { createStore } from "solid-js/store"
 import { useLanguage } from "@/context/language"
 import { useServerSDK } from "@/context/server-sdk"
 import { useServerSync } from "@/context/server-sync"
@@ -27,6 +29,64 @@ const PROVIDER_NOTES = [
   { match: (id: string) => id === "openrouter", key: "dialog.provider.openrouter.note" },
   { match: (id: string) => id === "vercel", key: "dialog.provider.vercel.note" },
 ] as const
+
+type QuickProvider = {
+  id: string
+  name: string
+  keyPrefix: string
+  keyPlaceholder: string
+  minLength: number
+  hint: string
+  docsUrl: string
+}
+
+const QUICK_PROVIDERS: QuickProvider[] = [
+  {
+    id: "anthropic",
+    name: "Anthropic (Claude)",
+    keyPrefix: "sk-ant-",
+    keyPlaceholder: "sk-ant-api03-...",
+    minLength: 40,
+    hint: "Starts with sk-ant-",
+    docsUrl: "https://console.anthropic.com/settings/keys",
+  },
+  {
+    id: "google",
+    name: "Google Gemini",
+    keyPrefix: "AIza",
+    keyPlaceholder: "AIzaSy...",
+    minLength: 35,
+    hint: "Starts with AIza",
+    docsUrl: "https://aistudio.google.com/apikey",
+  },
+  {
+    id: "openrouter",
+    name: "OpenRouter",
+    keyPrefix: "sk-or-",
+    keyPlaceholder: "sk-or-v1-...",
+    minLength: 30,
+    hint: "Starts with sk-or-",
+    docsUrl: "https://openrouter.ai/keys",
+  },
+  {
+    id: "groq",
+    name: "Groq",
+    keyPrefix: "gsk_",
+    keyPlaceholder: "gsk_...",
+    minLength: 30,
+    hint: "Starts with gsk_",
+    docsUrl: "https://console.groq.com/keys",
+  },
+  {
+    id: "xai",
+    name: "xAI (Grok)",
+    keyPrefix: "xai-",
+    keyPlaceholder: "xai-...",
+    minLength: 20,
+    hint: "Starts with xai-",
+    docsUrl: "https://console.x.ai",
+  },
+]
 
 export const SettingsProviders: Component = () => {
   return (
@@ -137,6 +197,93 @@ const SettingsProvidersContent: Component = () => {
       })
   }
 
+  function QuickConnectRow(props: { provider: QuickProvider; onConnected: () => void }) {
+    const [value, setValue] = createSignal("")
+    const [saving, setSaving] = createSignal(false)
+    const [formStore, setFormStore] = createStore({ error: undefined as string | undefined })
+
+    const validate = (key: string): string | undefined => {
+      if (!key.trim()) return "API key is required"
+      if (!key.startsWith(props.provider.keyPrefix))
+        return `Key must start with "${props.provider.keyPrefix}"`
+      if (key.length < props.provider.minLength)
+        return `Key is too short (min ${props.provider.minLength} characters)`
+      return undefined
+    }
+
+    const handleSave = async () => {
+      const key = value().trim()
+      const err = validate(key)
+      if (err) {
+        setFormStore("error", err)
+        return
+      }
+      setFormStore("error", undefined)
+      setSaving(true)
+      await serverSDK()
+        .client.auth.set({ providerID: props.provider.id, auth: { type: "api", key } })
+        .then(async () => {
+          await serverSDK().client.global.dispose()
+          setValue("")
+          showToast({
+            variant: "success",
+            icon: "circle-check",
+            title: `${props.provider.name} connected`,
+            description: "API key saved successfully.",
+          })
+          props.onConnected()
+        })
+        .catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : String(err)
+          setFormStore("error", message)
+        })
+        .finally(() => setSaving(false))
+    }
+
+    return (
+      <div class="flex flex-col gap-3 py-4 border-b border-border-weak-base last:border-none">
+        <div class="flex items-center gap-3">
+          <ProviderIcon id={props.provider.id} class="size-5 shrink-0 icon-strong-base" />
+          <span class="text-14-medium text-text-strong">{props.provider.name}</span>
+          <span class="text-11-medium text-text-weak ml-auto">{props.provider.hint}</span>
+        </div>
+        <div class="flex items-start gap-2">
+          <div class="flex-1">
+            <TextField
+              type="password"
+              label={`${props.provider.name} API Key`}
+              hideLabel
+              placeholder={props.provider.keyPlaceholder}
+              value={value()}
+              onChange={(v) => {
+                setValue(v)
+                if (formStore.error) setFormStore("error", undefined)
+              }}
+              validationState={formStore.error ? "invalid" : undefined}
+              error={formStore.error}
+              autocomplete="off"
+              spellcheck={false}
+            />
+          </div>
+          <Button
+            size="large"
+            variant="primary"
+            disabled={saving() || !value().trim()}
+            onClick={() => void handleSave()}
+          >
+            {saving() ? "Saving…" : "Save"}
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  const [quickConnectRefresh, setQuickConnectRefresh] = createSignal(0)
+  const connectedQuickIDs = createMemo(() => {
+    void quickConnectRefresh()
+    return new Set(connected().map((p) => p.id))
+  })
+
   return (
     <div class="flex flex-col h-full overflow-y-auto no-scrollbar px-4 pb-10 sm:px-10 sm:pb-10">
       <div class="sticky top-0 z-10 bg-[linear-gradient(to_bottom,var(--surface-stronger-non-alpha)_calc(100%_-_24px),transparent)]">
@@ -147,6 +294,28 @@ const SettingsProvidersContent: Component = () => {
       </div>
 
       <div class="flex flex-col gap-8 max-w-[720px]">
+        <div class="flex flex-col gap-1" data-component="quick-connect-section">
+          <h3 class="text-14-medium text-text-strong pb-2">Quick Connect</h3>
+          <p class="text-12-regular text-text-weak pb-3">
+            Enter an API key to instantly connect a provider. Keys are validated before saving.
+          </p>
+          <SettingsList>
+            <For each={QUICK_PROVIDERS.filter((p) => !connectedQuickIDs().has(p.id))}>
+              {(provider) => (
+                <QuickConnectRow
+                  provider={provider}
+                  onConnected={() => setQuickConnectRefresh((n) => n + 1)}
+                />
+              )}
+            </For>
+            <Show when={QUICK_PROVIDERS.every((p) => connectedQuickIDs().has(p.id))}>
+              <div class="py-4 text-14-regular text-text-weak">
+                All quick-connect providers are connected. 🎉
+              </div>
+            </Show>
+          </SettingsList>
+        </div>
+
         <div class="flex flex-col gap-1" data-component="connected-providers-section">
           <h3 class="text-14-medium text-text-strong pb-2">{language.t("settings.providers.section.connected")}</h3>
           <SettingsList>

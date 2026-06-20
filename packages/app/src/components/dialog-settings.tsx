@@ -9,6 +9,7 @@ import { SettingsKeybinds } from "./settings-keybinds"
 import { SettingsProviders } from "./settings-providers"
 import { SettingsModels } from "./settings-models"
 import { SettingsServers } from "./settings-servers"
+import { SettingsAIFeatures } from "./settings-ai-features"
 
 export const DialogSettings: Component = () => {
   const language = useLanguage()
@@ -50,6 +51,10 @@ export const DialogSettings: Component = () => {
                       <Icon name="models" />
                       {language.t("settings.models.title")}
                     </Tabs.Trigger>
+                    <Tabs.Trigger value="ai-features">
+                      <Icon name="brain" />
+                      AI Features
+                    </Tabs.Trigger>
                   </div>
                 </div>
               </div>
@@ -60,20 +65,23 @@ export const DialogSettings: Component = () => {
             </div>
           </div>
         </Tabs.List>
-        <Tabs.Content value="general" class="no-scrollbar">
+        <Tabs.Content value="general" class="overflow-y-auto">
           <SettingsGeneral />
         </Tabs.Content>
-        <Tabs.Content value="shortcuts" class="no-scrollbar">
+        <Tabs.Content value="shortcuts" class="overflow-y-auto">
           <SettingsKeybinds />
         </Tabs.Content>
-        <Tabs.Content value="servers" class="no-scrollbar">
+        <Tabs.Content value="servers" class="overflow-y-auto">
           <SettingsServers />
         </Tabs.Content>
-        <Tabs.Content value="providers" class="no-scrollbar">
+        <Tabs.Content value="providers" class="overflow-y-auto">
           <SettingsProviders />
         </Tabs.Content>
-        <Tabs.Content value="models" class="no-scrollbar">
+        <Tabs.Content value="models" class="overflow-y-auto">
           <SettingsModels />
+        </Tabs.Content>
+        <Tabs.Content value="ai-features" class="overflow-y-auto">
+          <SettingsAIFeatures />
         </Tabs.Content>
       </Tabs>
     </Dialog>

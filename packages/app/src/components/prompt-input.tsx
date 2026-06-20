@@ -427,6 +427,86 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
 
   const history = props.history ?? createPersistedPromptInputHistory()
 
+  const [isListening, setIsListening] = createSignal(false)
+  let recognition: any = null
+
+  const toggleListening = () => {
+    if (isListening()) {
+      recognition?.stop()
+      return
+    }
+
+    const SpeechCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SpeechCtor) {
+      showToast({
+        title: "Speech Recognition Unavailable",
+        description: "Your browser or device does not support Speech Recognition.",
+      })
+      return
+    }
+
+    recognition = new SpeechCtor()
+    recognition.continuous = true
+    recognition.interimResults = true
+    recognition.lang = language.locale() || "en-US"
+
+    const startPrompt = prompt.current().map((p) => ({ ...p }))
+
+    recognition.onstart = () => {
+      setIsListening(true)
+    }
+
+    recognition.onend = () => {
+      setIsListening(false)
+      recognition = null
+    }
+
+    recognition.onerror = (e: any) => {
+      console.error("Speech recognition error:", e)
+      setIsListening(false)
+    }
+
+    recognition.onresult = (event: any) => {
+      let voiceText = ""
+      for (let i = 0; i < event.results.length; ++i) {
+        voiceText += event.results[i][0].transcript
+      }
+
+      const nextParts = startPrompt.map((p) => ({ ...p }))
+      const lastPartIndex = nextParts.length - 1
+      const lastPart = nextParts[lastPartIndex]
+      const separator = (lastPart && lastPart.type === "text" && lastPart.content && !lastPart.content.endsWith(" ")) ? " " : ""
+      
+      const newText = separator + voiceText
+
+      if (lastPart && lastPart.type === "text") {
+        nextParts[lastPartIndex] = {
+          ...lastPart,
+          content: lastPart.content + newText
+        }
+      } else {
+        nextParts.push({
+          type: "text",
+          content: newText,
+          start: 0,
+          end: 0
+        })
+      }
+
+      mirror.input = true
+      prompt.set(nextParts)
+      queueScroll()
+    }
+
+    recognition.start()
+  }
+
+  onCleanup(() => {
+    if (recognition) {
+      recognition.stop()
+    }
+  })
+
   const suggest = createMemo(() => !hasUserPrompt())
 
   const placeholder = createMemo(() =>
@@ -1727,7 +1807,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
               onMouseDown={(e) => {
                 const target = e.target
                 if (!(target instanceof HTMLElement)) return
-                if (target.closest('[data-action="prompt-attach"], [data-action="prompt-submit"]')) {
+                if (target.closest('[data-action="prompt-attach"], [data-action="prompt-submit"], [data-action="prompt-voice"]')) {
                   return
                 }
                 editorRef?.focus()
@@ -1788,7 +1868,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                 }}
               />
 
-              <div class="pointer-events-none absolute bottom-2 right-2 flex items-center gap-2">
+              <div class="pointer-events-none absolute bottom-2 right-2 flex items-center gap-2 z-10">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -1801,6 +1881,20 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                     e.currentTarget.value = ""
                   }}
                 />
+
+                <div class="flex items-center gap-1 pointer-events-auto">
+                  <Tooltip placement="top" value={isListening() ? "Stop Listening" : "Voice to Text"}>
+                    <IconButton
+                      data-action="prompt-voice"
+                      type="button"
+                      icon={isListening() ? "stop" : "microphone"}
+                      variant={isListening() ? "primary" : "ghost"}
+                      class={`size-8 ${isListening() ? "text-red-500 animate-pulse" : ""}`}
+                      onClick={toggleListening}
+                      aria-label="Voice Input"
+                    />
+                  </Tooltip>
+                </div>
 
                 <div class="flex items-center gap-1 pointer-events-auto">
                   <Tooltip placement="top" inactive={!working() && blank()} value={tip()}>
