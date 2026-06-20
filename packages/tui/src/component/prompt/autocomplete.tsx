@@ -725,6 +725,12 @@ export function Autocomplete(props: {
         height={height()}
         scrollbarOptions={{ visible: false }}
         scrollAcceleration={scrollAcceleration()}
+        onMouseScroll={(e) => {
+          if (e.scroll && scroll) {
+            const direction = e.scroll.direction === "up" ? -1 : 1
+            scroll.scrollBy(direction * 3)
+          }
+        }}
       >
         <Index
           each={options()}

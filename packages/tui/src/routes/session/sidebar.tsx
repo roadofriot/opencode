@@ -5,6 +5,7 @@ import { useTheme } from "../../context/theme"
 import { useTuiConfig } from "../../config"
 import { InstallationChannel, InstallationVersion } from "@opencode-ai/core/installation/version"
 import { usePluginRuntime } from "../../plugin/runtime"
+import type { ScrollBoxRenderable } from "@opentui/core"
 
 import { getScrollAcceleration } from "../../util/scroll"
 import { WorkspaceLabel } from "../../component/workspace-label"
@@ -22,6 +23,7 @@ export function Sidebar(props: { sessionID: string; overlay?: boolean }) {
     return project.workspace.get(workspaceID)
   }
   const scrollAcceleration = createMemo(() => getScrollAcceleration(tuiConfig))
+  let scroll: ScrollBoxRenderable | undefined
 
   return (
     <Show when={session()}>
@@ -36,6 +38,7 @@ export function Sidebar(props: { sessionID: string; overlay?: boolean }) {
         position={props.overlay ? "absolute" : "relative"}
       >
         <scrollbox
+          ref={(element: ScrollBoxRenderable) => (scroll = element)}
           flexGrow={1}
           scrollAcceleration={scrollAcceleration()}
           verticalScrollbarOptions={{
@@ -43,6 +46,12 @@ export function Sidebar(props: { sessionID: string; overlay?: boolean }) {
               backgroundColor: theme.background,
               foregroundColor: theme.borderActive,
             },
+          }}
+          onMouseScroll={(e) => {
+            if (e.scroll && scroll) {
+              const direction = e.scroll.direction === "up" ? -1 : 1
+              scroll.scrollBy(direction * 3)
+            }
           }}
         >
           <box flexShrink={0} gap={1} paddingRight={1}>

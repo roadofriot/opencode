@@ -542,6 +542,12 @@ export function DialogSelect<T>(props: DialogSelectProps<T>) {
             scrollAcceleration={scrollAcceleration()}
             ref={(r: ScrollBoxRenderable) => (scroll = r)}
             maxHeight={height()}
+            onMouseScroll={(e) => {
+              if (e.scroll && scroll) {
+                const direction = e.scroll.direction === "up" ? -1 : 1
+                scroll.scrollBy(direction * 3)
+              }
+            }}
           >
             <For each={grouped()}>
               {([category, options], index) => (

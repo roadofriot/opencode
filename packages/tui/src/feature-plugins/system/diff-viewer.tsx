@@ -790,6 +790,12 @@ function DiffViewer(props: { api: TuiPluginApi }) {
                     scrollAcceleration={patchScrollAcceleration()}
                     verticalScrollbarOptions={{ visible: false }}
                     horizontalScrollbarOptions={{ visible: false }}
+                    onMouseScroll={(e) => {
+                      if (e.scroll && scroll) {
+                        const direction = e.scroll.direction === "up" ? -1 : 1
+                        scroll.scrollBy(direction * 3)
+                      }
+                    }}
                   >
                     <For each={visiblePatchFiles()}>
                       {(entry, index) => {

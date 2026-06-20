@@ -1177,6 +1177,12 @@ export function Session() {
                 stickyStart="bottom"
                 flexGrow={1}
                 scrollAcceleration={scrollAcceleration()}
+                onMouseScroll={(e) => {
+                  if (e.scroll) {
+                    const direction = e.scroll.direction === "up" ? -1 : 1
+                    scroll.scrollBy(direction * 3)
+                  }
+                }}
               >
                 <box height={1} />
                 <For each={messages()}>

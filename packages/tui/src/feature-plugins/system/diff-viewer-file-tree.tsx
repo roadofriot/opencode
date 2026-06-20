@@ -57,6 +57,12 @@ export function DiffViewerFileTree(props: DiffViewerFileTreeProps) {
         ref={(element: ScrollBoxRenderable) => (scroll = element)}
         verticalScrollbarOptions={{ visible: false }}
         horizontalScrollbarOptions={{ visible: false }}
+        onMouseScroll={(e) => {
+          if (e.scroll && scroll) {
+            const direction = e.scroll.direction === "up" ? -1 : 1
+            scroll.scrollBy(direction * 3)
+          }
+        }}
       >
         <Switch>
           <Match when={props.loading || props.error}>

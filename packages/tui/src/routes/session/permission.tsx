@@ -2,7 +2,7 @@ import { createStore } from "solid-js/store"
 import { dirname } from "node:path"
 import { createMemo, For, Match, Show, Switch } from "solid-js"
 import { Portal, useRenderer, useTerminalDimensions, type JSX } from "@opentui/solid"
-import type { TextareaRenderable } from "@opentui/core"
+import type { TextareaRenderable, ScrollBoxRenderable } from "@opentui/core"
 import { useTheme, selectedForeground } from "../../context/theme"
 import type { PermissionRequest } from "@opencode-ai/sdk/v2"
 import { useSDK } from "../../context/sdk"
@@ -43,11 +43,13 @@ function EditBody(props: { request: PermissionRequest }) {
 
   const ft = createMemo(() => filetype(filepath()))
   const scrollAcceleration = createMemo(() => getScrollAcceleration(config))
+  let scroll: ScrollBoxRenderable | undefined
 
   return (
     <box flexDirection="column" gap={1}>
       <Show when={diff()}>
         <scrollbox
+          ref={(r) => (scroll = r)}
           height="100%"
           scrollAcceleration={scrollAcceleration()}
           verticalScrollbarOptions={{
@@ -55,6 +57,12 @@ function EditBody(props: { request: PermissionRequest }) {
               backgroundColor: theme.background,
               foregroundColor: theme.borderActive,
             },
+          }}
+          onMouseScroll={(e) => {
+            if (e.scroll && scroll) {
+              const direction = e.scroll.direction === "up" ? -1 : 1
+              scroll.scrollBy(direction * 3)
+            }
           }}
         >
           <diff

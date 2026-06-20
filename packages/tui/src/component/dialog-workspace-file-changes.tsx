@@ -1,4 +1,4 @@
-import { TextAttributes } from "@opentui/core"
+import { TextAttributes, ScrollBoxRenderable } from "@opentui/core"
 import { useKeyboard } from "@opentui/solid"
 import type { VcsFileStatus } from "@opencode-ai/sdk/v2"
 import { createMemo, For } from "solid-js"
@@ -36,6 +36,7 @@ export function DialogWorkspaceFileChanges(props: {
   const scrollAcceleration = createMemo(() => getScrollAcceleration(tuiConfig))
   const [store, setStore] = createStore({ active: "yes" as WorkspaceFileChangesChoice })
   const height = createMemo(() => Math.min(props.files.length, 8))
+  let scroll: ScrollBoxRenderable | undefined
   const fileNameWidth = createMemo(() => 48 - Math.max(Math.max(7, ...props.files.map(changeCountWidth)) - 7, 0))
 
   function confirm() {
@@ -81,10 +82,17 @@ export function DialogWorkspaceFileChanges(props: {
         </text>
       </box>
       <scrollbox
+        ref={(r) => (scroll = r)}
         height={height()}
         backgroundColor={theme.backgroundElement}
         scrollbarOptions={{ visible: false }}
         scrollAcceleration={scrollAcceleration()}
+        onMouseScroll={(e) => {
+          if (e.scroll && scroll) {
+            const direction = e.scroll.direction === "up" ? -1 : 1
+            scroll.scrollBy(direction * 3)
+          }
+        }}
       >
         <For each={props.files}>
           {(item) => (
