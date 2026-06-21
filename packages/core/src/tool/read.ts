@@ -7,6 +7,7 @@ import { FileSystem } from "../filesystem"
 import { FSUtil } from "../fs-util"
 import { Image } from "../image"
 import { Location } from "../location"
+import { LocationMutation } from "../location-mutation"
 import { PermissionV2 } from "../permission"
 import { AbsolutePath } from "../schema"
 import { ReadToolFileSystem } from "./read-filesystem"
@@ -35,6 +36,7 @@ export const layer = Layer.effectDiscard(
     const location = yield* Location.Service
     const image = yield* Image.Service
     const permission = yield* PermissionV2.Service
+    const mutation = yield* LocationMutation.Service
 
     yield* tools
       .register({
@@ -53,37 +55,43 @@ export const layer = Layer.effectDiscard(
           },
           execute: (input, context) => {
             return Effect.gen(function* () {
-              const absolute = path.resolve(location.directory, input.path)
-              const selected = path.isAbsolute(input.path) ? path.dirname(absolute) : location.directory
-              if (!path.isAbsolute(input.path) && !FSUtil.contains(location.directory, absolute))
-                return yield* Effect.die(new Error("Path escapes the allowed read root"))
-              const real = yield* fs.realPath(absolute).pipe(Effect.orDie)
-              const root = yield* fs.realPath(selected).pipe(Effect.orDie)
-              if (!FSUtil.contains(root, real))
-                return yield* Effect.die(new Error("Path escapes the allowed read root"))
-              const resource = path.relative(root, real).replaceAll("\\", "/") || "."
-              const target = AbsolutePath.make(real)
-              const type = yield* reader.inspect(target)
+              const source = {
+                type: "tool" as const,
+                messageID: context.assistantMessageID,
+                callID: context.toolCallID,
+              }
+              const target = yield* mutation.resolve({ path: input.path })
+              const external = target.externalDirectory
+              if (external) {
+                yield* permission.assert({
+                  ...LocationMutation.externalDirectoryPermission(external),
+                  sessionID: context.sessionID,
+                  agent: context.agent,
+                  source,
+                })
+              }
               yield* permission.assert({
                 action: name,
-                resources: [resource],
+                resources: [target.resource],
                 save: ["*"],
                 sessionID: context.sessionID,
                 agent: context.agent,
-                source: { type: "tool", messageID: context.assistantMessageID, callID: context.toolCallID },
+                source,
               })
-              if (type === "directory") return yield* reader.list(target, { offset: input.offset, limit: input.limit })
-              const content = yield* reader.read(target, resource, {
+              const targetPath = AbsolutePath.make(target.canonical)
+              const type = yield* reader.inspect(targetPath)
+              if (type === "directory") return yield* reader.list(targetPath, { offset: input.offset, limit: input.limit })
+              const content = yield* reader.read(targetPath, target.resource, {
                 offset: input.offset,
                 limit: input.limit,
               })
               if ("encoding" in content && content.encoding === "base64" && SUPPORTED_IMAGE_MIMES.has(content.mime)) {
                 return yield* image
-                  .normalize(resource, { ...content, encoding: "base64" })
+                  .normalize(target.resource, { ...content, encoding: "base64" })
                   .pipe(Effect.catchTag("Image.ResizerUnavailableError", () => Effect.succeed(content)))
               }
               if ("encoding" in content && content.encoding === "base64")
-                return yield* Effect.fail(new ReadToolFileSystem.BinaryFileError(resource))
+                return yield* Effect.fail(new ReadToolFileSystem.BinaryFileError(target.resource))
               return content
             }).pipe(
               Effect.mapError((error) => {

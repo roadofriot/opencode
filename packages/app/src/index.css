@@ -171,3 +171,25 @@
     }
   }
 }
+
+/* Force show scrollbars override */
+body.show-scrollbars .no-scrollbar::-webkit-scrollbar {
+  display: block !important;
+  width: 6px !important;
+  height: 6px !important;
+}
+
+body.show-scrollbars .no-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--color-border-weak, rgba(128, 128, 128, 0.3)) !important;
+  border-radius: 3px !important;
+}
+
+body.show-scrollbars .no-scrollbar::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+body.show-scrollbars .no-scrollbar {
+  -ms-overflow-style: auto !important;
+  scrollbar-width: thin !important;
+}
+

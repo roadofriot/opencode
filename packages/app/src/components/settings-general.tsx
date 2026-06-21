@@ -348,6 +348,18 @@ export const SettingsGeneral: Component = () => {
         </SettingsRow>
 
         <SettingsRow
+          title="Show Scrollbars"
+          description="Force show visual scrollbars in all scrollable views and settings lists."
+        >
+          <div data-action="settings-show-scrollbars">
+            <Switch
+              checked={settings.general.showScrollbars()}
+              onChange={(checked) => settings.general.setShowScrollbars(checked)}
+            />
+          </div>
+        </SettingsRow>
+
+        <SettingsRow
           title={language.t("settings.general.row.newLayoutDesigns.title")}
           description={language.t("settings.general.row.newLayoutDesigns.description")}
         >

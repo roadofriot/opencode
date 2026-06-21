@@ -34,6 +34,7 @@ export interface Settings {
     showSessionProgressBar: boolean
     showCustomAgents: boolean
     newLayoutDesigns?: boolean
+    showScrollbars: boolean
   }
   appearance: {
     fontSize: number
@@ -47,6 +48,11 @@ export interface Settings {
   }
   notifications: NotificationSettings
   sounds: SoundSettings
+  voice: {
+    engine: "cloud" | "local"
+    model: string
+    language: string
+  }
 }
 
 export const monoDefault = "System Mono"
@@ -118,6 +124,7 @@ const defaultSettings: Settings = {
     editToolPartsExpanded: false,
     showSessionProgressBar: true,
     showCustomAgents: false,
+    showScrollbars: false,
   },
   appearance: {
     fontSize: 14,
@@ -141,6 +148,11 @@ const defaultSettings: Settings = {
     permissions: "staplebops-02",
     errorsEnabled: true,
     errors: "nope-03",
+  },
+  voice: {
+    engine: "local",
+    model: "Xenova/whisper-tiny",
+    language: "auto",
   },
 }
 
@@ -173,6 +185,12 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
     createEffect(() => {
       if (store.general?.followup !== "queue") return
       setStore("general", "followup", "steer")
+    })
+
+    createEffect(() => {
+      if (typeof document === "undefined") return
+      const show = store.general?.showScrollbars ?? false
+      document.body.classList.toggle("show-scrollbars", show)
     })
 
     return {
@@ -247,6 +265,10 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         showCustomAgents,
         setShowCustomAgents(value: boolean) {
           setStore("general", "showCustomAgents", value)
+        },
+        showScrollbars: withFallback(() => store.general?.showScrollbars, defaultSettings.general.showScrollbars),
+        setShowScrollbars(value: boolean) {
+          setStore("general", "showScrollbars", value)
         },
         newLayoutDesigns,
         setNewLayoutDesigns(value: boolean) {
@@ -341,6 +363,20 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         errors: withFallback(() => store.sounds?.errors, defaultSettings.sounds.errors),
         setErrors(value: string) {
           setStore("sounds", "errors", value)
+        },
+      },
+      voice: {
+        engine: withFallback(() => store.voice?.engine, defaultSettings.voice.engine),
+        setEngine(value: "cloud" | "local") {
+          setStore("voice", "engine", value)
+        },
+        model: withFallback(() => store.voice?.model, defaultSettings.voice.model),
+        setModel(value: string) {
+          setStore("voice", "model", value)
+        },
+        language: withFallback(() => store.voice?.language, defaultSettings.voice.language),
+        setLanguage(value: string) {
+          setStore("voice", "language", value)
         },
       },
     }

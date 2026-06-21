@@ -48,6 +48,8 @@ import { Persist, persisted } from "@/utils/persist"
 import { usePermission } from "@/context/permission"
 import { useLanguage } from "@/context/language"
 import { usePlatform } from "@/context/platform"
+import { useSettings } from "@/context/settings"
+import { WhisperTranscriber } from "@/utils/whisper-transcriber"
 import { createSessionTabs } from "@/pages/session/helpers"
 import { createTextFragment, getCursorPosition, setCursorPosition, setRangeEdge } from "./prompt-input/editor-dom"
 import { createPromptAttachments } from "./prompt-input/attachments"
@@ -217,6 +219,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   const permission = usePermission()
   const language = useLanguage()
   const platform = usePlatform()
+  const settings = useSettings()
   const tabs = () => props.controls.session.tabs
   let editorRef!: HTMLDivElement
   let fileInputRef: HTMLInputElement | undefined
@@ -428,19 +431,113 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   const history = props.history ?? createPersistedPromptInputHistory()
 
   const [isListening, setIsListening] = createSignal(false)
+  const [isTranscribing, setIsTranscribing] = createSignal(false)
   let recognition: any = null
+  let micStream: MediaStream | null = null
+  let localRecorder: any = null
 
-  const toggleListening = () => {
-    if (isListening()) {
-      recognition?.stop()
+  const stopListening = async () => {
+    if (settings.voice.engine() === "local") {
+      if (!localRecorder) return
+      setIsListening(false)
+      setIsTranscribing(true)
+      try {
+        const audioData = await localRecorder.stop()
+        const voiceText = await WhisperTranscriber.transcribe(
+          audioData,
+          settings.voice.model(),
+          settings.voice.language(),
+        )
+
+        if (voiceText && voiceText.trim()) {
+          const startPrompt = prompt.current().map((p) => ({ ...p }))
+          const nextParts = startPrompt.map((p) => ({ ...p }))
+          const lastPartIndex = nextParts.length - 1
+          const lastPart = nextParts[lastPartIndex]
+          const separator =
+            lastPart && lastPart.type === "text" && lastPart.content && !lastPart.content.endsWith(" ") ? " " : ""
+          const newText = separator + voiceText.trim()
+
+          if (lastPart && lastPart.type === "text") {
+            nextParts[lastPartIndex] = { ...lastPart, content: lastPart.content + newText }
+          } else {
+            nextParts.push({ type: "text", content: newText, start: 0, end: 0 })
+          }
+
+          mirror.input = true
+          prompt.set(nextParts)
+          queueScroll()
+        }
+      } catch (err) {
+        console.error("Local Whisper transcribing error:", err)
+        showToast({
+          title: "Voice Input Error",
+          description: "An error occurred during local transcription. Make sure the model is downloaded.",
+        })
+      } finally {
+        setIsTranscribing(false)
+        localRecorder = null
+      }
+      return
+    }
+
+    recognition?.stop()
+    recognition = null
+    micStream?.getTracks().forEach((t) => t.stop())
+    micStream = null
+    setIsListening(false)
+  }
+
+  const toggleListening = async () => {
+    if (isListening() || isTranscribing()) {
+      void stopListening()
+      return
+    }
+
+    if (settings.voice.engine() === "local") {
+      try {
+        setIsTranscribing(true)
+        // Ensure Whisper model is preloaded/cached (offline ready)
+        await WhisperTranscriber.preloadModel(settings.voice.model())
+        setIsTranscribing(false)
+
+        const { AudioRecorder } = await import("@/utils/audio-recorder")
+        localRecorder = new AudioRecorder()
+        await localRecorder.start()
+        setIsListening(true)
+      } catch (err: any) {
+        setIsTranscribing(false)
+        const denied = err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError"
+        showToast({
+          title: denied ? "Microphone Access Denied" : "Microphone Unavailable",
+          description: denied
+            ? "Please allow microphone access in your system settings and try again."
+            : `Could not access microphone: ${err?.message ?? String(err)}`,
+        })
+        localRecorder = null
+      }
       return
     }
 
     const SpeechCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SpeechCtor) {
       showToast({
-        title: "Speech Recognition Unavailable",
-        description: "Your browser or device does not support Speech Recognition.",
+        title: "Voice Input Unavailable",
+        description: "Speech Recognition is not supported in this environment.",
+      })
+      return
+    }
+
+    // Request mic permission explicitly — required in Electron before SpeechRecognition can access it
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+    } catch (err: any) {
+      const denied = err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError"
+      showToast({
+        title: denied ? "Microphone Access Denied" : "Microphone Unavailable",
+        description: denied
+          ? "Please allow microphone access in your system settings and try again."
+          : `Could not access microphone: ${err?.message ?? String(err)}`,
       })
       return
     }
@@ -457,13 +554,42 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     }
 
     recognition.onend = () => {
-      setIsListening(false)
+      micStream?.getTracks().forEach((t) => t.stop())
+      micStream = null
       recognition = null
+      setIsListening(false)
     }
 
     recognition.onerror = (e: any) => {
-      console.error("Speech recognition error:", e)
-      setIsListening(false)
+      const code: string = e?.error ?? "unknown"
+      console.error("Speech recognition error:", code, e)
+
+      if (code === "network" || code === "service-not-allowed") {
+        showToast({
+          title: "Cloud Voice Input Failed",
+          description: "Network error. Switching to local offline Whisper engine...",
+        })
+        settings.voice.setEngine("local")
+        void stopListening()
+        setTimeout(() => {
+          void toggleListening()
+        }, 1000)
+        return
+      }
+
+      const messages: Record<string, string> = {
+        "not-allowed": "Microphone access was denied. Check your system permissions.",
+        "service-not-allowed": "Speech service is not allowed. Make sure you are connected to the internet.",
+        "network": "Network error — speech recognition requires an internet connection.",
+        "no-speech": "No speech detected. Please speak clearly and try again.",
+        "audio-capture": "Could not capture audio. Check that your microphone is connected.",
+        "aborted": "",
+      }
+      const description = messages[code]
+      if (description) {
+        showToast({ title: "Voice Input Error", description })
+      }
+      void stopListening()
     }
 
     recognition.onresult = (event: any) => {
@@ -475,22 +601,14 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       const nextParts = startPrompt.map((p) => ({ ...p }))
       const lastPartIndex = nextParts.length - 1
       const lastPart = nextParts[lastPartIndex]
-      const separator = (lastPart && lastPart.type === "text" && lastPart.content && !lastPart.content.endsWith(" ")) ? " " : ""
-      
+      const separator =
+        lastPart && lastPart.type === "text" && lastPart.content && !lastPart.content.endsWith(" ") ? " " : ""
       const newText = separator + voiceText
 
       if (lastPart && lastPart.type === "text") {
-        nextParts[lastPartIndex] = {
-          ...lastPart,
-          content: lastPart.content + newText
-        }
+        nextParts[lastPartIndex] = { ...lastPart, content: lastPart.content + newText }
       } else {
-        nextParts.push({
-          type: "text",
-          content: newText,
-          start: 0,
-          end: 0
-        })
+        nextParts.push({ type: "text", content: newText, start: 0, end: 0 })
       }
 
       mirror.input = true
@@ -502,9 +620,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   }
 
   onCleanup(() => {
-    if (recognition) {
-      recognition.stop()
-    }
+    stopListening()
   })
 
   const suggest = createMemo(() => !hasUserPrompt())
@@ -1740,22 +1856,36 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                     </div>
                   </Show>
                 </div>
-                <Tooltip placement="top" inactive={!working() && blank()} value={tip()}>
-                  <IconButton
-                    data-action="prompt-submit"
-                    type="submit"
-                    disabled={!working() && blank()}
-                    tabIndex={store.mode === "normal" ? undefined : -1}
-                    icon={stopping() ? "stop" : store.mode === "shell" ? "arrow-undo-down" : "arrow-up"}
-                    variant="primary"
-                    class="size-7 rounded-md p-[6px] text-v2-icon-icon-muted shadow-[var(--v2-elevation-button-contrast)] disabled:opacity-50"
-                    style={{
-                      "background-image":
-                        "linear-gradient(180deg,var(--v2-alpha-light-20) 0%,var(--v2-alpha-light-0) 100%),linear-gradient(90deg,var(--v2-background-bg-contrast) 0%,var(--v2-background-bg-contrast) 100%)",
-                    }}
-                    aria-label={stopping() ? language.t("prompt.action.stop") : language.t("prompt.action.send")}
-                  />
-                </Tooltip>
+                <div class="flex items-center gap-[2px]">
+                  <Tooltip placement="top" value={isTranscribing() ? "Transcribing..." : isListening() ? "Stop Listening" : "Voice to Text"}>
+                    <IconButton
+                      data-action="prompt-voice"
+                      type="button"
+                      disabled={isTranscribing()}
+                      icon={isTranscribing() ? "reset" : isListening() ? "stop" : "microphone"}
+                      variant={isListening() ? "primary" : "ghost"}
+                      class={`size-7 rounded-md p-[6px] text-v2-icon-icon-muted${isListening() ? " animate-pulse" : ""}${isTranscribing() ? " animate-spin" : ""}`}
+                      onClick={toggleListening}
+                      aria-label="Voice Input"
+                    />
+                  </Tooltip>
+                  <Tooltip placement="top" inactive={!working() && blank()} value={tip()}>
+                    <IconButton
+                      data-action="prompt-submit"
+                      type="submit"
+                      disabled={!working() && blank()}
+                      tabIndex={store.mode === "normal" ? undefined : -1}
+                      icon={stopping() ? "stop" : store.mode === "shell" ? "arrow-undo-down" : "arrow-up"}
+                      variant="primary"
+                      class="size-7 rounded-md p-[6px] text-v2-icon-icon-muted shadow-[var(--v2-elevation-button-contrast)] disabled:opacity-50"
+                      style={{
+                        "background-image":
+                          "linear-gradient(180deg,var(--v2-alpha-light-20) 0%,var(--v2-alpha-light-0) 100%),linear-gradient(90deg,var(--v2-background-bg-contrast) 0%,var(--v2-background-bg-contrast) 100%)",
+                      }}
+                      aria-label={stopping() ? language.t("prompt.action.stop") : language.t("prompt.action.send")}
+                    />
+                  </Tooltip>
+                </div>
               </div>
             </DockShellForm>
             <Show when={newSession() && selectedProject()}>
@@ -1882,21 +2012,19 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                   }}
                 />
 
-                <div class="flex items-center gap-1 pointer-events-auto">
-                  <Tooltip placement="top" value={isListening() ? "Stop Listening" : "Voice to Text"}>
+                <div class="flex items-center gap-[2px] pointer-events-auto">
+                  <Tooltip placement="top" value={isTranscribing() ? "Transcribing..." : isListening() ? "Stop Listening" : "Voice to Text"}>
                     <IconButton
                       data-action="prompt-voice"
                       type="button"
-                      icon={isListening() ? "stop" : "microphone"}
+                      disabled={isTranscribing()}
+                      icon={isTranscribing() ? "reset" : isListening() ? "stop" : "microphone"}
                       variant={isListening() ? "primary" : "ghost"}
-                      class={`size-8 ${isListening() ? "text-red-500 animate-pulse" : ""}`}
+                      class={`size-8 ${isListening() ? "text-red-500 animate-pulse" : ""}${isTranscribing() ? "animate-spin" : ""}`}
                       onClick={toggleListening}
                       aria-label="Voice Input"
                     />
                   </Tooltip>
-                </div>
-
-                <div class="flex items-center gap-1 pointer-events-auto">
                   <Tooltip placement="top" inactive={!working() && blank()} value={tip()}>
                     <IconButton
                       data-action="prompt-submit"

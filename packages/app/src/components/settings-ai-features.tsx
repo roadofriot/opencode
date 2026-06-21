@@ -1,7 +1,10 @@
-import { type Component, For } from "solid-js"
+import { type Component, For, Show, createSignal, onMount, onCleanup } from "solid-js"
 import { Button } from "@opencode-ai/ui/button"
 import { Icon } from "@opencode-ai/ui/icon"
+import { Select } from "@opencode-ai/ui/select"
 import { useDialog } from "@opencode-ai/ui/context/dialog"
+import { useSettings } from "@/context/settings"
+import { WhisperTranscriber } from "@/utils/whisper-transcriber"
 import { SettingsList } from "./settings-list"
 
 type FeatureCard = {
@@ -14,6 +17,43 @@ type FeatureCard = {
 
 export const SettingsAIFeatures: Component = () => {
   const dialog = useDialog()
+  const settings = useSettings()
+
+  const [downloading, setDownloading] = createSignal(false)
+  const [loaded, setLoaded] = createSignal(false)
+  const [activeFile, setActiveFile] = createSignal("")
+  const [activeProgress, setActiveProgress] = createSignal(0)
+
+  onMount(() => {
+    const unsubscribe = WhisperTranscriber.subscribeProgress((progress) => {
+      if (progress.status === "initiate") {
+        setActiveFile(progress.file)
+        setActiveProgress(0)
+        setDownloading(true)
+      } else if (progress.status === "downloading") {
+        setActiveFile(progress.file)
+        setActiveProgress(Math.round(progress.progress))
+        setDownloading(true)
+      } else if (progress.status === "done") {
+        setActiveProgress(100)
+        setDownloading(false)
+        setLoaded(true)
+      }
+    })
+    onCleanup(unsubscribe)
+  })
+
+  const downloadModel = async () => {
+    setDownloading(true)
+    try {
+      await WhisperTranscriber.preloadModel(settings.voice.model())
+      setLoaded(true)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   const openServers = () => {
     void import("./dialog-select-server").then((x) => {
@@ -71,7 +111,7 @@ export const SettingsAIFeatures: Component = () => {
       title: "Voice to Text",
       badge: "Built-in",
       description:
-        "Use the microphone button in the chat input to dictate your queries using your device's Speech Recognition API. Click once to start recording — your words appear in real time in the text box. Click again (or the stop button) to finish. Works in all supported browsers and Electron.",
+        "Configure speech transcription settings. Use standard cloud recognition or load a local multilingual Whisper model that operates completely offline.",
       actions: [],
     },
     {
@@ -120,6 +160,102 @@ export const SettingsAIFeatures: Component = () => {
                       )}
                     </div>
                     <p class="text-12-regular text-text-weak leading-relaxed">{feature.description}</p>
+                    
+                    <Show when={feature.title === "Voice to Text"}>
+                      <div class="flex flex-col gap-4 mt-4 p-4 rounded-xl border border-border-weak-base bg-surface-raised-stronger-non-alpha max-w-lg">
+                        <div class="flex items-center justify-between gap-4">
+                          <span class="text-12-medium text-text-strong">Speech Engine</span>
+                          <Select
+                            options={[
+                              { value: "cloud", label: "Cloud (Web Speech API)" },
+                              { value: "local", label: "Local Whisper (ONNX)" },
+                            ]}
+                            current={[
+                              { value: "cloud", label: "Cloud (Web Speech API)" },
+                              { value: "local", label: "Local Whisper (ONNX)" },
+                            ].find((o) => o.value === settings.voice.engine())}
+                            value={(o) => o.value}
+                            label={(o) => o.label}
+                            onSelect={(option) => option && settings.voice.setEngine(option.value as any)}
+                            variant="secondary"
+                            size="small"
+                            triggerVariant="settings"
+                          />
+                        </div>
+
+                        <Show when={settings.voice.engine() === "local"}>
+                          <div class="flex items-center justify-between gap-4">
+                            <span class="text-12-medium text-text-strong">Model Size</span>
+                            <Select
+                              options={[
+                                { value: "Xenova/whisper-tiny", label: "Tiny (~75 MB)" },
+                                { value: "Xenova/whisper-base", label: "Base (~140 MB)" },
+                              ]}
+                              current={[
+                                { value: "Xenova/whisper-tiny", label: "Tiny (~75 MB)" },
+                                { value: "Xenova/whisper-base", label: "Base (~140 MB)" },
+                              ].find((o) => o.value === settings.voice.model())}
+                              value={(o) => o.value}
+                              label={(o) => o.label}
+                              onSelect={(option) => option && settings.voice.setModel(option.value)}
+                              variant="secondary"
+                              size="small"
+                              triggerVariant="settings"
+                            />
+                          </div>
+
+                          <div class="flex items-center justify-between gap-4">
+                            <span class="text-12-medium text-text-strong">Language Mode</span>
+                            <Select
+                              options={[
+                                { value: "auto", label: "Auto-Detect Language" },
+                                { value: "en", label: "English Only" },
+                                { value: "ne", label: "Nepali Only" },
+                              ]}
+                              current={[
+                                { value: "auto", label: "Auto-Detect Language" },
+                                { value: "en", label: "English Only" },
+                                { value: "ne", label: "Nepali Only" },
+                              ].find((o) => o.value === settings.voice.language())}
+                              value={(o) => o.value}
+                              label={(o) => o.label}
+                              onSelect={(option) => option && settings.voice.setLanguage(option.value)}
+                              variant="secondary"
+                              size="small"
+                              triggerVariant="settings"
+                            />
+                          </div>
+
+                          <div class="flex flex-col gap-2 pt-2 border-t border-border-weak-base">
+                            <div class="flex items-center justify-between">
+                              <span class="text-12-regular text-text-weak">
+                                {downloading()
+                                  ? `Downloading ${activeFile().split("/").pop()}...`
+                                  : loaded()
+                                    ? "Model loaded & cached (Offline ready)"
+                                    : "Model needs to be cached for offline use"}
+                              </span>
+                              <Show when={!loaded() && !downloading()}>
+                                <Button size="small" variant="primary" onClick={downloadModel}>
+                                  Download Model
+                                </Button>
+                              </Show>
+                            </div>
+
+                            <Show when={downloading()}>
+                              <div class="w-full bg-surface-raised-stronger-non-alpha rounded-full h-1.5 overflow-hidden">
+                                <div
+                                  class="bg-accent h-full transition-all duration-300"
+                                  style={{ width: `${activeProgress()}%` }}
+                                />
+                              </div>
+                              <span class="text-[10px] text-text-weak self-end">{activeProgress()}%</span>
+                            </Show>
+                          </div>
+                        </Show>
+                      </div>
+                    </Show>
+
                     {feature.actions.length > 0 && (
                       <div class="flex items-center gap-2 mt-1">
                         <For each={feature.actions}>

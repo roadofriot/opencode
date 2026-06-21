@@ -1113,6 +1113,39 @@ export function UserMessageDisplay(props: { message: UserMessage; parts: PartTyp
     }
   }
 
+  const handleDownload = () => {
+    const content = text()
+    if (!content) return
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `query-${props.message.id}.txt`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleExport = () => {
+    const content = text()
+    if (!content) return
+    const stampText = typeof props.message.time?.created === "number" ? new Date(props.message.time.created).toISOString() : ""
+    const exportContent = [
+      `# User Query`,
+      `* Timestamp: ${stampText}`,
+      `* Model: ${model()}`,
+      `* Agent: ${props.message.agent || "default"}`,
+      `---`,
+      content
+    ].join("\n")
+    const blob = new Blob([exportContent], { type: "text/markdown;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `query-${props.message.id}.md`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   const revert = () => {
     const act = props.actions?.revert
     if (!act || busy()) return
@@ -1221,6 +1254,40 @@ export function UserMessageDisplay(props: { message: UserMessage; parts: PartTyp
                   void handleCopy()
                 }}
                 aria-label={copied() ? i18n.t("ui.message.copied") : i18n.t("ui.message.copyMessage")}
+              />
+            </Tooltip>
+            <Tooltip
+              value="Download text"
+              placement="top"
+              gutter={4}
+            >
+              <IconButton
+                icon="download"
+                size="normal"
+                variant="ghost"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  handleDownload()
+                }}
+                aria-label="Download message text"
+              />
+            </Tooltip>
+            <Tooltip
+              value="Export markdown"
+              placement="top"
+              gutter={4}
+            >
+              <IconButton
+                icon="share"
+                size="normal"
+                variant="ghost"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  handleExport()
+                }}
+                aria-label="Export message as markdown"
               />
             </Tooltip>
           </div>
@@ -1556,6 +1623,39 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
     }
   }
 
+  const handleDownload = () => {
+    const content = text()
+    if (!content) return
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `response-${part().id}.txt`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleExport = () => {
+    const content = text()
+    if (!content) return
+    const stampText = typeof props.message.time?.created === "number" ? new Date(props.message.time.created).toISOString() : ""
+    const exportContent = [
+      `# Assistant Response`,
+      `* Timestamp: ${stampText}`,
+      `* Model: ${model()}`,
+      `* Agent: ${(props.message as AssistantMessage).agent || "default"}`,
+      `---`,
+      content
+    ].join("\n")
+    const blob = new Blob([exportContent], { type: "text/markdown;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `response-${part().id}.md`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <Show when={text()}>
       <div data-component="text-part" data-timeline-part-id={part().id}>
@@ -1578,6 +1678,34 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={handleCopy}
                 aria-label={copied() ? i18n.t("ui.message.copied") : i18n.t("ui.message.copyResponse")}
+              />
+            </Tooltip>
+            <Tooltip
+              value="Download text"
+              placement="top"
+              gutter={4}
+            >
+              <IconButton
+                icon="download"
+                size="normal"
+                variant="ghost"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleDownload}
+                aria-label="Download response text"
+              />
+            </Tooltip>
+            <Tooltip
+              value="Export markdown"
+              placement="top"
+              gutter={4}
+            >
+              <IconButton
+                icon="share"
+                size="normal"
+                variant="ghost"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleExport}
+                aria-label="Export response as markdown"
               />
             </Tooltip>
             <Show when={meta()}>

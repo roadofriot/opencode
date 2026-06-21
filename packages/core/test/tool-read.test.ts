@@ -14,6 +14,7 @@ import { location } from "./fixture/location"
 import { ToolRegistry } from "@opencode-ai/core/tool/registry"
 import { ReadTool } from "@opencode-ai/core/tool/read"
 import { ReadToolFileSystem } from "@opencode-ai/core/tool/read-filesystem"
+import { LocationMutation } from "@opencode-ai/core/location-mutation"
 import { testEffect } from "./lib/effect"
 import { toolIdentity, executeTool, settleTool, toolDefinitions } from "./lib/tool"
 
@@ -81,6 +82,7 @@ const unavailableImage = Layer.succeed(
   Image.Service,
   Image.Service.of({ normalize: () => Effect.fail(new Image.ResizerUnavailableError()) }),
 )
+const mutation = LocationMutation.layer.pipe(Layer.provide(infrastructure))
 const read = ReadTool.layer.pipe(
   Layer.provide(registry),
   Layer.provide(reader),
@@ -88,6 +90,7 @@ const read = ReadTool.layer.pipe(
   Layer.provide(config),
   Layer.provide(image),
   Layer.provide(infrastructure),
+  Layer.provide(mutation),
 )
 const it = testEffect(Layer.mergeAll(registry, reader, permission, config, image, infrastructure, read))
 const unavailableRead = ReadTool.layer.pipe(
@@ -97,6 +100,7 @@ const unavailableRead = ReadTool.layer.pipe(
   Layer.provide(config),
   Layer.provide(unavailableImage),
   Layer.provide(infrastructure),
+  Layer.provide(mutation),
 )
 const itWithoutResizer = testEffect(
   Layer.mergeAll(registry, reader, permission, config, unavailableImage, infrastructure, unavailableRead),

@@ -89,12 +89,14 @@ export const layer = Layer.effect(
     const resolvePath = Effect.fnUntraced(function* (absolute: string) {
       const existing = yield* notFound(fs.realPath(absolute))
       if (existing !== undefined) {
-        const info = yield* fs.stat(existing)
-        return {
-          canonical: existing,
-          type: info.type,
-          directory: info.type === "Directory" ? existing : path.dirname(existing),
-        } satisfies ResolvedPath
+        const info = yield* notFound(fs.stat(existing))
+        if (info !== undefined) {
+          return {
+            canonical: existing,
+            type: info.type,
+            directory: info.type === "Directory" ? existing : path.dirname(existing),
+          } satisfies ResolvedPath
+        }
       }
 
       let anchor = path.dirname(absolute)
@@ -120,8 +122,9 @@ export const layer = Layer.effect(
       const relative = !path.isAbsolute(input.path)
       const absolute = path.resolve(location.directory, input.path)
       const lexicallyInternal = FSUtil.contains(location.directory, absolute)
-      if (relative && !lexicallyInternal) return yield* new PathError({ path: input.path, reason: "relative_escape" })
-
+      if (relative && !lexicallyInternal) {
+        return yield* new PathError({ path: input.path, reason: "relative_escape" })
+      }
       const resolved = yield* resolvePath(absolute)
       if (lexicallyInternal && !FSUtil.contains(locationRoot, resolved.canonical)) {
         return yield* new PathError({ path: input.path, reason: "location_escape" })

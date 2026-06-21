@@ -1,9 +1,10 @@
 import { useIsRouting, useLocation } from "@solidjs/router"
-import { batch, createEffect, onCleanup, onMount } from "solid-js"
+import { batch, createEffect, onCleanup, onMount, createSignal, Show } from "solid-js"
 import { createStore } from "solid-js/store"
 import { makeEventListener } from "@solid-primitives/event-listener"
 import { Tooltip } from "@opencode-ai/ui/tooltip"
 import { useLanguage } from "@/context/language"
+import { Icon } from "@opencode-ai/ui/v2/icon"
 
 type Mem = Performance & {
   memory?: {
@@ -100,6 +101,144 @@ export function DebugBar() {
       pending: false,
     },
   })
+
+  const [minimized, setMinimized] = createSignal(localStorage.getItem("opencode:debug-bar-minimized") === "true")
+  const [position, setPosition] = createSignal<{ x: number; y: number } | undefined>(undefined)
+
+  createEffect(() => {
+    localStorage.setItem("opencode:debug-bar-minimized", minimized() ? "true" : "false")
+  })
+
+  let containerRef!: HTMLElement
+
+  const handleResize = () => {
+    const pos = position()
+    if (!pos || !containerRef) return
+    const rect = containerRef.getBoundingClientRect()
+    const newX = Math.max(8, Math.min(pos.x, window.innerWidth - rect.width - 8))
+    const newY = Math.max(8, Math.min(pos.y, window.innerHeight - rect.height - 8))
+    if (newX !== pos.x || newY !== pos.y) {
+      setPosition({ x: newX, y: newY })
+    }
+  }
+
+  const handleMouseDown = (e: MouseEvent) => {
+    if ((e.target as HTMLElement).closest("button") || (e.target as HTMLElement).closest("[role='tooltip']")) {
+      return
+    }
+
+    e.preventDefault()
+
+    const startX = e.clientX
+    const startY = e.clientY
+
+    const rect = containerRef.getBoundingClientRect()
+    const initialX = rect.left
+    const initialY = rect.top
+
+    let hasMoved = false
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - startX
+      const deltaY = moveEvent.clientY - startY
+
+      if (!hasMoved && Math.hypot(deltaX, deltaY) > 4) {
+        hasMoved = true
+      }
+
+      if (hasMoved) {
+        let newLeft = initialX + deltaX
+        let newTop = initialY + deltaY
+
+        newLeft = Math.max(8, Math.min(newLeft, window.innerWidth - rect.width - 8))
+        newTop = Math.max(8, Math.min(newTop, window.innerHeight - rect.height - 8))
+
+        setPosition({ x: newLeft, y: newTop })
+      }
+    }
+
+    const handleMouseUp = () => {
+      document.removeEventListener("mousemove", handleMouseMove)
+      document.removeEventListener("mouseup", handleMouseUp)
+
+      if (hasMoved && position()) {
+        localStorage.setItem("opencode:debug-bar-x", position()!.x.toString())
+        localStorage.setItem("opencode:debug-bar-y", position()!.y.toString())
+      } else if (!hasMoved) {
+        setMinimized(!minimized())
+      }
+    }
+
+    document.addEventListener("mousemove", handleMouseMove)
+    document.addEventListener("mouseup", handleMouseUp)
+  }
+
+  const handleTouchStart = (e: TouchEvent) => {
+    if ((e.target as HTMLElement).closest("button")) {
+      return
+    }
+
+    const touch = e.touches[0]
+    if (!touch) return
+
+    const startX = touch.clientX
+    const startY = touch.clientY
+
+    const rect = containerRef.getBoundingClientRect()
+    const initialX = rect.left
+    const initialY = rect.top
+
+    let hasMoved = false
+
+    const handleTouchMove = (moveEvent: TouchEvent) => {
+      const moveTouch = moveEvent.touches[0]
+      if (!moveTouch) return
+
+      const deltaX = moveTouch.clientX - startX
+      const deltaY = moveTouch.clientY - startY
+
+      if (!hasMoved && Math.hypot(deltaX, deltaY) > 4) {
+        hasMoved = true
+      }
+
+      if (hasMoved) {
+        let newLeft = initialX + deltaX
+        let newTop = initialY + deltaY
+
+        newLeft = Math.max(8, Math.min(newLeft, window.innerWidth - rect.width - 8))
+        newTop = Math.max(8, Math.min(newTop, window.innerHeight - rect.height - 8))
+
+        setPosition({ x: newLeft, y: newTop })
+      }
+    }
+
+    const handleTouchEnd = () => {
+      document.removeEventListener("touchmove", handleTouchMove)
+      document.removeEventListener("touchend", handleTouchEnd)
+
+      if (hasMoved && position()) {
+        localStorage.setItem("opencode:debug-bar-x", position()!.x.toString())
+        localStorage.setItem("opencode:debug-bar-y", position()!.y.toString())
+      } else if (!hasMoved) {
+        setMinimized(!minimized())
+      }
+    }
+
+    document.addEventListener("touchmove", handleTouchMove, { passive: true })
+    document.addEventListener("touchend", handleTouchEnd)
+  }
+
+  const style = () => {
+    const pos = position()
+    if (!pos) return {}
+    return {
+      position: "fixed" as const,
+      left: `${pos.x}px`,
+      top: `${pos.y}px`,
+      bottom: "auto",
+      right: "auto",
+    }
+  }
 
   const na = () => language.t("debugBar.na")
   const heap = () => (state.heap.limit ? (state.heap.used ?? 0) / state.heap.limit : undefined)
@@ -351,6 +490,16 @@ export function DebugBar() {
     syncHeap()
     start()
     makeEventListener(document, "visibilitychange", vis)
+    makeEventListener(window, "resize", handleResize)
+
+    const storedX = localStorage.getItem("opencode:debug-bar-x")
+    const storedY = localStorage.getItem("opencode:debug-bar-y")
+    if (storedX !== null && storedY !== null) {
+      setPosition({ x: parseFloat(storedX), y: parseFloat(storedY) })
+      requestAnimationFrame(() => {
+        handleResize()
+      })
+    }
 
     onCleanup(() => {
       if (one !== 0) cancelAnimationFrame(one)
@@ -361,83 +510,135 @@ export function DebugBar() {
   })
 
   return (
-    <aside
-      aria-label={language.t("debugBar.ariaLabel")}
-      class="pointer-events-auto fixed bottom-3 right-3 z-50 w-[308px] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-border-base bg-surface-raised-stronger-non-alpha p-0.5 text-text-strong shadow-[var(--shadow-lg-border-base)] sm:bottom-4 sm:right-4 sm:w-[324px]"
+    <Show
+      when={!minimized()}
+      fallback={
+        <div
+          ref={(el) => containerRef = el}
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+          style={style()}
+          class="pointer-events-auto fixed z-50 flex items-center gap-2 px-3 py-1.5 cursor-grab active:cursor-grabbing rounded-full border border-border-base bg-surface-raised-stronger-non-alpha text-text-strong shadow-[var(--shadow-lg-border-base)] hover:bg-surface-raised-stronger transition-all duration-150 select-none font-mono text-[11px] font-bold leading-none"
+          classList={{
+            "bottom-3 right-3 sm:bottom-4 sm:right-4": !position(),
+          }}
+          title="Click to expand performance diagnostics (Draggable)"
+        >
+          <span class="text-sm">📊</span>
+          <span class="opacity-80">PERF</span>
+          <span
+            class="w-2 h-2 rounded-full transition-colors duration-300"
+            classList={{
+              "bg-[#10b981]": state.fps !== undefined && state.fps >= 50,
+              "bg-[#f59e0b]": state.fps !== undefined && state.fps < 50 && state.fps >= 30,
+              "bg-[#f43f5e]": state.fps !== undefined && state.fps < 30,
+              "bg-border-base": state.fps === undefined,
+            }}
+          />
+        </div>
+      }
     >
-      <div class="grid grid-cols-5 gap-px font-mono">
-        <Cell
-          label={language.t("debugBar.nav.label")}
-          tip={language.t("debugBar.nav.tip")}
-          value={navv()}
-          bad={bad(state.nav.dur, 400)}
-          dim={state.nav.dur === undefined && !state.nav.pending}
-        />
-        <Cell
-          label={language.t("debugBar.fps.label")}
-          tip={language.t("debugBar.fps.tip")}
-          value={state.fps === undefined ? na() : `${Math.round(state.fps)}`}
-          bad={bad(state.fps, 50, true)}
-          dim={state.fps === undefined}
-        />
-        <Cell
-          label={language.t("debugBar.frame.label")}
-          tip={language.t("debugBar.frame.tip")}
-          value={time(state.gap) ?? na()}
-          bad={bad(state.gap, 50)}
-          dim={state.gap === undefined}
-        />
-        <Cell
-          label={language.t("debugBar.jank.label")}
-          tip={language.t("debugBar.jank.tip")}
-          value={state.jank === undefined ? na() : `${state.jank}`}
-          bad={bad(state.jank, 8)}
-          dim={state.jank === undefined}
-        />
-        <Cell
-          label={language.t("debugBar.long.label")}
-          tip={language.t("debugBar.long.tip", { max: ms(state.long.max) ?? na() })}
-          value={longv()}
-          bad={bad(state.long.block, 200)}
-          dim={state.long.count === undefined}
-        />
-        <Cell
-          label={language.t("debugBar.delay.label")}
-          tip={language.t("debugBar.delay.tip")}
-          value={time(state.delay) ?? na()}
-          bad={bad(state.delay, 100)}
-          dim={state.delay === undefined}
-        />
-        <Cell
-          label={language.t("debugBar.inp.label")}
-          tip={language.t("debugBar.inp.tip")}
-          value={time(state.inp) ?? na()}
-          bad={bad(state.inp, 200)}
-          dim={state.inp === undefined}
-        />
-        <Cell
-          label={language.t("debugBar.cls.label")}
-          tip={language.t("debugBar.cls.tip")}
-          value={state.cls === undefined ? na() : state.cls.toFixed(2)}
-          bad={bad(state.cls, 0.1)}
-          dim={state.cls === undefined}
-        />
-        <Cell
-          label={language.t("debugBar.mem.label")}
-          tip={
-            state.heap.used === undefined
-              ? language.t("debugBar.mem.tipUnavailable")
-              : language.t("debugBar.mem.tip", {
-                  used: mb(state.heap.used) ?? na(),
-                  limit: mb(state.heap.limit) ?? na(),
-                })
-          }
-          value={heapv()}
-          bad={bad(heap(), 0.8)}
-          dim={state.heap.used === undefined}
-          wide
-        />
-      </div>
-    </aside>
+      <aside
+        ref={(el) => containerRef = el}
+        onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
+        style={style()}
+        aria-label={language.t("debugBar.ariaLabel")}
+        class="pointer-events-auto fixed z-50 w-[308px] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-border-base bg-surface-raised-stronger-non-alpha p-0.5 text-text-strong shadow-[var(--shadow-lg-border-base)] sm:w-[324px]"
+        classList={{
+          "bottom-3 right-3 sm:bottom-4 sm:right-4": !position(),
+        }}
+      >
+        <div class="flex items-center justify-between px-2.5 py-1.5 border-b border-border-base/30 cursor-move select-none text-[10px] leading-none font-bold opacity-60 font-mono tracking-wider">
+          <span class="flex items-center gap-1">
+            <span>📊</span>
+            <span>PERFORMANCE</span>
+          </span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setMinimized(true)
+            }}
+            class="hover:text-text-critical hover:bg-surface-raised/80 transition-all p-1 rounded-md"
+            title="Minimize stats"
+          >
+            <Icon name="xmark-small" size="small" />
+          </button>
+        </div>
+        <div class="grid grid-cols-5 gap-px font-mono mt-0.5">
+          <Cell
+            label={language.t("debugBar.nav.label")}
+            tip={language.t("debugBar.nav.tip")}
+            value={navv()}
+            bad={bad(state.nav.dur, 400)}
+            dim={state.nav.dur === undefined && !state.nav.pending}
+          />
+          <Cell
+            label={language.t("debugBar.fps.label")}
+            tip={language.t("debugBar.fps.tip")}
+            value={state.fps === undefined ? na() : `${Math.round(state.fps)}`}
+            bad={bad(state.fps, 50, true)}
+            dim={state.fps === undefined}
+          />
+          <Cell
+            label={language.t("debugBar.frame.label")}
+            tip={language.t("debugBar.frame.tip")}
+            value={time(state.gap) ?? na()}
+            bad={bad(state.gap, 50)}
+            dim={state.gap === undefined}
+          />
+          <Cell
+            label={language.t("debugBar.jank.label")}
+            tip={language.t("debugBar.jank.tip")}
+            value={state.jank === undefined ? na() : `${state.jank}`}
+            bad={bad(state.jank, 8)}
+            dim={state.jank === undefined}
+          />
+          <Cell
+            label={language.t("debugBar.long.label")}
+            tip={language.t("debugBar.long.tip", { max: ms(state.long.max) ?? na() })}
+            value={longv()}
+            bad={bad(state.long.block, 200)}
+            dim={state.long.count === undefined}
+          />
+          <Cell
+            label={language.t("debugBar.delay.label")}
+            tip={language.t("debugBar.delay.tip")}
+            value={time(state.delay) ?? na()}
+            bad={bad(state.delay, 100)}
+            dim={state.delay === undefined}
+          />
+          <Cell
+            label={language.t("debugBar.inp.label")}
+            tip={language.t("debugBar.inp.tip")}
+            value={time(state.inp) ?? na()}
+            bad={bad(state.inp, 200)}
+            dim={state.inp === undefined}
+          />
+          <Cell
+            label={language.t("debugBar.cls.label")}
+            tip={language.t("debugBar.cls.tip")}
+            value={state.cls === undefined ? na() : state.cls.toFixed(2)}
+            bad={bad(state.cls, 0.1)}
+            dim={state.cls === undefined}
+          />
+          <Cell
+            label={language.t("debugBar.mem.label")}
+            tip={
+              state.heap.used === undefined
+                ? language.t("debugBar.mem.tipUnavailable")
+                : language.t("debugBar.mem.tip", {
+                    used: mb(state.heap.used) ?? na(),
+                    limit: mb(state.heap.limit) ?? na(),
+                  })
+            }
+            value={heapv()}
+            bad={bad(heap(), 0.8)}
+            dim={state.heap.used === undefined}
+            wide
+          />
+        </div>
+      </aside>
+    </Show>
   )
 }
