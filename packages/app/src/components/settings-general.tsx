@@ -348,8 +348,8 @@ export const SettingsGeneral: Component = () => {
         </SettingsRow>
 
         <SettingsRow
-          title="Show Scrollbars"
-          description="Force show visual scrollbars in all scrollable views and settings lists."
+          title={language.t("settings.general.row.showScrollbars.title")}
+          description={language.t("settings.general.row.showScrollbars.description")}
         >
           <div data-action="settings-show-scrollbars">
             <Switch
@@ -368,10 +368,14 @@ export const SettingsGeneral: Component = () => {
               checked={settings.general.newLayoutDesigns()}
               onChange={(checked) => {
                 settings.general.setNewLayoutDesigns(checked)
-                if (!checked) return
-                void import("@/components/settings-v2").then((module) => {
-                  dialog.show(() => <module.DialogSettings />)
-                })
+                dialog.close()
+                setTimeout(() => {
+                  if (checked) {
+                    void import("@/components/settings-v2").then((module) => {
+                      dialog.show(() => <module.DialogSettings />)
+                    })
+                  }
+                }, 150)
               }}
             />
           </div>

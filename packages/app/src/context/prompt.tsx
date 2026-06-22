@@ -134,13 +134,16 @@ function createPromptActions(
 ) {
   return {
     set(prompt: Prompt, cursorPosition?: number) {
+      console.log("[STATE] prompt.set called with prompt:", JSON.stringify(prompt), "cursorPosition:", cursorPosition)
       const next = clonePrompt(prompt)
       batch(() => {
         setStore("prompt", next)
         if (cursorPosition !== undefined) setStore("cursor", cursorPosition)
       })
+      console.log("[STATE] prompt.set completed")
     },
     reset() {
+      console.log("[STATE] prompt.reset called")
       batch(() => {
         setStore("prompt", clonePrompt(DEFAULT_PROMPT))
         setStore("cursor", 0)
@@ -181,6 +184,7 @@ function promptTarget(serverScope: ServerScope, scope: Scope) {
 }
 
 function createPromptSession(serverScope: ServerScope, scope: Scope) {
+  console.log(`[STATE] Creating prompt session for scope: ${scopeKey(scope)}`)
   const [store, setStore, _, ready] = persisted(
     promptTarget(serverScope, scope),
     createStore<PromptStore>(promptStore()),
@@ -203,7 +207,10 @@ function createPromptStateValue(store: PromptStore, setStore: SetStoreFunction<P
   const actions = createPromptActions(setStore)
 
   return {
-    current: () => store.prompt,
+    current: () => {
+      console.log("[STATE] prompt.current() read:", JSON.stringify(store.prompt))
+      return store.prompt
+    },
     cursor: createMemo(() => store.cursor),
     dirty: () => !isPromptEqual(store.prompt, DEFAULT_PROMPT),
     context: {

@@ -1257,20 +1257,20 @@ export function UserMessageDisplay(props: { message: UserMessage; parts: PartTyp
               />
             </Tooltip>
             <Tooltip
-              value="Download text"
+              value="Send to Chat"
               placement="top"
               gutter={4}
             >
               <IconButton
-                icon="download"
+                icon="enter"
                 size="normal"
                 variant="ghost"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={(event) => {
                   event.stopPropagation()
-                  handleDownload()
+                  window.dispatchEvent(new CustomEvent("send-to-chat", { detail: { text: text() } }))
                 }}
-                aria-label="Download message text"
+                aria-label="Send message text to chat"
               />
             </Tooltip>
             <Tooltip
@@ -1681,17 +1681,20 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
               />
             </Tooltip>
             <Tooltip
-              value="Download text"
+              value="Send to Chat"
               placement="top"
               gutter={4}
             >
               <IconButton
-                icon="download"
+                icon="enter"
                 size="normal"
                 variant="ghost"
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={handleDownload}
-                aria-label="Download response text"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  window.dispatchEvent(new CustomEvent("send-to-chat", { detail: { text: text() } }))
+                }}
+                aria-label="Send response text to chat"
               />
             </Tooltip>
             <Tooltip

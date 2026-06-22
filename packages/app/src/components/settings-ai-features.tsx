@@ -211,11 +211,23 @@ export const SettingsAIFeatures: Component = () => {
                                 { value: "auto", label: "Auto-Detect Language" },
                                 { value: "en", label: "English Only" },
                                 { value: "ne", label: "Nepali Only" },
+                                { value: "hi", label: "Hindi Only" },
+                                { value: "es", label: "Spanish Only" },
+                                { value: "fr", label: "French Only" },
+                                { value: "de", label: "German Only" },
+                                { value: "ja", label: "Japanese Only" },
+                                { value: "zh", label: "Chinese Only" },
                               ]}
                               current={[
                                 { value: "auto", label: "Auto-Detect Language" },
                                 { value: "en", label: "English Only" },
                                 { value: "ne", label: "Nepali Only" },
+                                { value: "hi", label: "Hindi Only" },
+                                { value: "es", label: "Spanish Only" },
+                                { value: "fr", label: "French Only" },
+                                { value: "de", label: "German Only" },
+                                { value: "ja", label: "Japanese Only" },
+                                { value: "zh", label: "Chinese Only" },
                               ].find((o) => o.value === settings.voice.language())}
                               value={(o) => o.value}
                               label={(o) => o.label}

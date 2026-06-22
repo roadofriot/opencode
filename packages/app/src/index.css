@@ -193,3 +193,47 @@ body.show-scrollbars .no-scrollbar {
   scrollbar-width: thin !important;
 }
 
+/* Settings dialog: always show a subtle scrollbar so hidden content is reachable */
+.settings-dialog [role="tabpanel"]::-webkit-scrollbar,
+.settings-dialog .overflow-y-auto::-webkit-scrollbar {
+  display: block !important;
+  width: 5px !important;
+}
+
+.settings-dialog [role="tabpanel"]::-webkit-scrollbar-thumb,
+.settings-dialog .overflow-y-auto::-webkit-scrollbar-thumb {
+  background-color: rgba(128, 128, 128, 0.25) !important;
+  border-radius: 3px !important;
+}
+
+.settings-dialog [role="tabpanel"]::-webkit-scrollbar-thumb:hover,
+.settings-dialog .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(128, 128, 128, 0.5) !important;
+}
+
+.settings-dialog [role="tabpanel"]::-webkit-scrollbar-track,
+.settings-dialog .overflow-y-auto::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.settings-dialog [role="tabpanel"],
+.settings-dialog .overflow-y-auto {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(128,128,128,0.25) transparent !important;
+}
+
+/* Settings v2 panel: always-on thin scrollbar, more prominent when show-scrollbars enabled */
+body.show-scrollbars .settings-v2-panel {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(128, 128, 128, 0.5) transparent !important;
+}
+
+body.show-scrollbars .settings-v2-panel::-webkit-scrollbar {
+  display: block !important;
+  width: 6px !important;
+}
+
+body.show-scrollbars .settings-v2-panel::-webkit-scrollbar-thumb {
+  background-color: rgba(128, 128, 128, 0.5) !important;
+  border-radius: 3px !important;
+}

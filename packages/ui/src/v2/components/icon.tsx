@@ -65,6 +65,18 @@ const icons = {
     viewBox: "0 0 16 16",
     body: `<path d="M2.5 7.5H3.5V8.5H2.5V7.5Z" stroke="currentColor"/><path d="M7.5 7.5H8.5V8.5H7.5V7.5Z" stroke="currentColor"/><path d="M12.5 7.5H13.5V8.5H12.5V7.5Z" stroke="currentColor"/>`,
   },
+  sun: {
+    viewBox: "0 0 16 16",
+    body: `<circle cx="8" cy="8" r="3" stroke="currentColor"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M12.95 3.05l-1.06 1.06M4.11 11.89l-1.06 1.06" stroke="currentColor" stroke-linecap="round"/>`,
+  },
+  moon: {
+    viewBox: "0 0 16 16",
+    body: `<path d="M13.5 10A6 6 0 0 1 6 2.5a.5.5 0 0 0-.6-.6A6.5 6.5 0 1 0 14.1 10.6a.5.5 0 0 0-.6-.6z" stroke="currentColor" fill="none"/>`,
+  },
+  monitor: {
+    viewBox: "0 0 16 16",
+    body: `<rect x="1.5" y="2.5" width="13" height="9" rx="1" stroke="currentColor"/><path d="M5.5 13.5h5M8 11.5v2" stroke="currentColor" stroke-linecap="round"/>`,
+  },
 }
 
 const spriteID = "opencode-v2-icon-sprite"

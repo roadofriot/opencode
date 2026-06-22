@@ -15,6 +15,7 @@ import {
   Match,
   type ComponentProps,
   type JSX,
+  onMount,
 } from "solid-js"
 import { Popover as KobaltePopover } from "@kobalte/core/popover"
 import { createStore, type SetStoreFunction, type Store } from "solid-js/store"
@@ -50,6 +51,7 @@ import { useLanguage } from "@/context/language"
 import { usePlatform } from "@/context/platform"
 import { useSettings } from "@/context/settings"
 import { WhisperTranscriber } from "@/utils/whisper-transcriber"
+import { toaster } from "@opencode-ai/ui/toast"
 import { createSessionTabs } from "@/pages/session/helpers"
 import { createTextFragment, getCursorPosition, setCursorPosition, setRangeEdge } from "./prompt-input/editor-dom"
 import { createPromptAttachments } from "./prompt-input/attachments"
@@ -226,6 +228,24 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   let scrollRef!: HTMLDivElement
   let slashPopoverRef!: HTMLDivElement
   let projectSearchRef: HTMLInputElement | undefined
+
+  createEffect(() => {
+    const handleSendToChat = (e: any) => {
+      const textVal = e.detail?.text
+      if (!textVal) return
+      
+      const nextParts = [{ type: "text" as const, content: textVal, start: 0, end: 0 }]
+      prompt.set(nextParts)
+      queueScroll()
+      requestAnimationFrame(() => {
+        editorRef.focus()
+      })
+    }
+    window.addEventListener("send-to-chat", handleSendToChat)
+    onCleanup(() => {
+      window.removeEventListener("send-to-chat", handleSendToChat)
+    })
+  })
 
   const mirror = { input: false }
   const inset = 56
@@ -432,22 +452,94 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
 
   const [isListening, setIsListening] = createSignal(false)
   const [isTranscribing, setIsTranscribing] = createSignal(false)
+  // "checking" | "available" | "unavailable"
+  const [voiceCapability, setVoiceCapability] = createSignal<"checking" | "available" | "unavailable">("checking")
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let recognition: any = null
   let micStream: MediaStream | null = null
   let localRecorder: any = null
+  let latestVoiceText = ""
+
+  onMount(() => {
+    // Check voice capability: local Whisper engine is always considered available
+    if (settings.voice.engine() === "local") {
+      setVoiceCapability("available")
+    } else {
+      void (async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+          stream.getTracks().forEach((t) => t.stop())
+          const win = window as unknown as Record<string, unknown>
+          const hasSpeechAPI = !!(win["SpeechRecognition"] || win["webkitSpeechRecognition"])
+          setVoiceCapability(hasSpeechAPI ? "available" : "unavailable")
+        } catch {
+          // getUserMedia failed — but local Whisper mode doesn't need it at check time
+          setVoiceCapability("unavailable")
+        }
+      })()
+    }
+  })
+  onMount(() => {
+    let downloadToastId: number | null = null
+
+    const unsubscribe = WhisperTranscriber.subscribeProgress((progress) => {
+      if (progress.status === "initiate" || progress.status === "downloading") {
+        const percent = Math.round(progress.progress)
+        const filename = progress.file.split("/").pop() ?? ""
+        const title = "Downloading Local AI Model"
+        const description = `Loading ${filename}... (${percent}%)`
+
+        if (downloadToastId !== null) {
+          toaster.dismiss(downloadToastId)
+        }
+
+        downloadToastId = showToast({
+          title,
+          description,
+          variant: "loading",
+          persistent: true,
+        }) ?? null
+      } else if (progress.status === "done") {
+        if (downloadToastId !== null) {
+          toaster.dismiss(downloadToastId)
+          downloadToastId = null
+        }
+        showToast({
+          title: "Model Loaded",
+          description: "Local Whisper model is ready.",
+          variant: "success",
+          duration: 3000,
+        })
+      }
+    })
+
+    onCleanup(() => {
+      unsubscribe()
+      if (downloadToastId !== null) {
+        toaster.dismiss(downloadToastId)
+      }
+    })
+  })
 
   const stopListening = async () => {
+    console.log("[EVENT] stopListening triggered. engine:", settings.voice.engine())
     if (settings.voice.engine() === "local") {
-      if (!localRecorder) return
+      if (!localRecorder) {
+        console.warn("[VOICE] stopListening called but localRecorder is not set")
+        return
+      }
       setIsListening(false)
       setIsTranscribing(true)
       try {
+        console.log("[VOICE] Stopping localRecorder...")
         const audioData = await localRecorder.stop()
+        console.log("[VOICE] localRecorder stopped. Transcribing audio...")
         const voiceText = await WhisperTranscriber.transcribe(
           audioData,
           settings.voice.model(),
           settings.voice.language(),
         )
+        console.log(`[WHISPER] Received transcription result: "${voiceText}"`)
 
         if (voiceText && voiceText.trim()) {
           const startPrompt = prompt.current().map((p) => ({ ...p }))
@@ -458,15 +550,28 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
             lastPart && lastPart.type === "text" && lastPart.content && !lastPart.content.endsWith(" ") ? " " : ""
           const newText = separator + voiceText.trim()
 
+          console.log(`[STATE] Appending voiceText: "${newText}" to last part:`, JSON.stringify(lastPart))
           if (lastPart && lastPart.type === "text") {
             nextParts[lastPartIndex] = { ...lastPart, content: lastPart.content + newText }
           } else {
             nextParts.push({ type: "text", content: newText, start: 0, end: 0 })
           }
 
-          mirror.input = true
-          prompt.set(nextParts)
+          const newLength = promptLength(nextParts)
+          console.log(`[STATE] Setting prompt store. New length: ${newLength}. parts:`, JSON.stringify(nextParts))
+          prompt.set(nextParts, newLength)
           queueScroll()
+          requestAnimationFrame(() => {
+            console.log("[UI] Focusing editorRef and setting cursor position to:", newLength)
+            if (editorRef) {
+              editorRef.focus()
+              setCursorPosition(editorRef, newLength)
+            } else {
+              console.error("[UI] editorRef is undefined inside stopListening requestAnimationFrame!")
+            }
+          })
+        } else {
+          console.warn("[WHISPER] Transcription result was empty or whitespace only")
         }
       } catch (err) {
         console.error("Local Whisper transcribing error:", err)
@@ -481,11 +586,43 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       return
     }
 
+    console.log("[EVENT] Stopping cloud SpeechRecognition...")
     recognition?.stop()
     recognition = null
     micStream?.getTracks().forEach((t) => t.stop())
     micStream = null
     setIsListening(false)
+
+    if (latestVoiceText.trim()) {
+      console.log(`[EVENT] SpeechRecognition finished. Text: "${latestVoiceText}"`)
+      const currentPrompt = prompt.current()
+      const lastPart = currentPrompt[currentPrompt.length - 1]
+      const separator =
+        lastPart && lastPart.type === "text" && lastPart.content && !lastPart.content.endsWith(" ") ? " " : ""
+      const existingText = lastPart?.type === "text" ? lastPart.content : ""
+      if (!existingText.endsWith(latestVoiceText.trim())) {
+        const nextParts = currentPrompt.map((p) => ({ ...p }))
+        if (lastPart?.type === "text") {
+          nextParts[nextParts.length - 1] = { ...lastPart, content: lastPart.content + separator + latestVoiceText.trim() }
+        } else {
+          nextParts.push({ type: "text", content: latestVoiceText.trim(), start: 0, end: 0 })
+        }
+        const newLength = promptLength(nextParts)
+        console.log(`[STATE] Setting SpeechRecognition prompt store. New length: ${newLength}`)
+        prompt.set(nextParts, newLength)
+        queueScroll()
+        requestAnimationFrame(() => {
+          console.log("[UI] Focusing editorRef and setting cursor position to:", newLength)
+          if (editorRef) {
+            editorRef.focus()
+            setCursorPosition(editorRef, newLength)
+          } else {
+            console.error("[UI] editorRef is undefined inside stopListening (SpeechRecognition) requestAnimationFrame!")
+          }
+        })
+      }
+    }
+    latestVoiceText = ""
   }
 
   const toggleListening = async () => {
@@ -500,13 +637,21 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
         // Ensure Whisper model is preloaded/cached (offline ready)
         await WhisperTranscriber.preloadModel(settings.voice.model())
         setIsTranscribing(false)
+      } catch (err: any) {
+        setIsTranscribing(false)
+        showToast({
+          title: "Local Speech Model Failed to Load",
+          description: `Could not load local transcription model: ${err?.message ?? String(err)}. Check your internet connection.`,
+        })
+        return
+      }
 
+      try {
         const { AudioRecorder } = await import("@/utils/audio-recorder")
         localRecorder = new AudioRecorder()
         await localRecorder.start()
         setIsListening(true)
       } catch (err: any) {
-        setIsTranscribing(false)
         const denied = err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError"
         showToast({
           title: denied ? "Microphone Access Denied" : "Microphone Unavailable",
@@ -553,9 +698,10 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       setIsListening(true)
     }
 
+    const streamAtStart = micStream
     recognition.onend = () => {
-      micStream?.getTracks().forEach((t) => t.stop())
-      micStream = null
+      streamAtStart?.getTracks().forEach((t) => t.stop())
+      if (micStream === streamAtStart) micStream = null
       recognition = null
       setIsListening(false)
     }
@@ -574,6 +720,11 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
         setTimeout(() => {
           void toggleListening()
         }, 1000)
+        return
+      }
+
+      if (code === "no-speech" && latestVoiceText) {
+        void stopListening()
         return
       }
 
@@ -597,6 +748,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       for (let i = 0; i < event.results.length; ++i) {
         voiceText += event.results[i][0].transcript
       }
+      latestVoiceText = voiceText
 
       const nextParts = startPrompt.map((p) => ({ ...p }))
       const lastPartIndex = nextParts.length - 1
@@ -611,9 +763,12 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
         nextParts.push({ type: "text", content: newText, start: 0, end: 0 })
       }
 
-      mirror.input = true
-      prompt.set(nextParts)
+      const newLength = promptLength(nextParts)
+      prompt.set(nextParts, newLength)
       queueScroll()
+      requestAnimationFrame(() => {
+        setCursorPosition(editorRef, newLength)
+      })
     }
 
     recognition.start()
@@ -999,6 +1154,11 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     })
 
   const renderEditor = (parts: Prompt) => {
+    console.log("[UI] renderEditor called with parts:", JSON.stringify(parts))
+    if (!editorRef) {
+      console.error("[UI] renderEditor called but editorRef is undefined!")
+      return
+    }
     clearEditor()
     for (const part of parts) {
       if (part.type === "text") {
@@ -1014,6 +1174,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     if (last?.nodeType === Node.ELEMENT_NODE && (last as HTMLElement).tagName === "BR") {
       editorRef.appendChild(document.createTextNode("\u200B"))
     }
+    console.log("[UI] renderEditor completed. editorRef textContent:", editorRef.textContent)
   }
 
   // Auto-scroll active command into view when navigating with keyboard
@@ -1046,16 +1207,22 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   }
 
   const reconcile = (input: Prompt) => {
+    console.log("[INPUT] reconcile called with input:", JSON.stringify(input), "mirror.input:", mirror.input)
     if (mirror.input) {
       mirror.input = false
-      if (isNormalizedEditor()) return
+      const norm = isNormalizedEditor()
+      console.log("[INPUT] reconcile: mirror.input is true. isNormalizedEditor:", norm)
+      if (norm) return
 
       renderEditorWithCursor(input)
       return
     }
 
     const dom = parseFromDOM()
-    if (isNormalizedEditor() && isPromptEqual(input, dom)) return
+    const norm = isNormalizedEditor()
+    const equal = isPromptEqual(input, dom)
+    console.log("[INPUT] reconcile: isNormalizedEditor:", norm, "isPromptEqual:", equal, "dom:", JSON.stringify(dom))
+    if (norm && equal) return
 
     renderEditorWithCursor(input)
   }
@@ -1857,14 +2024,27 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                   </Show>
                 </div>
                 <div class="flex items-center gap-[2px]">
-                  <Tooltip placement="top" value={isTranscribing() ? "Transcribing..." : isListening() ? "Stop Listening" : "Voice to Text"}>
+                  <Tooltip
+                    placement="top"
+                    value={
+                      voiceCapability() === "unavailable"
+                        ? "Voice input unavailable — enable microphone permissions"
+                        : voiceCapability() === "checking"
+                          ? "Checking microphone..."
+                          : isTranscribing()
+                            ? "Transcribing..."
+                            : isListening()
+                              ? "Stop Listening"
+                              : "Voice to Text"
+                    }
+                  >
                     <IconButton
                       data-action="prompt-voice"
                       type="button"
-                      disabled={isTranscribing()}
+                      disabled={isTranscribing() || voiceCapability() !== "available"}
                       icon={isTranscribing() ? "reset" : isListening() ? "stop" : "microphone"}
                       variant={isListening() ? "primary" : "ghost"}
-                      class={`size-7 rounded-md p-[6px] text-v2-icon-icon-muted${isListening() ? " animate-pulse" : ""}${isTranscribing() ? " animate-spin" : ""}`}
+                      class={`size-7 rounded-md p-[6px] text-v2-icon-icon-muted${isListening() ? " animate-pulse" : ""}${isTranscribing() ? " animate-spin" : ""}${voiceCapability() === "unavailable" ? " opacity-40" : ""}`}
                       onClick={toggleListening}
                       aria-label="Voice Input"
                     />
@@ -2013,14 +2193,27 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                 />
 
                 <div class="flex items-center gap-[2px] pointer-events-auto">
-                  <Tooltip placement="top" value={isTranscribing() ? "Transcribing..." : isListening() ? "Stop Listening" : "Voice to Text"}>
+                  <Tooltip
+                    placement="top"
+                    value={
+                      voiceCapability() === "unavailable"
+                        ? "Voice input unavailable — enable microphone permissions"
+                        : voiceCapability() === "checking"
+                          ? "Checking microphone..."
+                          : isTranscribing()
+                            ? "Transcribing..."
+                            : isListening()
+                              ? "Stop Listening"
+                              : "Voice to Text"
+                    }
+                  >
                     <IconButton
                       data-action="prompt-voice"
                       type="button"
-                      disabled={isTranscribing()}
+                      disabled={isTranscribing() || voiceCapability() !== "available"}
                       icon={isTranscribing() ? "reset" : isListening() ? "stop" : "microphone"}
                       variant={isListening() ? "primary" : "ghost"}
-                      class={`size-8 ${isListening() ? "text-red-500 animate-pulse" : ""}${isTranscribing() ? "animate-spin" : ""}`}
+                      class={`size-8 ${isListening() ? "text-red-500 animate-pulse" : ""}${isTranscribing() ? "animate-spin" : ""}${voiceCapability() === "unavailable" ? " opacity-40" : ""}`}
                       onClick={toggleListening}
                       aria-label="Voice Input"
                     />

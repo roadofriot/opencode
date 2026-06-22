@@ -150,7 +150,7 @@ const defaultSettings: Settings = {
     errors: "nope-03",
   },
   voice: {
-    engine: "local",
+    engine: "cloud",
     model: "Xenova/whisper-tiny",
     language: "auto",
   },

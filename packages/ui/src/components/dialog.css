@@ -124,6 +124,13 @@
     }
   }
 
+  &:not([data-fit]) {
+    [data-slot="dialog-content"] {
+      height: 100%;
+    }
+  }
+
+
   &[data-size="large"] [data-slot="dialog-container"] {
     width: min(calc(100vw - 32px), 800px);
     height: min(calc(100vh - 32px), 600px);

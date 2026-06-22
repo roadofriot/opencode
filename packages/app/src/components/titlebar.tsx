@@ -749,9 +749,49 @@ type TitlebarV2RightState = {
   update: TitlebarUpdatePillState
 }
 
+function ThemeToggleButton() {
+  const theme = useTheme()
+
+  const nextScheme = () => {
+    const current = theme.colorScheme()
+    if (current === "dark") return "light" as const
+    if (current === "light") return "system" as const
+    return "dark" as const
+  }
+
+  const icon = () => {
+    const s = theme.colorScheme()
+    if (s === "light") return "sun" as const
+    if (s === "dark") return "moon" as const
+    return "monitor" as const
+  }
+
+  const label = () => {
+    const s = theme.colorScheme()
+    if (s === "light") return "Light theme (click for system)"
+    if (s === "dark") return "Dark theme (click for light)"
+    return "System theme (click for dark)"
+  }
+
+  return (
+    <TooltipV2 placement="bottom" value={label()} class="shrink-0">
+      <IconButtonV2
+        type="button"
+        variant="ghost-muted"
+        size="large"
+        class="!w-9 shrink-0"
+        icon={<IconV2 name={icon()} />}
+        onClick={() => theme.setColorScheme(nextScheme())}
+        aria-label={label()}
+      />
+    </TooltipV2>
+  )
+}
+
 function TitlebarV2Right(props: { state: TitlebarV2RightState }) {
   return (
     <div class="relative z-20 flex shrink-0 items-center justify-end gap-0 overflow-visible">
+      <ThemeToggleButton />
       <Show when={props.state.update.visible}>
         <TitlebarUpdateIconButton state={props.state.update} />
       </Show>
@@ -759,6 +799,7 @@ function TitlebarV2Right(props: { state: TitlebarV2RightState }) {
     </div>
   )
 }
+
 
 function TitlebarUpdateIconButton(props: { state: TitlebarUpdatePillState }) {
   return (

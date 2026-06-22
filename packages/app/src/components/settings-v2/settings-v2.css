@@ -19,11 +19,21 @@
   flex-direction: column;
   height: 100%;
   overflow-y: auto;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--v2-border-border-muted) transparent;
 }
 
 .settings-v2-panel::-webkit-scrollbar {
-  display: none;
+  width: 5px;
+}
+
+.settings-v2-panel::-webkit-scrollbar-thumb {
+  background-color: var(--v2-border-border-muted);
+  border-radius: 3px;
+}
+
+.settings-v2-panel::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .settings-v2-tab-header {

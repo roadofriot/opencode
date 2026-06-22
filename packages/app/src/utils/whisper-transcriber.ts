@@ -1,10 +1,4 @@
-import { env, pipeline } from "@xenova/transformers"
-
-// Force Hugging Face CDN since we run entirely client-side
-env.allowLocalModels = false
-
-let pipelineInstance: any = null
-let currentModel: string | null = null
+import WhisperWorkerUrl from "./whisper.worker.ts?worker&url"
 
 export type DownloadProgress = {
   file: string
@@ -13,7 +7,10 @@ export type DownloadProgress = {
 }
 
 export class WhisperTranscriber {
+  private static worker: Worker | null = null
   private static onProgressCallbacks = new Set<(progress: DownloadProgress) => void>()
+  private static activePreloadPromise: { resolve: () => void; reject: (err: Error) => void } | null = null
+  private static activeTranscribePromise: { resolve: (text: string) => void; reject: (err: Error) => void } | null = null
 
   static subscribeProgress(cb: (progress: DownloadProgress) => void) {
     this.onProgressCallbacks.add(cb)
@@ -26,43 +23,95 @@ export class WhisperTranscriber {
     }
   }
 
-  static async getPipeline(model: string) {
-    if (pipelineInstance && currentModel === model) {
-      return pipelineInstance
+  private static getWorker(): Worker {
+    if (this.worker) return this.worker
+
+    console.log("[WHISPER] Initializing new Whisper worker...")
+    this.worker = new Worker(WhisperWorkerUrl, { type: "module" })
+    this.worker.onmessage = (event: MessageEvent) => {
+      const type = event.data.type
+      console.log(`[WHISPER] Worker message received: ${type}`, event.data)
+
+      if (type === "progress") {
+        this.notifyProgress(event.data.data)
+        return
+      }
+
+      if (type === "preload-done") {
+        console.log("[WHISPER] Preload complete");
+        if (this.activePreloadPromise) {
+          this.activePreloadPromise.resolve()
+          this.activePreloadPromise = null
+        }
+        return
+      }
+
+      if (type === "transcribe-done") {
+        console.log(`[WHISPER] Transcription complete! Text: "${event.data.text}"`)
+        if (this.activeTranscribePromise) {
+          this.activeTranscribePromise.resolve(event.data.text)
+          this.activeTranscribePromise = null
+        }
+        return
+      }
+
+      if (type === "error") {
+        console.error("[WHISPER] Worker returned an error:", event.data.error)
+        const err = new Error(event.data.error || "Worker error")
+        if (this.activePreloadPromise) {
+          this.activePreloadPromise.reject(err)
+          this.activePreloadPromise = null
+        }
+        if (this.activeTranscribePromise) {
+          this.activeTranscribePromise.reject(err)
+          this.activeTranscribePromise = null
+        }
+      }
     }
 
-    pipelineInstance = await pipeline("automatic-speech-recognition", model, {
-      progress_callback: (data: any) => {
-        if (data.status === "initiate" || data.status === "progress" || data.status === "done") {
-          this.notifyProgress({
-            file: data.file,
-            progress: data.progress ?? 100,
-            status: data.status === "progress" ? "downloading" : data.status,
-          })
-        }
-      },
-    })
-    currentModel = model
-    return pipelineInstance
+    this.worker.onerror = (e) => {
+      console.error("[WHISPER] Worker onerror triggered:", e)
+      const err = new Error(e.message || "Whisper worker failed")
+      if (this.activePreloadPromise) {
+        this.activePreloadPromise.reject(err)
+        this.activePreloadPromise = null
+      }
+      if (this.activeTranscribePromise) {
+        this.activeTranscribePromise.reject(err)
+        this.activeTranscribePromise = null
+      }
+    }
+
+    return this.worker
   }
 
-  static async preloadModel(model: string) {
-    await this.getPipeline(model)
+  static async preloadModel(model: string): Promise<void> {
+    console.log(`[WHISPER] Requesting model preload for: ${model}`)
+    const worker = this.getWorker()
+    if (this.activePreloadPromise) {
+      console.warn("[WHISPER] Preload already in progress!")
+      throw new Error("A model preload is already in progress")
+    }
+    return new Promise<void>((resolve, reject) => {
+      this.activePreloadPromise = { resolve, reject }
+      worker.postMessage({ type: "preload", payload: { model } })
+    })
   }
 
   static async transcribe(audioData: Float32Array, model: string, language: string): Promise<string> {
-    const transcriber = await this.getPipeline(model)
-    const options: any = {
-      chunk_length_s: 30,
-      stride_length_s: 5,
-      task: "transcribe",
+    console.log(`[WHISPER] Requesting transcription. Model: ${model}, Language: ${language}, Audio sample length: ${audioData.length}`)
+    const worker = this.getWorker()
+    if (this.activeTranscribePromise) {
+      console.warn("[WHISPER] Transcription already in progress!")
+      throw new Error("A transcription is already in progress")
     }
-
-    if (language && language !== "auto") {
-      options.language = language === "ne" ? "nepali" : "english"
-    }
-
-    const result = await transcriber(audioData, options)
-    return result.text
+    return new Promise<string>((resolve, reject) => {
+      this.activeTranscribePromise = { resolve, reject }
+      worker.postMessage(
+        { type: "transcribe", payload: { audioData, model, language } },
+        [audioData.buffer]
+      )
+    })
   }
 }
+

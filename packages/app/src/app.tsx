@@ -167,7 +167,7 @@ function UiI18nBridge(props: ParentProps) {
 
 declare global {
   interface Window {
-    __OPENCODE__?: {
+    __MINDSQARQ__?: {
       deepLinks?: string[]
     }
     api?: {
