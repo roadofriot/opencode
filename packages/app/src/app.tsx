@@ -27,6 +27,8 @@ import {
   Show,
 } from "solid-js"
 import { Dynamic } from "solid-js/web"
+import { AuthProvider, useAuth } from "@/context/auth"
+import { LoginOverlay } from "@/components/auth/login-overlay"
 import { CommandProvider } from "@/context/command"
 import { CommentsProvider } from "@/context/comments"
 import { FileProvider } from "@/context/file"
@@ -173,6 +175,12 @@ declare global {
     api?: {
       setTitlebar?: (theme: { mode: "light" | "dark" }) => Promise<void>
       exportDebugLogs?: () => Promise<string>
+      auth?: {
+        signInWithProvider: (provider: "github" | "google") => Promise<void>
+        signOut: () => Promise<void>
+        getUser: () => Promise<{ id: string; email: string | null; name: string | null; avatar: string | null } | null>
+        onAuthStateChange: (cb: (user: { id: string; email: string | null; name: string | null; avatar: string | null } | null) => void) => () => void
+      }
     }
   }
 }
@@ -264,6 +272,7 @@ export function AppBaseProviders(props: ParentProps<{ locale?: Locale }>) {
   return (
     <MetaProvider>
       <Font />
+      <AuthProvider>
       <ThemeProvider
         onThemeApplied={(_, mode) => {
           void window.api?.setTitlebar?.({ mode })
@@ -290,6 +299,7 @@ export function AppBaseProviders(props: ParentProps<{ locale?: Locale }>) {
           </UiI18nBridge>
         </LanguageProvider>
       </ThemeProvider>
+    </AuthProvider>
     </MetaProvider>
   )
 }
@@ -432,7 +442,10 @@ export function AppInterface(props: {
     </QueryProvider>
   )
 
+  const auth = useAuth()
+
   return (
+    <Show when={!auth.showLogin()} fallback={<LoginOverlay />}>
     <ServerProvider
       defaultServer={props.defaultServer}
       canonicalLocalServer={props.canonicalLocalServer}
@@ -462,5 +475,6 @@ export function AppInterface(props: {
         </ConnectionGate>
       </GlobalProvider>
     </ServerProvider>
+    </Show>
   )
 }

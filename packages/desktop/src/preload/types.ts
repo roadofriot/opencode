@@ -99,4 +99,11 @@ export type ElectronAPI = {
   setBackgroundColor: (color: string) => Promise<void>
   exportDebugLogs: () => Promise<string>
   recordFatalRendererError: (error: FatalRendererError) => Promise<void>
+
+  auth: {
+    signInWithProvider: (provider: "github" | "google") => Promise<void>
+    signOut: () => Promise<void>
+    getUser: () => Promise<{ id: string; email: string | null; name: string | null; avatar: string | null } | null>
+    onAuthStateChange: (cb: (user: { id: string; email: string | null; name: string | null; avatar: string | null } | null) => void) => () => void
+  }
 }

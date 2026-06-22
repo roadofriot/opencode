@@ -1666,6 +1666,12 @@ export const layer = Layer.effect(
         })
 
         if (baseURL !== undefined) options["baseURL"] = baseURL
+        if (model.providerID === "google") {
+          const currentUrl = options["baseURL"] || baseURL || model.api.url
+          if (!currentUrl || currentUrl === "https://generativelanguage.googleapis.com" || currentUrl === "https://generativelanguage.googleapis.com/") {
+            options["baseURL"] = "https://generativelanguage.googleapis.com/v1beta"
+          }
+        }
         if (options["apiKey"] === undefined && provider.key) options["apiKey"] = provider.key
         if (model.headers)
           options["headers"] = {

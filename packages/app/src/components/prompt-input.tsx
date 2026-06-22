@@ -523,7 +523,8 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
 
   const stopListening = async () => {
     console.log("[EVENT] stopListening triggered. engine:", settings.voice.engine())
-    if (settings.voice.engine() === "local") {
+    const voiceEngine = settings.voice.engine()
+    if (voiceEngine === "local" || voiceEngine === "openai" || voiceEngine === "gemini" || voiceEngine === "groq" || voiceEngine === "huggingface") {
       if (!localRecorder) {
         console.warn("[VOICE] stopListening called but localRecorder is not set")
         return
@@ -534,11 +535,41 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
         console.log("[VOICE] Stopping localRecorder...")
         const audioData = await localRecorder.stop()
         console.log("[VOICE] localRecorder stopped. Transcribing audio...")
-        const voiceText = await WhisperTranscriber.transcribe(
-          audioData,
-          settings.voice.model(),
-          settings.voice.language(),
-        )
+        
+        let voiceText = ""
+        if (voiceEngine === "local") {
+          voiceText = await WhisperTranscriber.transcribe(
+            audioData,
+            settings.voice.model(),
+            settings.voice.language(),
+          )
+        } else if (voiceEngine === "openai") {
+          const key = settings.voice.openaiApiKey()
+          if (!key) {
+            throw new Error("OpenAI API Key is missing. Please configure it in settings.")
+          }
+          const wavBlob = encodeWAV(audioData)
+          voiceText = await transcribeWithOpenAI(wavBlob, key, settings.voice.language())
+        } else if (voiceEngine === "gemini") {
+          const key = settings.voice.geminiApiKey()
+          if (!key) {
+            throw new Error("Gemini API Key is missing. Please configure it in settings.")
+          }
+          const wavBlob = encodeWAV(audioData)
+          voiceText = await transcribeWithGemini(wavBlob, key)
+        } else if (voiceEngine === "groq") {
+          const key = settings.voice.groqApiKey()
+          if (!key) {
+            throw new Error("Groq API Key is missing. Please configure it in settings.")
+          }
+          const wavBlob = encodeWAV(audioData)
+          voiceText = await transcribeWithGroq(wavBlob, key, settings.voice.language())
+        } else if (voiceEngine === "huggingface") {
+          const token = settings.voice.huggingfaceToken()
+          const wavBlob = encodeWAV(audioData)
+          voiceText = await transcribeWithHuggingFace(wavBlob, token, settings.voice.language())
+        }
+        
         console.log(`[WHISPER] Received transcription result: "${voiceText}"`)
 
         if (voiceText && voiceText.trim()) {
@@ -573,11 +604,11 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
         } else {
           console.warn("[WHISPER] Transcription result was empty or whitespace only")
         }
-      } catch (err) {
-        console.error("Local Whisper transcribing error:", err)
+      } catch (err: any) {
+        console.error("Transcription error:", err)
         showToast({
           title: "Voice Input Error",
-          description: "An error occurred during local transcription. Make sure the model is downloaded.",
+          description: err?.message || "An error occurred during transcription.",
         })
       } finally {
         setIsTranscribing(false)
@@ -631,19 +662,22 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       return
     }
 
-    if (settings.voice.engine() === "local") {
-      try {
-        setIsTranscribing(true)
-        // Ensure Whisper model is preloaded/cached (offline ready)
-        await WhisperTranscriber.preloadModel(settings.voice.model())
-        setIsTranscribing(false)
-      } catch (err: any) {
-        setIsTranscribing(false)
-        showToast({
-          title: "Local Speech Model Failed to Load",
-          description: `Could not load local transcription model: ${err?.message ?? String(err)}. Check your internet connection.`,
-        })
-        return
+    const voiceEngine = settings.voice.engine()
+    if (voiceEngine === "local" || voiceEngine === "openai" || voiceEngine === "gemini" || voiceEngine === "groq" || voiceEngine === "huggingface") {
+      if (voiceEngine === "local") {
+        try {
+          setIsTranscribing(true)
+          // Ensure Whisper model is preloaded/cached (offline ready)
+          await WhisperTranscriber.preloadModel(settings.voice.model())
+          setIsTranscribing(false)
+        } catch (err: any) {
+          setIsTranscribing(false)
+          showToast({
+            title: "Local Speech Model Failed to Load",
+            description: `Could not load local transcription model: ${err?.message ?? String(err)}. Check your internet connection.`,
+          })
+          return
+        }
       }
 
       try {
@@ -687,10 +721,24 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       return
     }
 
+    const speechLocaleMap: Record<string, string> = {
+      en: "en-US",
+      ne: "ne-NP",
+      hi: "hi-IN",
+      es: "es-ES",
+      fr: "fr-FR",
+      de: "de-DE",
+      ja: "ja-JP",
+      zh: "zh-CN",
+    }
+
     recognition = new SpeechCtor()
     recognition.continuous = true
     recognition.interimResults = true
-    recognition.lang = language.locale() || "en-US"
+    const voiceLang = settings.voice.language()
+    recognition.lang = voiceLang && voiceLang !== "auto"
+      ? (speechLocaleMap[voiceLang] ?? voiceLang)
+      : (language.locale() || "en-US")
 
     const startPrompt = prompt.current().map((p) => ({ ...p }))
 
@@ -2660,4 +2708,183 @@ function ComposerModelControl(props: { state: ComposerModelControlState }) {
       </Show>
     </Show>
   )
+}
+
+function encodeWAV(samples: Float32Array): Blob {
+  const buffer = new ArrayBuffer(44 + samples.length * 2)
+  const view = new DataView(buffer)
+
+  writeString(view, 0, "RIFF")
+  view.setUint32(4, 36 + samples.length * 2, true)
+  writeString(view, 8, "WAVE")
+  writeString(view, 12, "fmt ")
+  view.setUint32(16, 16, true)
+  view.setUint16(20, 1, true)
+  view.setUint16(22, 1, true)
+  view.setUint32(24, 16000, true)
+  view.setUint32(28, 16000 * 2, true)
+  view.setUint16(32, 2, true)
+  view.setUint16(34, 16, true)
+  writeString(view, 36, "data")
+  view.setUint32(40, samples.length * 2, true)
+
+  floatTo16BitPCM(view, 44, samples)
+
+  return new Blob([view], { type: "audio/wav" })
+}
+
+function writeString(view: DataView, offset: number, string: string) {
+  for (let i = 0; i < string.length; i++) {
+    view.setUint8(offset + i, string.charCodeAt(i))
+  }
+}
+
+function floatTo16BitPCM(output: DataView, offset: number, input: Float32Array) {
+  for (let i = 0; i < input.length; i++, offset += 2) {
+    const s = Math.max(-1, Math.min(1, input[i]))
+    output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true)
+  }
+}
+
+async function transcribeWithOpenAI(wavBlob: Blob, apiKey: string, languageCode: string): Promise<string> {
+  const formData = new FormData()
+  formData.append("file", wavBlob, "recording.wav")
+  formData.append("model", "whisper-1")
+  if (languageCode && languageCode !== "auto") {
+    formData.append("language", languageCode)
+  }
+
+  const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`
+    },
+    body: formData
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error("[OPENAI_SPEECH] API error response:", errorText)
+    throw new Error(`OpenAI API failed: ${response.status} - ${errorText}`)
+  }
+
+  const result = await response.json()
+  return result.text || ""
+}
+
+async function transcribeWithGemini(wavBlob: Blob, apiKey: string): Promise<string> {
+  const arrayBuffer = await wavBlob.arrayBuffer()
+  const bytes = new Uint8Array(arrayBuffer)
+  let binary = ""
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i])
+  }
+  const base64Data = btoa(binary)
+
+  const payload = {
+    contents: [{
+      parts: [
+        {
+          inlineData: {
+            mimeType: "audio/wav",
+            data: base64Data
+          }
+        },
+        {
+          text: "Transcribe the audio exactly as spoken. Do not translate, do not summarize, do not add any notes, headers, or explanations. output only the raw transcription. If the audio is in Nepali, write the transcription in Nepali Devanagari script. If it is in Hindi, write in Hindi Devanagari script. If it is in English, write in English."
+        }
+      ]
+    }],
+    generationConfig: {
+      temperature: 0.0
+    }
+  }
+
+  const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-latest"]
+  let lastError: Error | null = null
+
+  for (const model of models) {
+    try {
+      console.log(`[GEMINI_SPEECH] Attempting transcription with model: ${model}`)
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        }
+      )
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.warn(`[GEMINI_SPEECH] Model ${model} failed: ${response.status} - ${errorText}`)
+        lastError = new Error(`Gemini API failed for model ${model}: ${response.status} - ${errorText}`)
+        continue
+      }
+
+      const result = await response.json()
+      const text = result.candidates?.[0]?.content?.parts?.[0]?.text
+      if (text) {
+        console.log(`[GEMINI_SPEECH] Transcription successful with model: ${model}`)
+        return text
+      }
+    } catch (err: any) {
+      console.warn(`[GEMINI_SPEECH] Error with model ${model}:`, err)
+      lastError = err instanceof Error ? err : new Error(String(err))
+    }
+  }
+
+  throw lastError || new Error("All Gemini models failed to transcribe the audio.")
+}
+
+async function transcribeWithGroq(wavBlob: Blob, apiKey: string, languageCode: string): Promise<string> {
+  const formData = new FormData()
+  formData.append("file", wavBlob, "recording.wav")
+  formData.append("model", "whisper-large-v3-turbo")
+  if (languageCode && languageCode !== "auto") {
+    formData.append("language", languageCode)
+  }
+
+  const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`
+    },
+    body: formData
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error("[GROQ_SPEECH] API error response:", errorText)
+    throw new Error(`Groq API failed: ${response.status} - ${errorText}`)
+  }
+
+  const result = await response.json()
+  return result.text || ""
+}
+
+async function transcribeWithHuggingFace(wavBlob: Blob, token: string | undefined, languageCode: string): Promise<string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "audio/wav",
+  }
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`
+  }
+
+  const response = await fetch("https://api-inference.huggingface.co/models/openai/whisper-large-v3", {
+    method: "POST",
+    headers,
+    body: wavBlob
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error("[HF_SPEECH] API error response:", errorText)
+    throw new Error(`Hugging Face API failed: ${response.status} - ${errorText}`)
+  }
+
+  const result = await response.json()
+  return result.text || ""
 }

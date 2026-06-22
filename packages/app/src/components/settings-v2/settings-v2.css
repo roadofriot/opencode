@@ -662,3 +662,12 @@
   line-height: 1;
   color: var(--v2-state-fg-danger);
 }
+
+[data-component="dialog-v2"]:has(.settings-v2-dialog) [data-slot="dialog-container"] {
+  resize: both;
+  overflow: hidden;
+  min-width: 600px;
+  min-height: 400px;
+  max-width: 95vw;
+  max-height: 95vh;
+}

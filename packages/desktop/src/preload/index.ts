@@ -117,6 +117,17 @@ const api: ElectronAPI = {
   setBackgroundColor: (color: string) => ipcRenderer.invoke("set-background-color", color),
   exportDebugLogs: () => ipcRenderer.invoke("export-debug-logs"),
   recordFatalRendererError: (error) => ipcRenderer.invoke("record-fatal-renderer-error", error),
+
+  auth: {
+    signInWithProvider: (provider) => ipcRenderer.invoke("auth:sign-in", provider),
+    signOut: () => ipcRenderer.invoke("auth:sign-out"),
+    getUser: () => ipcRenderer.invoke("auth:get-user"),
+    onAuthStateChange: (cb) => {
+      const handler = (_: unknown, user: any) => cb(user)
+      ipcRenderer.on("auth:state-changed", handler)
+      return () => ipcRenderer.removeListener("auth:state-changed", handler)
+    },
+  },
 }
 
 contextBridge.exposeInMainWorld("api", api)

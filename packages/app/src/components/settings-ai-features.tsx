@@ -24,6 +24,56 @@ export const SettingsAIFeatures: Component = () => {
   const [activeFile, setActiveFile] = createSignal("")
   const [activeProgress, setActiveProgress] = createSignal(0)
 
+  const [validating, setValidating] = createSignal<Record<string, "idle" | "loading" | "success" | "error">>({})
+  const [valError, setValError] = createSignal<Record<string, string>>({})
+
+  const validateKey = async (type: "openai" | "gemini" | "groq" | "huggingface") => {
+    setValidating((prev) => ({ ...prev, [type]: "loading" }))
+    setValError((prev) => ({ ...prev, [type]: "" }))
+    try {
+      const headers: Record<string, string> = {}
+      let url = ""
+      
+      if (type === "openai") {
+        const key = settings.voice.openaiApiKey()
+        if (!key) throw new Error("Please enter a key first")
+        url = "https://api.openai.com/v1/models"
+        headers["Authorization"] = `Bearer ${key}`
+      } else if (type === "gemini") {
+        const key = settings.voice.geminiApiKey()
+        if (!key) throw new Error("Please enter a key first")
+        url = `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`
+      } else if (type === "groq") {
+        const key = settings.voice.groqApiKey()
+        if (!key) throw new Error("Please enter a key first")
+        url = "https://api.groq.com/openai/v1/models"
+        headers["Authorization"] = `Bearer ${key}`
+      } else if (type === "huggingface") {
+        const token = settings.voice.huggingfaceToken()
+        if (!token) throw new Error("Please enter a token first")
+        url = "https://huggingface.co/api/whoami-v2"
+        headers["Authorization"] = `Bearer ${token}`
+      }
+
+      const res = await fetch(url, { headers })
+      if (!res.ok) {
+        const text = await res.text()
+        let errMsg = `Failed: ${res.status}`
+        try {
+          const parsed = JSON.parse(text)
+          errMsg = parsed.error?.message || parsed.message || errMsg
+        } catch {}
+        throw new Error(errMsg)
+      }
+
+      setValidating((prev) => ({ ...prev, [type]: "success" }))
+    } catch (err: any) {
+      console.error(`Validation error for ${type}:`, err)
+      setValidating((prev) => ({ ...prev, [type]: "error" }))
+      setValError((prev) => ({ ...prev, [type]: err?.message || String(err) }))
+    }
+  }
+
   onMount(() => {
     const unsubscribe = WhisperTranscriber.subscribeProgress((progress) => {
       if (progress.status === "initiate") {
@@ -72,7 +122,13 @@ export const SettingsAIFeatures: Component = () => {
         {
           label: "Open Agent Selector",
           icon: "arrow-up",
-          action: () => dialog.close(),
+          action: () => {
+            dialog.close()
+            requestAnimationFrame(() => {
+              const el = document.querySelector('[data-action="prompt-agent"]') as HTMLElement | null
+              if (el) el.click()
+            })
+          },
         },
       ],
     },
@@ -169,10 +225,18 @@ export const SettingsAIFeatures: Component = () => {
                             options={[
                               { value: "cloud", label: "Cloud (Web Speech API)" },
                               { value: "local", label: "Local Whisper (ONNX)" },
+                              { value: "openai", label: "OpenAI Whisper (API)" },
+                              { value: "gemini", label: "Gemini 1.5 Flash (API)" },
+                              { value: "groq", label: "Groq (API - Free)" },
+                              { value: "huggingface", label: "Hugging Face (Inference API - Free)" },
                             ]}
                             current={[
                               { value: "cloud", label: "Cloud (Web Speech API)" },
                               { value: "local", label: "Local Whisper (ONNX)" },
+                              { value: "openai", label: "OpenAI Whisper (API)" },
+                              { value: "gemini", label: "Gemini 1.5 Flash (API)" },
+                              { value: "groq", label: "Groq (API - Free)" },
+                              { value: "huggingface", label: "Hugging Face (Inference API - Free)" },
                             ].find((o) => o.value === settings.voice.engine())}
                             value={(o) => o.value}
                             label={(o) => o.label}
@@ -183,8 +247,42 @@ export const SettingsAIFeatures: Component = () => {
                           />
                         </div>
 
+                        <div class="flex items-center justify-between gap-4">
+                          <span class="text-12-medium text-text-strong">Language Mode</span>
+                          <Select
+                            options={[
+                              { value: "auto", label: "Auto-Detect Language" },
+                              { value: "en", label: "English Only" },
+                              { value: "ne", label: "Nepali Only" },
+                              { value: "hi", label: "Hindi Only" },
+                              { value: "es", label: "Spanish Only" },
+                              { value: "fr", label: "French Only" },
+                              { value: "de", label: "German Only" },
+                              { value: "ja", label: "Japanese Only" },
+                              { value: "zh", label: "Chinese Only" },
+                            ]}
+                            current={[
+                              { value: "auto", label: "Auto-Detect Language" },
+                              { value: "en", label: "English Only" },
+                              { value: "ne", label: "Nepali Only" },
+                              { value: "hi", label: "Hindi Only" },
+                              { value: "es", label: "Spanish Only" },
+                              { value: "fr", label: "French Only" },
+                              { value: "de", label: "German Only" },
+                              { value: "ja", label: "Japanese Only" },
+                              { value: "zh", label: "Chinese Only" },
+                            ].find((o) => o.value === settings.voice.language())}
+                            value={(o) => o.value}
+                            label={(o) => o.label}
+                            onSelect={(option) => option && settings.voice.setLanguage(option.value)}
+                            variant="secondary"
+                            size="small"
+                            triggerVariant="settings"
+                          />
+                        </div>
+
                         <Show when={settings.voice.engine() === "local"}>
-                          <div class="flex items-center justify-between gap-4">
+                          <div class="flex items-center justify-between gap-4 pt-2 border-t border-border-weak-base">
                             <span class="text-12-medium text-text-strong">Model Size</span>
                             <Select
                               options={[
@@ -204,41 +302,7 @@ export const SettingsAIFeatures: Component = () => {
                             />
                           </div>
 
-                          <div class="flex items-center justify-between gap-4">
-                            <span class="text-12-medium text-text-strong">Language Mode</span>
-                            <Select
-                              options={[
-                                { value: "auto", label: "Auto-Detect Language" },
-                                { value: "en", label: "English Only" },
-                                { value: "ne", label: "Nepali Only" },
-                                { value: "hi", label: "Hindi Only" },
-                                { value: "es", label: "Spanish Only" },
-                                { value: "fr", label: "French Only" },
-                                { value: "de", label: "German Only" },
-                                { value: "ja", label: "Japanese Only" },
-                                { value: "zh", label: "Chinese Only" },
-                              ]}
-                              current={[
-                                { value: "auto", label: "Auto-Detect Language" },
-                                { value: "en", label: "English Only" },
-                                { value: "ne", label: "Nepali Only" },
-                                { value: "hi", label: "Hindi Only" },
-                                { value: "es", label: "Spanish Only" },
-                                { value: "fr", label: "French Only" },
-                                { value: "de", label: "German Only" },
-                                { value: "ja", label: "Japanese Only" },
-                                { value: "zh", label: "Chinese Only" },
-                              ].find((o) => o.value === settings.voice.language())}
-                              value={(o) => o.value}
-                              label={(o) => o.label}
-                              onSelect={(option) => option && settings.voice.setLanguage(option.value)}
-                              variant="secondary"
-                              size="small"
-                              triggerVariant="settings"
-                            />
-                          </div>
-
-                          <div class="flex flex-col gap-2 pt-2 border-t border-border-weak-base">
+                          <div class="flex flex-col gap-2 pt-2">
                             <div class="flex items-center justify-between">
                               <span class="text-12-regular text-text-weak">
                                 {downloading()
@@ -263,6 +327,138 @@ export const SettingsAIFeatures: Component = () => {
                               </div>
                               <span class="text-[10px] text-text-weak self-end">{activeProgress()}%</span>
                             </Show>
+                          </div>
+                        </Show>
+
+                        <Show when={settings.voice.engine() === "openai"}>
+                          <div class="flex flex-col gap-2 pt-2 border-t border-border-weak-base">
+                            <span class="text-12-medium text-text-strong">OpenAI API Key</span>
+                            <div class="flex gap-2">
+                              <input
+                                type="password"
+                                placeholder="sk-..."
+                                value={settings.voice.openaiApiKey() || ""}
+                                onInput={(e) => settings.voice.setOpenaiApiKey(e.currentTarget.value)}
+                                class="text-12-regular px-3 py-1.5 rounded border border-border-weak-base bg-surface bg-text-strong w-full outline-none focus:border-accent"
+                              />
+                              <Button
+                                size="small"
+                                variant={validating()["openai"] === "success" ? "primary" : "secondary"}
+                                onClick={() => void validateKey("openai")}
+                                disabled={validating()["openai"] === "loading"}
+                              >
+                                {validating()["openai"] === "loading"
+                                  ? "Checking..."
+                                  : validating()["openai"] === "success"
+                                    ? "Valid ✓"
+                                    : validating()["openai"] === "error"
+                                      ? "Failed ✕"
+                                      : "Validate"}
+                              </Button>
+                            </div>
+                            <Show when={valError()["openai"]}>
+                              <span class="text-[10px] text-red-500 font-medium">{valError()["openai"]}</span>
+                            </Show>
+                            <span class="text-[10px] text-text-weak">API Key is saved locally in your app settings.</span>
+                          </div>
+                        </Show>
+
+                        <Show when={settings.voice.engine() === "gemini"}>
+                          <div class="flex flex-col gap-2 pt-2 border-t border-border-weak-base">
+                            <span class="text-12-medium text-text-strong">Gemini API Key</span>
+                            <div class="flex gap-2">
+                              <input
+                                type="password"
+                                placeholder="AIzaSy..."
+                                value={settings.voice.geminiApiKey() || ""}
+                                onInput={(e) => settings.voice.setGeminiApiKey(e.currentTarget.value)}
+                                class="text-12-regular px-3 py-1.5 rounded border border-border-weak-base bg-surface bg-text-strong w-full outline-none focus:border-accent"
+                              />
+                              <Button
+                                size="small"
+                                variant={validating()["gemini"] === "success" ? "primary" : "secondary"}
+                                onClick={() => void validateKey("gemini")}
+                                disabled={validating()["gemini"] === "loading"}
+                              >
+                                {validating()["gemini"] === "loading"
+                                  ? "Checking..."
+                                  : validating()["gemini"] === "success"
+                                    ? "Valid ✓"
+                                    : validating()["gemini"] === "error"
+                                      ? "Failed ✕"
+                                      : "Validate"}
+                              </Button>
+                            </div>
+                            <Show when={valError()["gemini"]}>
+                              <span class="text-[10px] text-red-500 font-medium">{valError()["gemini"]}</span>
+                            </Show>
+                            <span class="text-[10px] text-text-weak">API Key is saved locally in your app settings.</span>
+                          </div>
+                        </Show>
+
+                        <Show when={settings.voice.engine() === "groq"}>
+                          <div class="flex flex-col gap-2 pt-2 border-t border-border-weak-base">
+                            <span class="text-12-medium text-text-strong">Groq API Key</span>
+                            <div class="flex gap-2">
+                              <input
+                                type="password"
+                                placeholder="gsk_..."
+                                value={settings.voice.groqApiKey() || ""}
+                                onInput={(e) => settings.voice.setGroqApiKey(e.currentTarget.value)}
+                                class="text-12-regular px-3 py-1.5 rounded border border-border-weak-base bg-surface bg-text-strong w-full outline-none focus:border-accent"
+                              />
+                              <Button
+                                size="small"
+                                variant={validating()["groq"] === "success" ? "primary" : "secondary"}
+                                onClick={() => void validateKey("groq")}
+                                disabled={validating()["groq"] === "loading"}
+                              >
+                                {validating()["groq"] === "loading"
+                                  ? "Checking..."
+                                  : validating()["groq"] === "success"
+                                    ? "Valid ✓"
+                                    : validating()["groq"] === "error"
+                                      ? "Failed ✕"
+                                      : "Validate"}
+                              </Button>
+                            </div>
+                            <Show when={valError()["groq"]}>
+                              <span class="text-[10px] text-red-500 font-medium">{valError()["groq"]}</span>
+                            </Show>
+                            <span class="text-[10px] text-text-weak">Get a free key from console.groq.com. Saved locally in settings.</span>
+                          </div>
+                        </Show>
+
+                        <Show when={settings.voice.engine() === "huggingface"}>
+                          <div class="flex flex-col gap-2 pt-2 border-t border-border-weak-base">
+                            <span class="text-12-medium text-text-strong">Hugging Face Token</span>
+                            <div class="flex gap-2">
+                              <input
+                                type="password"
+                                placeholder="hf_..."
+                                value={settings.voice.huggingfaceToken() || ""}
+                                onInput={(e) => settings.voice.setHuggingfaceToken(e.currentTarget.value)}
+                                class="text-12-regular px-3 py-1.5 rounded border border-border-weak-base bg-surface bg-text-strong w-full outline-none focus:border-accent"
+                              />
+                              <Button
+                                size="small"
+                                variant={validating()["huggingface"] === "success" ? "primary" : "secondary"}
+                                onClick={() => void validateKey("huggingface")}
+                                disabled={validating()["huggingface"] === "loading"}
+                              >
+                                {validating()["huggingface"] === "loading"
+                                  ? "Checking..."
+                                  : validating()["huggingface"] === "success"
+                                    ? "Valid ✓"
+                                    : validating()["huggingface"] === "error"
+                                      ? "Failed ✕"
+                                      : "Validate"}
+                              </Button>
+                            </div>
+                            <Show when={valError()["huggingface"]}>
+                              <span class="text-[10px] text-red-500 font-medium">{valError()["huggingface"]}</span>
+                            </Show>
+                            <span class="text-[10px] text-text-weak">Optional. Get a free user access token from huggingface.co. Saved locally in settings.</span>
                           </div>
                         </Show>
                       </div>

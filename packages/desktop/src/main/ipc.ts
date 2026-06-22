@@ -12,6 +12,7 @@ import { getStore } from "./store"
 import { getPinchZoomEnabled, setPinchZoomEnabled, setTitlebar, updateTitlebar } from "./windows"
 import type { UpdaterController } from "./updater-controller"
 import { createUpdaterSubscriptions } from "./updater-subscriptions"
+import { Auth } from "./auth"
 
 const pickerFilters = (ext?: string[]) => {
   if (!ext || ext.length === 0) return undefined
@@ -231,6 +232,21 @@ export function registerIpcHandlers(deps: Deps) {
       relaunch: deps.relaunch,
     })
   })
+
+  ipcMain.handle("auth:sign-in", async (_event: IpcMainInvokeEvent, provider: "github" | "google") => {
+    await Auth.signInWithProvider(provider)
+    const user = Auth.getUser()
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.webContents.send("auth:state-changed", user)
+    }
+  })
+  ipcMain.handle("auth:sign-out", () => {
+    Auth.signOut()
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.webContents.send("auth:state-changed", null)
+    }
+  })
+  ipcMain.handle("auth:get-user", () => Auth.getUser())
 }
 
 export function sendMenuCommand(win: BrowserWindow, id: string) {

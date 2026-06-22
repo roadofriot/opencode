@@ -49,9 +49,13 @@ export interface Settings {
   notifications: NotificationSettings
   sounds: SoundSettings
   voice: {
-    engine: "cloud" | "local"
+    engine: "cloud" | "local" | "openai" | "gemini" | "groq" | "huggingface"
     model: string
     language: string
+    openaiApiKey?: string
+    geminiApiKey?: string
+    groqApiKey?: string
+    huggingfaceToken?: string
   }
 }
 
@@ -153,6 +157,10 @@ const defaultSettings: Settings = {
     engine: "cloud",
     model: "Xenova/whisper-tiny",
     language: "auto",
+    openaiApiKey: "",
+    geminiApiKey: "",
+    groqApiKey: "",
+    huggingfaceToken: "",
   },
 }
 
@@ -367,7 +375,7 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
       },
       voice: {
         engine: withFallback(() => store.voice?.engine, defaultSettings.voice.engine),
-        setEngine(value: "cloud" | "local") {
+        setEngine(value: "cloud" | "local" | "openai" | "gemini" | "groq" | "huggingface") {
           setStore("voice", "engine", value)
         },
         model: withFallback(() => store.voice?.model, defaultSettings.voice.model),
@@ -377,6 +385,22 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         language: withFallback(() => store.voice?.language, defaultSettings.voice.language),
         setLanguage(value: string) {
           setStore("voice", "language", value)
+        },
+        openaiApiKey: withFallback(() => store.voice?.openaiApiKey, defaultSettings.voice.openaiApiKey),
+        setOpenaiApiKey(value: string) {
+          setStore("voice", "openaiApiKey", value)
+        },
+        geminiApiKey: withFallback(() => store.voice?.geminiApiKey, defaultSettings.voice.geminiApiKey),
+        setGeminiApiKey(value: string) {
+          setStore("voice", "geminiApiKey", value)
+        },
+        groqApiKey: withFallback(() => store.voice?.groqApiKey, defaultSettings.voice.groqApiKey),
+        setGroqApiKey(value: string) {
+          setStore("voice", "groqApiKey", value)
+        },
+        huggingfaceToken: withFallback(() => store.voice?.huggingfaceToken, defaultSettings.voice.huggingfaceToken),
+        setHuggingfaceToken(value: string) {
+          setStore("voice", "huggingfaceToken", value)
         },
       },
     }

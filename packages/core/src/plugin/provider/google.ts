@@ -8,7 +8,11 @@ export const GooglePlugin = PluginV2.define({
       "aisdk.sdk": Effect.fn(function* (evt) {
         if (evt.package !== "@ai-sdk/google") return
         const mod = yield* Effect.promise(() => import("@ai-sdk/google"))
-        evt.sdk = mod.createGoogleGenerativeAI(evt.options)
+        const options = { ...evt.options }
+        if (!options.baseURL || options.baseURL.trim() === "https://generativelanguage.googleapis.com" || options.baseURL.trim() === "https://generativelanguage.googleapis.com/") {
+          options.baseURL = "https://generativelanguage.googleapis.com/v1beta"
+        }
+        evt.sdk = mod.createGoogleGenerativeAI(options)
       }),
     }
   }),
