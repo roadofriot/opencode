@@ -72,7 +72,7 @@ export type DesktopMenu = {
 export const DESKTOP_MENU: DesktopMenu[] = [
   {
     id: "app",
-    label: "MindSparQ AI",
+    label: "YourBrand",
     platforms: ["macos"],
     items: [
       { type: "item", role: "about" },
@@ -200,7 +200,7 @@ export const DESKTOP_MENU: DesktopMenu[] = [
     id: "help",
     label: "Help",
     items: [
-      { type: "item", label: "MindSparQ AI Documentation", href: "https://opencode.ai/docs" },
+      { type: "item", label: "YourBrand Documentation", href: "https://opencode.ai/docs" },
       { type: "item", label: "Community Discord", href: "https://discord.com/invite/opencode" },
       { type: "item", label: "Export Logs...", command: "logs.export" },
       { type: "separator" },

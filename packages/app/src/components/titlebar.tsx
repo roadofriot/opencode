@@ -1046,7 +1046,7 @@ function NewSessionTabItem(props: { ref?: HTMLDivElement; href: string; title: s
 function ChannelIndicator() {
   return (
     <div class="bg-icon-interactive-base text-[#FFF] font-medium px-2 rounded-sm uppercase font-mono whitespace-nowrap">
-      MindSparQ AI
+      YourBrand
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { createSignal, Show, onMount } from "solid-js"
 import { Button } from "@opencode-ai/ui/button"
 import { Card } from "@opencode-ai/ui/card"
+import { Mark } from "@opencode-ai/ui/logo"
 import { useAuth } from "@/context/auth"
 import type { AuthProvider } from "@/auth/types"
 import { isSupabaseConfigured } from "@/auth/supabase-service"
@@ -63,7 +64,7 @@ export function LoginOverlay() {
             transition: "opacity 600ms ease-out 100ms, transform 600ms cubic-bezier(0.34, 1.56, 0.64, 1) 100ms"
           }}
         >
-          <MindSparqAnimatedLogo size={80} />
+          <Mark class="w-20 h-20" />
         </div>
 
         <div
@@ -74,7 +75,7 @@ export function LoginOverlay() {
             transition: "opacity 400ms ease-out 300ms, transform 400ms ease-out 300ms"
           }}
         >
-          <h1 class="text-20-semibold text-text-base">MindSparQ AI</h1>
+          <h1 class="text-20-semibold text-text-base">YourBrand</h1>
           <Show
             when={configured}
             fallback={
@@ -163,54 +164,6 @@ export function LoginOverlay() {
           Continue without signing in
         </button>
       </div>
-    </div>
-  )
-}
-
-function MindSparqAnimatedLogo(props: { size?: number }) {
-  const size = props.size ?? 80
-  const [pulse, setPulse] = createSignal(false)
-
-  onMount(() => {
-    const interval = setInterval(() => setPulse((p) => !p), 2000)
-    return () => clearInterval(interval)
-  })
-
-  return (
-    <div
-      class="relative"
-      style={{ width: `${size}px`, height: `${size}px` }}
-    >
-      <div
-        class="absolute inset-0 rounded-full"
-        style={{
-          background: "conic-gradient(from 0deg, #8b5cf6, #ec4899, #06b6d4, #8b5cf6)",
-          animation: "mindsparq-logo-rotate 4s linear infinite",
-          opacity: 0.1,
-          filter: "blur(14px)",
-          transform: pulse() ? "scale(1.12)" : "scale(1)",
-          transition: "transform 800ms ease-in-out"
-        }}
-      />
-      <img
-        src="/favicon.svg"
-        alt="MindSparQ AI"
-        class="relative w-full h-full object-contain"
-        style={{
-          filter: "drop-shadow(0 4px 16px rgba(139, 92, 246, 0.2))",
-          animation: "mindsparq-logo-float 3s ease-in-out infinite"
-        }}
-      />
-      <style>{`
-        @keyframes mindsparq-logo-rotate {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes mindsparq-logo-float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-3px); }
-        }
-      `}</style>
     </div>
   )
 }
