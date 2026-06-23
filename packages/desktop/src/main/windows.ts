@@ -33,6 +33,23 @@ const oc2Background = {
 }
 const documentPolicyHeader = "Document-Policy"
 const jsCallStacksDocumentPolicy = "include-js-call-stacks-in-crash-reports"
+const cspHeader = "Content-Security-Policy"
+const cspValue = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://api.github.com https://*.firebaseio.com https://*.googleapis.com http://127.0.0.1:*",
+  "media-src 'self' blob: mediastream:",
+  "worker-src 'self' blob:",
+  "child-src 'self' blob:",
+  "frame-src 'none'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join("; ")
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -160,6 +177,8 @@ export function createMainWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      backgroundThrottling: true,
+      v8CacheOptions: "code",
     },
   })
 
@@ -168,7 +187,9 @@ export function createMainWindow() {
 
   win.webContents.session.webRequest.onBeforeSendHeaders((details, callback) => {
     const { requestHeaders } = details
-    upsertKeyValue(requestHeaders, "Access-Control-Allow-Origin", ["*"])
+    if (isRendererUrl(details.url)) {
+      upsertKeyValue(requestHeaders, "Access-Control-Allow-Origin", ["null"])
+    }
     callback({ requestHeaders })
   })
 
@@ -358,6 +379,7 @@ function addDocumentPolicy(response: Response, file: string) {
   if (!file.toLowerCase().endsWith(".html")) return response
   const headers = new Headers(response.headers)
   headers.set(documentPolicyHeader, jsCallStacksDocumentPolicy)
+  headers.set(cspHeader, cspValue)
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers })
 }
 
@@ -381,9 +403,14 @@ function isTrustedRendererUrl(value?: string) {
 }
 
 function addRendererHeaders(value: string, headers: Record<string, any>) {
-  upsertKeyValue(headers, "Access-Control-Allow-Origin", ["*"])
-  upsertKeyValue(headers, "Access-Control-Allow-Headers", ["*"])
-  if (isRendererUrl(value, true)) upsertKeyValue(headers, documentPolicyHeader, [jsCallStacksDocumentPolicy])
+  if (isRendererUrl(value)) {
+    upsertKeyValue(headers, "Access-Control-Allow-Origin", ["null"])
+    upsertKeyValue(headers, "Access-Control-Allow-Headers", ["*"])
+  }
+  if (isRendererUrl(value, true)) {
+    upsertKeyValue(headers, documentPolicyHeader, [jsCallStacksDocumentPolicy])
+    upsertKeyValue(headers, cspHeader, [cspValue])
+  }
 }
 
 function isRendererUrl(value?: string, html = false) {

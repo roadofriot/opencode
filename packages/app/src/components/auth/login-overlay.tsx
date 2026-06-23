@@ -1,14 +1,20 @@
-import { createSignal, Show } from "solid-js"
+import { createSignal, Show, onMount } from "solid-js"
 import { Button } from "@opencode-ai/ui/button"
-import { Mark } from "@opencode-ai/ui/logo"
+import { Card } from "@opencode-ai/ui/card"
 import { useAuth } from "@/context/auth"
 import type { AuthProvider } from "@/auth/types"
 import { isSupabaseConfigured } from "@/auth/supabase-service"
+import { showToast } from "@opencode-ai/ui/toast"
 
 export function LoginOverlay() {
   const auth = useAuth()
   const [loading, setLoading] = createSignal<AuthProvider | null>(null)
-  const [error, setError] = createSignal<string | null>(null)
+  const [, setError] = createSignal<string | null>(null)
+  const [isVisible, setIsVisible] = createSignal(false)
+
+  onMount(() => {
+    requestAnimationFrame(() => setIsVisible(true))
+  })
 
   const handleSignIn = async (provider: AuthProvider) => {
     setLoading(provider)
@@ -16,7 +22,13 @@ export function LoginOverlay() {
     try {
       await auth.signIn(provider)
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Sign in failed")
+      const msg = e instanceof Error ? e.message : "Sign in failed"
+      setError(msg)
+      showToast({
+        title: "Authentication failed",
+        description: msg,
+        variant: "error",
+      })
     } finally {
       setLoading(null)
     }
@@ -27,76 +39,113 @@ export function LoginOverlay() {
   return (
     <div
       data-component="login-overlay"
-      class="fixed inset-0 z-[9999] flex items-center justify-center bg-background-base"
+      class="fixed inset-0 z-[9999] flex items-center justify-center bg-background-base overflow-hidden"
     >
-      <div class="flex flex-col items-center gap-8 max-w-sm w-full px-6">
-        <Mark class="!w-12 !h-15 text-icon-base" />
+      <div
+        class="absolute inset-0 pointer-events-none"
+        style={{
+          background: "radial-gradient(ellipse at 50% 30%, rgba(139, 92, 246, 0.06) 0%, transparent 60%)"
+        }}
+      />
 
-        <div class="flex flex-col items-center gap-2 text-center">
+      <div
+        class="flex flex-col items-center gap-6 max-w-sm w-full px-4 sm:px-6"
+        style={{
+          opacity: isVisible() ? 1 : 0,
+          transform: isVisible() ? "translateY(0)" : "translateY(20px)",
+          transition: "opacity 500ms ease-out, transform 500ms ease-out"
+        }}
+      >
+        <div
+          style={{
+            opacity: isVisible() ? 1 : 0,
+            transform: isVisible() ? "scale(1)" : "scale(0.85)",
+            transition: "opacity 600ms ease-out 100ms, transform 600ms cubic-bezier(0.34, 1.56, 0.64, 1) 100ms"
+          }}
+        >
+          <MindSparqAnimatedLogo size={80} />
+        </div>
+
+        <div
+          class="flex flex-col items-center gap-1.5 text-center"
+          style={{
+            opacity: isVisible() ? 1 : 0,
+            transform: isVisible() ? "translateY(0)" : "translateY(10px)",
+            transition: "opacity 400ms ease-out 300ms, transform 400ms ease-out 300ms"
+          }}
+        >
           <h1 class="text-20-semibold text-text-base">MindSparQ AI</h1>
           <Show
             when={configured}
             fallback={
               <div class="flex flex-col items-center gap-3">
-                <p class="text-14-regular text-text-weak max-w-[260px]">
-                  Sign in connects you to Supabase (data sync), GitHub (code access), and Firebase (realtime).
+                <p class="text-13-regular text-text-weak max-w-[260px]">
+                  Sign in to sync data across devices.
                 </p>
-                <div class="rounded-lg border border-border-base p-4 text-left max-w-[300px]">
-                  <p class="text-13-semibold text-text-base mb-1">To enable auth, create a .env file with:</p>
+                <Card variant="info" class="max-w-[300px]">
+                  <p class="text-12-medium text-text-base mb-1">To enable auth, create a .env file with:</p>
                   <code class="text-11-regular text-text-weak block leading-relaxed">
                     VITE_SUPABASE_URL=https://your-project.supabase.co<br />
                     VITE_SUPABASE_ANON_KEY=your-anon-key
                   </code>
-                  <p class="text-11-regular text-text-weak mt-2">
+                  <p class="text-11-regular text-text-weak mt-1.5">
                     Then enable Google/GitHub auth in your Supabase dashboard.
                   </p>
-                </div>
+                </Card>
               </div>
             }
           >
-            <p class="text-14-regular text-text-weak max-w-[260px]">
-              Sign in to sync your data across devices and connect to GitHub, Supabase, Firebase, and more.
+            <p class="text-13-regular text-text-weak max-w-[260px]">
+              Sign in to sync your data across devices.
             </p>
           </Show>
         </div>
 
         <Show when={configured}>
-          <div class="flex flex-col gap-3 w-full">
-            <Button
-              variant="secondary"
-              onClick={() => handleSignIn("google")}
-              disabled={loading() !== null}
-              class="w-full justify-center gap-2"
-            >
-              <Show when={loading() !== "google"} fallback={<span>Connecting...</span>}>
-                <GoogleIcon />
-                Sign in with Google
-              </Show>
-            </Button>
+          <Card
+            class="w-full max-w-[340px]"
+            style={{
+              opacity: isVisible() ? 1 : 0,
+              transform: isVisible() ? "translateY(0)" : "translateY(10px)",
+              transition: "opacity 400ms ease-out 500ms, transform 400ms ease-out 500ms"
+            }}
+          >
+            <div class="flex flex-col gap-2.5 p-1">
+              <Button
+                variant="secondary"
+                onClick={() => handleSignIn("google")}
+                disabled={loading() !== null}
+                class="w-full justify-center gap-2.5 h-10 text-14-medium rounded-lg hover:bg-surface-raised-base-hover transition-all duration-200 cursor-pointer"
+              >
+                <Show when={loading() !== "google"} fallback={<LoadingSpinner />}>
+                  <GoogleIcon />
+                  Sign in with Google
+                </Show>
+              </Button>
 
-            <Button
-              variant="secondary"
-              onClick={() => handleSignIn("github")}
-              disabled={loading() !== null}
-              class="w-full justify-center gap-2"
-            >
-              <Show when={loading() !== "github"} fallback={<span>Connecting...</span>}>
-                <GitHubIcon />
-                Sign in with GitHub
-              </Show>
-            </Button>
-          </div>
+              <Button
+                variant="secondary"
+                onClick={() => handleSignIn("github")}
+                disabled={loading() !== null}
+                class="w-full justify-center gap-2.5 h-10 text-14-medium rounded-lg hover:bg-surface-raised-base-hover transition-all duration-200 cursor-pointer"
+              >
+                <Show when={loading() !== "github"} fallback={<LoadingSpinner />}>
+                  <GitHubIcon />
+                  Sign in with GitHub
+                </Show>
+              </Button>
+            </div>
+          </Card>
         </Show>
 
-        <Show when={error()}>
-          <div class="rounded-lg border border-border-danger bg-danger-100 p-3 max-w-[300px]">
-            <p class="text-12-regular text-text-danger">{error()}</p>
-          </div>
-        </Show>
-
-        <div class="flex flex-col items-center gap-1">
-          <span class="text-12-regular text-text-weak">Connected services:</span>
-          <div class="flex gap-3 mt-1">
+        <div
+          class="flex flex-col items-center gap-1.5"
+          style={{
+            opacity: isVisible() ? 1 : 0,
+            transition: "opacity 400ms ease-out 700ms"
+          }}
+        >
+          <div class="flex gap-3">
             <ServiceIndicator name="Supabase" active={false} />
             <ServiceIndicator name="Firebase" active={false} />
             <ServiceIndicator name="GitHub" active={false} />
@@ -105,12 +154,73 @@ export function LoginOverlay() {
 
         <button
           onClick={auth.skipAuth}
-          class="text-14-regular text-text-weak hover:text-text-base transition-colors cursor-pointer"
+          class="text-13-regular text-text-weak hover:text-text-base transition-colors cursor-pointer"
+          style={{
+            opacity: isVisible() ? 1 : 0,
+            transition: "opacity 400ms ease-out 800ms"
+          }}
         >
           Continue without signing in
         </button>
       </div>
     </div>
+  )
+}
+
+function MindSparqAnimatedLogo(props: { size?: number }) {
+  const size = props.size ?? 80
+  const [pulse, setPulse] = createSignal(false)
+
+  onMount(() => {
+    const interval = setInterval(() => setPulse((p) => !p), 2000)
+    return () => clearInterval(interval)
+  })
+
+  return (
+    <div
+      class="relative"
+      style={{ width: `${size}px`, height: `${size}px` }}
+    >
+      <div
+        class="absolute inset-0 rounded-full"
+        style={{
+          background: "conic-gradient(from 0deg, #8b5cf6, #ec4899, #06b6d4, #8b5cf6)",
+          animation: "mindsparq-logo-rotate 4s linear infinite",
+          opacity: 0.1,
+          filter: "blur(14px)",
+          transform: pulse() ? "scale(1.12)" : "scale(1)",
+          transition: "transform 800ms ease-in-out"
+        }}
+      />
+      <img
+        src="/favicon.svg"
+        alt="MindSparQ AI"
+        class="relative w-full h-full object-contain"
+        style={{
+          filter: "drop-shadow(0 4px 16px rgba(139, 92, 246, 0.2))",
+          animation: "mindsparq-logo-float 3s ease-in-out infinite"
+        }}
+      />
+      <style>{`
+        @keyframes mindsparq-logo-rotate {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes mindsparq-logo-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-3px); }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+function LoadingSpinner() {
+  return (
+    <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
   )
 }
 
@@ -137,7 +247,7 @@ function ServiceIndicator(props: { name: string; active: boolean }) {
   return (
     <div class="flex items-center gap-1">
       <div
-        class="w-2 h-2 rounded-full"
+        class="w-1.5 h-1.5 rounded-full"
         classList={{
           "bg-green-500": props.active,
           "bg-text-weak opacity-30": !props.active,
