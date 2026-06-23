@@ -3,6 +3,7 @@ import { useDialog } from "@opencode-ai/ui/context/dialog"
 import { createQuery, skipToken, useMutation, useQueryClient } from "@tanstack/solid-query"
 import {
   batch,
+  createSignal,
   onCleanup,
   Show,
   Match,
@@ -60,6 +61,7 @@ import { useServer } from "@/context/server"
 import { syncSessionModel } from "@/pages/session/session-model-helpers"
 import { SessionSidePanel } from "@/pages/session/session-side-panel"
 import { TerminalPanel } from "@/pages/session/terminal-panel"
+import { RunPanel } from "@/pages/session/run-panel"
 import { useSessionCommands } from "@/pages/session/use-session-commands"
 import { useSessionHashScroll } from "@/pages/session/use-session-hash-scroll"
 import { Identifier } from "@/utils/id"
@@ -68,6 +70,7 @@ import { Persist, persisted } from "@/utils/persist"
 import { extractPromptFromParts } from "@/utils/prompt"
 import { formatServerError } from "@/utils/server-errors"
 import { useUsageExceededDialogs } from "./session/usage-exceeded-dialogs"
+import { onRunPanelToggle } from "@/utils/run-panel-events"
 
 type FollowupItem = FollowupDraft & { id: string }
 type FollowupEdit = Pick<FollowupItem, "id" | "prompt" | "context">
@@ -179,6 +182,10 @@ export default function Page() {
     return `calc(100% - ${layout.fileTree.width()}px)`
   })
   const centered = createMemo(() => isDesktop() && !desktopReviewOpen())
+
+  const [runPanelOpen, setRunPanelOpen] = createSignal(false)
+
+  onCleanup(onRunPanelToggle(() => setRunPanelOpen((prev: boolean) => !prev)))
 
   function normalizeTab(tab: string) {
     if (!tab.startsWith("file://")) return tab
@@ -1724,6 +1731,18 @@ export default function Page() {
       </div>
 
       <TerminalPanel />
+      <Show when={runPanelOpen()}>
+        <RunPanel
+          directory={params.dir ?? ""}
+          files={[]}
+          onRun={() => {
+            terminal.new()
+            const all = terminal.all()
+            const latest = all[all.length - 1]
+            if (latest) terminal.open(latest.id)
+          }}
+        />
+      </Show>
     </div>
   )
 }

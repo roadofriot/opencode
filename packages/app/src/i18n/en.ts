@@ -715,6 +715,18 @@ export const dict = {
   "terminal.connectionLost.description":
     "The terminal connection was interrupted. This can happen when the server restarts.",
 
+  "run_panel.run": "Run",
+  "run_panel.debug": "Debug",
+  "run_panel.runTooltip": "Run the project",
+  "run_panel.debugTooltip": "Run with debugger",
+  "run_panel.fullscreen": "Fullscreen",
+  "run_panel.exitFullscreen": "Exit fullscreen",
+  "run_panel.noLanguageDetected": "No language detected",
+  "run_panel.buildReady": "Build ready",
+  "run_panel.unsupportedLanguage": "Language not supported for auto-run",
+  "run_panel.unsupportedHint": "Use the terminal to run your project manually.",
+  "command.run.toggle": "Toggle run panel",
+
   "common.closeTab": "Close tab",
   "common.dismiss": "Dismiss",
   "common.moreCountSuffix": " (+{{count}} more)",

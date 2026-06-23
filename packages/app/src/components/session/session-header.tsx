@@ -27,6 +27,7 @@ import { Persist, persisted } from "@/utils/persist"
 import { StatusPopover, StatusPopoverV2 } from "../status-popover"
 import { IconButtonV2 } from "@opencode-ai/ui/v2/icon-button-v2"
 import { Icon as IconV2 } from "@opencode-ai/ui/v2/icon"
+import { toggleRunPanel } from "@/utils/run-panel-events"
 
 const OPEN_APPS = [
   "vscode",
@@ -496,6 +497,22 @@ export function SessionHeader() {
                                 "text-icon-weak": !layout.fileTree.opened(),
                               }}
                             />
+                          </div>
+                        </Button>
+                      </TooltipKeybind>
+
+                      <TooltipKeybind
+                        title={language.t("command.run.toggle")}
+                        keybind=""
+                      >
+                        <Button
+                          variant="ghost"
+                          class="titlebar-icon w-8 h-6 p-0 box-border"
+                          onClick={() => toggleRunPanel()}
+                          aria-label={language.t("command.run.toggle")}
+                        >
+                          <div class="relative flex items-center justify-center size-4">
+                            <Icon size="small" name="terminal" />
                           </div>
                         </Button>
                       </TooltipKeybind>
