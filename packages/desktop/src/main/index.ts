@@ -196,7 +196,13 @@ const main = Effect.gen(function* () {
   useEnvProxy()
   app.commandLine.appendSwitch("proxy-bypass-list", "<-loopback>")
   const features = app.commandLine.getSwitchValue("enable-features")
-  app.commandLine.appendSwitch("enable-features", features ? `${jsCallStackFeature},${features}` : jsCallStackFeature)
+  app.commandLine.appendSwitch("enable-features", features ? `${jsCallStackFeature},IntensiveWakeUpThrottling,${features}` : `${jsCallStackFeature},IntensiveWakeUpThrottling`)
+  
+  // Performance and resource usage optimizations
+  app.commandLine.appendSwitch("disable-features", "HardwareMediaKeyHandling,MediaSessionService")
+  app.commandLine.appendSwitch("renderer-process-limit", "1")
+  app.commandLine.appendSwitch("js-flags", "--max-old-space-size=4096")
+
   if (!app.isPackaged) app.commandLine.appendSwitch("remote-debugging-port", "9222")
 
   if (!app.requestSingleInstanceLock()) {

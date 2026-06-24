@@ -15,6 +15,8 @@ type AuthContextValue = {
   showLogin: Accessor<boolean>
   setShowLogin: (show: boolean) => void
   skipAuth: () => void
+  userStatus: Accessor<"active" | "busy" | "away">
+  setUserStatus: (status: "active" | "busy" | "away") => void
 }
 
 const AuthContext = createContext<AuthContextValue>()
@@ -22,10 +24,18 @@ const AuthContext = createContext<AuthContextValue>()
 export function AuthProvider(props: ParentProps) {
   const [state, setState] = createSignal<AuthState>({ user: null, supabaseToken: null, gitHubToken: null, isInitialized: false })
   const [showLogin, setShowLogin] = createSignal(false)
+  const [userStatus, _setUserStatus] = createSignal<"active" | "busy" | "away">(
+    (localStorage.getItem("mindsparq_user_status") as any) ?? "active"
+  )
 
   const user = () => state().user
   const isAuthenticated = () => state().user !== null
   const isLoading = () => !state().isInitialized
+
+  const setUserStatus = (status: "active" | "busy" | "away") => {
+    _setUserStatus(status)
+    localStorage.setItem("mindsparq_user_status", status)
+  }
 
   const connections = (): AuthConnection[] => [
     { name: "Google", icon: "google", connected: user()?.provider === "google", description: "Primary sign-in" },
@@ -44,6 +54,23 @@ export function AuthProvider(props: ParentProps) {
         }
       }
     })
+
+    // Active Usage Tracker
+    let lastActive = Date.now()
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        const now = Date.now()
+        const elapsedSeconds = Math.round((now - lastActive) / 1000)
+        const increment = Math.min(elapsedSeconds, 10)
+        if (increment > 0) {
+          const current = parseInt(localStorage.getItem("mindsparq_total_usage_seconds") ?? "0", 10)
+          localStorage.setItem("mindsparq_total_usage_seconds", String(current + increment))
+        }
+      }
+      lastActive = Date.now()
+    }, 5000)
+
+    onCleanup(() => clearInterval(interval))
   })
 
   const unsub = subscribeToAuth((newState) => {
@@ -69,7 +96,7 @@ export function AuthProvider(props: ParentProps) {
 
   return (
     <AuthContext.Provider
-      value={{ state, user, isAuthenticated, isLoading, connections, signIn, signOut, showLogin, setShowLogin, skipAuth }}
+      value={{ state, user, isAuthenticated, isLoading, connections, signIn, signOut, showLogin, setShowLogin, skipAuth, userStatus, setUserStatus }}
     >
       {props.children}
     </AuthContext.Provider>

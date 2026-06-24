@@ -32,7 +32,7 @@ export function AuthDialog(props: AuthDialogProps) {
   return (
     <div data-component="auth-dialog" class="flex flex-col gap-4 p-6">
       <div class="flex flex-col gap-1">
-        <h2 class="text-16-semibold text-text-base">Sign in to YourBrand</h2>
+        <h2 class="text-16-semibold text-text-base">Sign in to MindSparq AI</h2>
         <p class="text-12-regular text-text-weak">Connect your account to sync data across devices.</p>
       </div>
       <Card class="mt-1">

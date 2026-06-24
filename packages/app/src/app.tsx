@@ -56,6 +56,7 @@ import { useCheckServerHealth } from "./utils/server-health"
 const HomeRoute = lazy(() => import("@/pages/home"))
 const Session = lazy(() => import("@/pages/session"))
 const NewSession = lazy(() => import("@/pages/new-session"))
+const AuthCallback = lazy(() => import("@/pages/auth-callback"))
 
 const SessionRoute = Object.assign(
   () => {
@@ -461,6 +462,7 @@ export function AppInterface(props: {
               </TabsProvider>
             )}
           >
+            <Route path="/auth/callback" component={AuthCallback} />
             <Route component={SelectedServerLayout}>
               <Route path="/" component={HomeRoute} />
               <Route path="/:dir" component={DirectoryLayout}>

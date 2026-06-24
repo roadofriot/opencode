@@ -96,7 +96,7 @@ export const dict = {
   "provider.connect.selectMethod": "{{provider}} के लिए लॉगिन विधि चुनें",
   "provider.connect.method.apiKey": "API कुंजी",
 
-  "app.name.desktop": "YourBrand डेस्कटॉप",
+  "app.name.desktop": "MindSparq AI डेस्कटॉप",
 
   "error.generic": "कुछ गलत हो गया। कृपया पुनः प्रयास करें।",
   "error.dev.rootNotFound": "रूट तत्व नहीं मिला",

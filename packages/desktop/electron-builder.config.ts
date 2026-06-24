@@ -39,7 +39,7 @@ const APP_IDS = {
 } as const
 
 const getBase = (appId: string): Configuration => ({
-  artifactName: "opencode-desktop-${os}-${arch}.${ext}",
+  artifactName: "MindSparQ AI-${os}-${arch}.${ext}",
   directories: {
     output: "dist",
     buildResources: "resources",
@@ -116,7 +116,7 @@ function getConfig() {
         ...base,
         appId,
         productName: "MindSparQ AI Dev",
-        rpm: { packageName: "opencode-dev" },
+        rpm: { packageName: "mindsparq-ai-dev" },
       }
     }
     case "beta": {
@@ -126,7 +126,7 @@ function getConfig() {
         productName: "MindSparQ AI Beta",
         protocols: { name: "MindSparQ AI Beta", schemes: ["mindsparq"] },
         publish: { provider: "github", owner: "anomalyco", repo: "opencode-beta", channel: "latest" },
-        rpm: { packageName: "opencode-beta" },
+        rpm: { packageName: "mindsparq-ai-beta" },
       }
     }
     case "prod": {
@@ -137,7 +137,7 @@ function getConfig() {
         protocols: { name: "MindSparQ AI", schemes: ["mindsparq"] },
         publish: { provider: "github", owner: "anomalyco", repo: "opencode", channel: "latest" },
         deb: { fpm: [legacyDesktopEntryFpm] },
-        rpm: { packageName: "opencode", fpm: [legacyDesktopEntryFpm] },
+        rpm: { packageName: "mindsparq-ai", fpm: [legacyDesktopEntryFpm] },
       }
     }
   }

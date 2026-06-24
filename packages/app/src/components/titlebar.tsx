@@ -41,6 +41,8 @@ import { useGlobal } from "@/context/global"
 import { decode64 } from "@/utils/base64"
 import { ServerConnection, useServer } from "@/context/server"
 import { tabHref, useTabs, type Tab } from "@/context/tabs"
+import { useAuth } from "@/context/auth"
+import { UserMenu } from "@/components/auth/user-menu"
 import "./titlebar.css"
 
 type TauriDesktopWindow = {
@@ -724,6 +726,7 @@ export function Titlebar(props: { update?: TitlebarUpdate }) {
               onMouseDown={drag}
             >
               <div id="opencode-titlebar-right" class="flex items-center gap-1 shrink-0 justify-end" />
+              <LegacyTitlebarRight />
               <Show when={windows()}>
                 {!tauriApi() && <div class="shrink-0" style={{ width: windowsControlsWidth() }} />}
                 <div data-tauri-decorum-tb class="flex flex-row" />
@@ -789,13 +792,47 @@ function ThemeToggleButton() {
 }
 
 function TitlebarV2Right(props: { state: TitlebarV2RightState }) {
+  const auth = useAuth()
+  const command = useCommand()
+
+  const toggleTerminal = () => {
+    command.trigger("terminal.toggle")
+  }
+
   return (
     <div class="relative z-20 flex shrink-0 items-center justify-end gap-0 overflow-visible">
       <ThemeToggleButton />
       <Show when={props.state.update.visible}>
         <TitlebarUpdateIconButton state={props.state.update} />
       </Show>
+      <TooltipV2 placement="bottom" value="Toggle Terminal" class="shrink-0">
+        <IconButtonV2
+          type="button"
+          variant="ghost-muted"
+          size="large"
+          class="!w-9 shrink-0"
+          icon={<IconV2 name="terminal" />}
+          onClick={toggleTerminal}
+          aria-label="Toggle Terminal"
+        />
+      </TooltipV2>
       <div id="opencode-titlebar-right" class="flex shrink-0 items-center justify-end gap-0" />
+      <Show when={auth.isAuthenticated()}>
+        <UserMenu />
+      </Show>
+      <Show when={!auth.isAuthenticated()}>
+        <TooltipV2 placement="bottom" value="Sign In" class="shrink-0">
+          <IconButtonV2
+            type="button"
+            variant="ghost-muted"
+            size="large"
+            class="!w-9 shrink-0"
+            icon={<IconV2 name="brain" />}
+            onClick={() => auth.setShowLogin(true)}
+            aria-label="Sign In"
+          />
+        </TooltipV2>
+      </Show>
     </div>
   )
 }
@@ -826,6 +863,45 @@ function TitlebarUpdateIconButton(props: { state: TitlebarUpdatePillState }) {
           </Show>
         </span>
       </button>
+    </div>
+  )
+}
+
+function LegacyTitlebarRight() {
+  const auth = useAuth()
+  const command = useCommand()
+
+  const toggleTerminal = () => {
+    command.trigger("terminal.toggle")
+  }
+
+  return (
+    <div class="flex items-center gap-1">
+      <Tooltip placement="bottom" value="Toggle Terminal">
+        <Button
+          variant="ghost"
+          class="titlebar-icon w-8 h-6 p-0 box-border"
+          onClick={toggleTerminal}
+          aria-label="Toggle Terminal"
+        >
+          <Icon size="small" name="terminal" />
+        </Button>
+      </Tooltip>
+      <Show when={auth.isAuthenticated()}>
+        <UserMenu />
+      </Show>
+      <Show when={!auth.isAuthenticated()}>
+        <Tooltip placement="bottom" value="Sign In">
+          <Button
+            variant="ghost"
+            class="titlebar-icon w-8 h-6 p-0 box-border"
+            onClick={() => auth.setShowLogin(true)}
+            aria-label="Sign In"
+          >
+            <Icon size="small" name="brain" />
+          </Button>
+        </Tooltip>
+      </Show>
     </div>
   )
 }
@@ -1046,7 +1122,7 @@ function NewSessionTabItem(props: { ref?: HTMLDivElement; href: string; title: s
 function ChannelIndicator() {
   return (
     <div class="bg-icon-interactive-base text-[#FFF] font-medium px-2 rounded-sm uppercase font-mono whitespace-nowrap">
-      YourBrand
+      MindSparq AI
     </div>
   )
 }

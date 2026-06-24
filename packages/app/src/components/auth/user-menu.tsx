@@ -4,12 +4,14 @@ import { Tooltip } from "@opencode-ai/ui/tooltip"
 import { Card } from "@opencode-ai/ui/card"
 import { useAuth } from "@/context/auth"
 import { DialogCreateRepo } from "@/components/dialog-create-repo"
+import { DialogProfile } from "@/components/auth/dialog-profile"
 import { isGitHubConnected } from "@/auth/github-service"
 
 export function UserMenu() {
   const auth = useAuth()
   const [open, setOpen] = createSignal(false)
   const [showCreateRepo, setShowCreateRepo] = createSignal(false)
+  const [showProfile, setShowProfile] = createSignal(false)
 
   return (
     <Show when={auth.user()}>
@@ -30,13 +32,21 @@ export function UserMenu() {
             >
               <button
                 onClick={() => setOpen(!open())}
-                class="size-8 shrink-0 rounded-full overflow-clip cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-accent-base"
+                class="relative size-8 shrink-0 rounded-full cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-accent-base"
                 aria-label="User menu"
               >
                 <Avatar
                   fallback={user().name ?? user().email ?? "U"}
                   src={user().avatar ?? undefined}
-                  class="size-full rounded-full"
+                  class="size-full rounded-full overflow-clip"
+                />
+                <span
+                  class="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-background-base"
+                  classList={{
+                    "bg-green-500": auth.userStatus() === "active",
+                    "bg-red-500": auth.userStatus() === "busy",
+                    "bg-amber-500": auth.userStatus() === "away",
+                  }}
                 />
               </button>
             </Tooltip>
@@ -55,6 +65,24 @@ export function UserMenu() {
                     </div>
 
                     <div class="flex flex-col gap-0.5 mt-1">
+                      <button
+                        onClick={() => {
+                          setOpen(false)
+                          setShowProfile(true)
+                        }}
+                        class="w-full text-left px-3 py-2 text-13-regular text-text-base hover:bg-background-hover rounded-md transition-colors cursor-pointer flex items-center gap-2"
+                      >
+                        <svg class="w-4 h-4 text-text-weak" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                        </svg>
+                        Profile
+                      </button>
+
                       <Show when={isGitHubConnected()}>
                         <button
                           onClick={() => {
@@ -105,6 +133,11 @@ export function UserMenu() {
             onCreated={(repo) => {
               console.log("Repository created:", repo)
             }}
+          />
+
+          <DialogProfile
+            open={showProfile()}
+            onClose={() => setShowProfile(false)}
           />
         </>
       )}

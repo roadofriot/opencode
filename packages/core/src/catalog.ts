@@ -245,12 +245,18 @@ export const layer = Layer.effect(
         }),
 
         all: Effect.fn("CatalogV2.model.all")(function* () {
+          const byFree = Order.mapInput(
+            Order.Number,
+            (item: ModelV2.Info) => (item.cost.length === 0 || (item.cost[0]?.input === 0 && item.cost[0]?.output === 0)) ? 0 : 1,
+          )
+          const byDate = Order.mapInput(Order.flip(Order.Number), (item: ModelV2.Info) => item.time.released.epochMilliseconds)
+          const combined = Order.combine(byFree, byDate)
           return pipe(
             Array.fromIterable(state.get().providers.values()),
             Array.flatMap((record) => {
               return Array.fromIterable(record.models.values()).map((model) => projectModel(model, record.provider))
             }),
-            Array.sortWith((item) => item.time.released.epochMilliseconds, Order.flip(Order.Number)),
+            Array.sort(combined),
           )
         }),
 

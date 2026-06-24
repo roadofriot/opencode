@@ -83,3 +83,87 @@ export async function createGist(description: string, files: Record<string, { co
     return null
   }
 }
+
+export type CreateRepoOptions = {
+  name: string
+  description?: string
+  private?: boolean
+  autoInit?: boolean
+  gitignoreTemplate?: string
+  licenseTemplate?: string
+}
+
+export type CreateRepoResult = {
+  id: number
+  name: string
+  fullName: string
+  htmlUrl: string
+  cloneUrl: string
+  defaultBranch: string
+}
+
+export async function createRepository(options: CreateRepoOptions): Promise<CreateRepoResult> {
+  const data = await apiFetch<{
+    id: number
+    name: string
+    full_name: string
+    html_url: string
+    clone_url: string
+    default_branch: string
+  }>("/user/repos", {
+    method: "POST",
+    body: JSON.stringify({
+      name: options.name,
+      description: options.description ?? "",
+      private: options.private ?? false,
+      auto_init: options.autoInit ?? true,
+      gitignore_template: options.gitignoreTemplate,
+      license_template: options.licenseTemplate,
+    }),
+  })
+  return {
+    id: data.id,
+    name: data.name,
+    fullName: data.full_name,
+    htmlUrl: data.html_url,
+    cloneUrl: data.clone_url,
+    defaultBranch: data.default_branch,
+  }
+}
+
+export async function createOrgRepository(
+  org: string,
+  options: CreateRepoOptions,
+): Promise<CreateRepoResult> {
+  const data = await apiFetch<{
+    id: number
+    name: string
+    full_name: string
+    html_url: string
+    clone_url: string
+    default_branch: string
+  }>(`/orgs/${org}/repos`, {
+    method: "POST",
+    body: JSON.stringify({
+      name: options.name,
+      description: options.description ?? "",
+      private: options.private ?? false,
+      auto_init: options.autoInit ?? true,
+      gitignore_template: options.gitignoreTemplate,
+      license_template: options.licenseTemplate,
+    }),
+  })
+  return {
+    id: data.id,
+    name: data.name,
+    fullName: data.full_name,
+    htmlUrl: data.html_url,
+    cloneUrl: data.clone_url,
+    defaultBranch: data.default_branch,
+  }
+}
+
+export async function getUserOrganizations(): Promise<Array<{ login: string; avatarUrl: string }>> {
+  const data = await apiFetch<Array<{ login: string; avatar_url: string }>>("/user/orgs")
+  return data.map((org) => ({ login: org.login, avatarUrl: org.avatar_url }))
+}

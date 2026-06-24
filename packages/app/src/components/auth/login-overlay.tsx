@@ -75,7 +75,7 @@ export function LoginOverlay() {
             transition: "opacity 400ms ease-out 300ms, transform 400ms ease-out 300ms"
           }}
         >
-          <h1 class="text-20-semibold text-text-base">YourBrand</h1>
+          <h1 class="text-20-semibold text-text-base">MindSparq AI</h1>
           <Show
             when={configured}
             fallback={
