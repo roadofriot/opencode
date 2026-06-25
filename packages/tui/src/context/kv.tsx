@@ -19,7 +19,13 @@ export const { use: useKV, provider: KVProvider } = createSimpleContext({
     // Queue same-process writes so rapid updates persist in order.
     let write = Promise.resolve()
 
-    Flock.withLock(lock, () => readJson<Record<string, unknown>>(file))
+    Flock.withLock(lock, async () => {
+        try {
+          return await readJson<Record<string, unknown>>(file)
+        } catch {
+          return {}
+        }
+      })
       .then((x) => {
         setStore(x)
       })

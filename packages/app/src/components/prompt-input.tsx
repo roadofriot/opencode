@@ -461,24 +461,75 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   let latestVoiceText = ""
 
   onMount(() => {
-    // Check voice capability: local Whisper engine is always considered available
-    if (settings.voice.engine() === "local") {
-      setVoiceCapability("available")
-    } else {
+    // Check voice capability based on selected engine
+    const engine = settings.voice.engine()
+
+    // Local Whisper and API-based engines (openai, gemini, groq, huggingface) only need mic access
+    if (engine === "local" || engine === "openai" || engine === "gemini" || engine === "groq" || engine === "huggingface") {
       void (async () => {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
           stream.getTracks().forEach((t) => t.stop())
-          const win = window as unknown as Record<string, unknown>
-          const hasSpeechAPI = !!(win["SpeechRecognition"] || win["webkitSpeechRecognition"])
-          setVoiceCapability(hasSpeechAPI ? "available" : "unavailable")
+          setVoiceCapability("available")
         } catch {
-          // getUserMedia failed — but local Whisper mode doesn't need it at check time
+          // getUserMedia failed — mic permission denied
           setVoiceCapability("unavailable")
         }
       })()
+      return
     }
+
+    // Cloud engine requires Web Speech API (only works in browsers, NOT Electron)
+    void (async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+        stream.getTracks().forEach((t) => t.stop())
+        const win = window as unknown as Record<string, unknown>
+        const hasSpeechAPI = !!(win["SpeechRecognition"] || win["webkitSpeechRecognition"])
+        if (hasSpeechAPI) {
+          setVoiceCapability("available")
+        } else {
+          // Web Speech API not available (e.g. Electron) — auto-switch to local engine
+          console.warn("[VOICE] SpeechRecognition API not available. Switching to local Whisper engine.")
+          settings.voice.setEngine("local")
+          setVoiceCapability("available")
+        }
+      } catch {
+        setVoiceCapability("unavailable")
+      }
+    })()
   })
+
+  // Re-check voice capability when engine changes
+  createEffect(() => {
+    const engine = settings.voice.engine()
+    // Local and API-based engines only need mic
+    if (engine === "local" || engine === "openai" || engine === "gemini" || engine === "groq" || engine === "huggingface") {
+      void (async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+          stream.getTracks().forEach((t) => t.stop())
+          setVoiceCapability("available")
+        } catch {
+          setVoiceCapability("unavailable")
+        }
+      })()
+      return
+    }
+    // Cloud engine needs SpeechRecognition
+    void (async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+        stream.getTracks().forEach((t) => t.stop())
+        const win = window as unknown as Record<string, unknown>
+        const hasSpeechAPI = !!(win["SpeechRecognition"] || win["webkitSpeechRecognition"])
+        setVoiceCapability(hasSpeechAPI ? "available" : "unavailable")
+      } catch {
+        setVoiceCapability("unavailable")
+      }
+    })()
+  })
+
   onMount(() => {
     let downloadToastId: number | null = null
 
@@ -700,10 +751,15 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
 
     const SpeechCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SpeechCtor) {
+      // Auto-switch to local engine if SpeechRecognition is not available (e.g. Electron)
+      console.warn("[VOICE] SpeechRecognition not available. Auto-switching to local Whisper engine.")
+      settings.voice.setEngine("local")
       showToast({
-        title: "Voice Input Unavailable",
-        description: "Speech Recognition is not supported in this environment.",
+        title: "Switched to Local Voice Engine",
+        description: "Web Speech API is not available in this environment. Using local Whisper instead.",
       })
+      // Re-trigger with local engine after a brief delay
+      setTimeout(() => void toggleListening(), 500)
       return
     }
 

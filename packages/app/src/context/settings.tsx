@@ -154,7 +154,7 @@ const defaultSettings: Settings = {
     errors: "nope-03",
   },
   voice: {
-    engine: "cloud",
+    engine: "local",
     model: "Xenova/whisper-tiny",
     language: "auto",
     openaiApiKey: "",
