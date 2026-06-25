@@ -2532,6 +2532,27 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                         </Show>
                       </Show>
                     </Show>
+                    <TooltipKeybind
+                      placement="top"
+                      gutter={4}
+                      title={language.t("command.terminal.toggle")}
+                      keybind={command.keybind("terminal.toggle")}
+                    >
+                      <Button
+                        data-action="prompt-terminal"
+                        variant="ghost"
+                        class="size-7 p-0 box-border shrink-0"
+                        onClick={() => {
+                          const sessionID = props.controls.session.id
+                          if (sessionID) layout.view(sessionID).terminal.toggle()
+                        }}
+                        aria-label={language.t("command.terminal.toggle")}
+                        aria-expanded={props.controls.session.id ? layout.view(props.controls.session.id).terminal.opened() : false}
+                        aria-controls="terminal-panel"
+                      >
+                        <Icon name={props.controls.session.id && layout.view(props.controls.session.id).terminal.opened() ? "terminal-active" : "terminal"} />
+                      </Button>
+                    </TooltipKeybind>
                   </div>
                 </div>
               </div>
