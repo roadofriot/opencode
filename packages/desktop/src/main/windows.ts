@@ -40,7 +40,7 @@ const cspValue = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data: https://fonts.gstatic.com",
-  "connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://api.github.com https://*.firebaseio.com https://*.googleapis.com http://127.0.0.1:*",
+  "connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://api.github.com https://*.firebaseio.com https://*.googleapis.com https://cdn.jsdelivr.net http://127.0.0.1:*",
   "media-src 'self' blob: mediastream:",
   "worker-src 'self' blob:",
   "child-src 'self' blob:",
