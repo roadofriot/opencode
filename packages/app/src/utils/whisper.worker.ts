@@ -1,6 +1,7 @@
 import { env, pipeline } from "@xenova/transformers"
 
 env.allowLocalModels = false
+env.backends.onnx.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/"
 
 let pipelineInstance: unknown = null
 let currentModel: string | null = null
