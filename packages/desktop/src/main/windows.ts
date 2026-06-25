@@ -36,7 +36,7 @@ const jsCallStacksDocumentPolicy = "include-js-call-stacks-in-crash-reports"
 const cspHeader = "Content-Security-Policy"
 const cspValue = [
   "default-src 'self'",
-  "script-src 'self'",
+  "script-src 'self' 'wasm-unsafe-eval'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data: https://fonts.gstatic.com",
