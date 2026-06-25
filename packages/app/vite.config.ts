@@ -32,7 +32,7 @@ export default defineConfig({
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "img-src 'self' data: blob: https:",
         "font-src 'self' data: https://fonts.gstatic.com",
-        "connect-src 'self' data: https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://api.github.com https://*.firebaseio.com https://*.googleapis.com https://cdn.jsdelivr.net http://127.0.0.1:* ws://localhost:*",
+        "connect-src 'self' data: https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://api.github.com https://*.firebaseio.com https://*.googleapis.com https://cdn.jsdelivr.net http://127.0.0.1:* ws://127.0.0.1:* wss://127.0.0.1:* ws://localhost:*",
         "media-src 'self' blob: mediastream:",
         "worker-src 'self' blob:",
         "child-src 'self' blob:",
