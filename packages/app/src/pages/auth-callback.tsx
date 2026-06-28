@@ -1,6 +1,6 @@
 import { useNavigate, useSearchParams } from "@solidjs/router"
 import { createEffect, onMount } from "solid-js"
-import { getClient } from "@opencode-ai/supabase/client"
+import { getClient } from "@mindsparq-ai/supabase/client"
 
 export default function AuthCallback() {
   const navigate = useNavigate()

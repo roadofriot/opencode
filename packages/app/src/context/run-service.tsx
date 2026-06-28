@@ -1,5 +1,5 @@
 import { createStore } from "solid-js/store"
-import { createSimpleContext } from "@opencode-ai/ui/context"
+import { createSimpleContext } from "@mindsparq-ai/ui/context"
 import { createMemo, batch, createEffect } from "solid-js"
 import { Persist, persisted } from "@/utils/persist"
 import { deviceStore, startDeviceDiscovery, stopDeviceDiscovery, detectFlutterProject } from "@/services/device-discovery"

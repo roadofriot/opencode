@@ -1,9 +1,9 @@
 import { EOL } from "os"
 import { Effect } from "effect"
-import { ModelsDev } from "@opencode-ai/core/models-dev"
+import { ModelsDev } from "@mindsparq-ai/core/models-dev"
 import { effectCmd, fail } from "../effect-cmd"
 import { UI } from "../ui"
-import { ProviderV2 } from "@opencode-ai/core/provider"
+import { ProviderV2 } from "@mindsparq-ai/core/provider"
 
 export const ModelsCommand = effectCmd({
   command: "models [provider]",
@@ -54,8 +54,8 @@ export const ModelsCommand = effectCmd({
     }
 
     const ids = Object.keys(providers).sort((a, b) => {
-      const aIsOpencode = a.startsWith("opencode")
-      const bIsOpencode = b.startsWith("opencode")
+      const aIsOpencode = a.startsWith("mindsparq")
+      const bIsOpencode = b.startsWith("mindsparq")
       if (aIsOpencode && !bIsOpencode) return -1
       if (!aIsOpencode && bIsOpencode) return 1
       return a.localeCompare(b)

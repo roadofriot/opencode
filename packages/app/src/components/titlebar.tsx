@@ -12,15 +12,15 @@ import {
 } from "solid-js"
 import { createStore } from "solid-js/store"
 import { useLocation, useNavigate, useParams } from "@solidjs/router"
-import { IconButton } from "@opencode-ai/ui/icon-button"
-import { Icon } from "@opencode-ai/ui/icon"
-import { Button } from "@opencode-ai/ui/button"
-import { Tooltip, TooltipKeybind } from "@opencode-ai/ui/tooltip"
-import { useTheme } from "@opencode-ai/ui/theme/context"
-import { IconButtonV2 } from "@opencode-ai/ui/v2/icon-button-v2"
-import { Icon as IconV2 } from "@opencode-ai/ui/v2/icon"
-import { KeybindV2 } from "@opencode-ai/ui/v2/keybind-v2"
-import { TooltipV2 } from "@opencode-ai/ui/v2/tooltip-v2"
+import { IconButton } from "@mindsparq-ai/ui/icon-button"
+import { Icon } from "@mindsparq-ai/ui/icon"
+import { Button } from "@mindsparq-ai/ui/button"
+import { Tooltip, TooltipKeybind } from "@mindsparq-ai/ui/tooltip"
+import { useTheme } from "@mindsparq-ai/ui/theme/context"
+import { IconButtonV2 } from "@mindsparq-ai/ui/v2/icon-button-v2"
+import { Icon as IconV2 } from "@mindsparq-ai/ui/v2/icon"
+import { KeybindV2 } from "@mindsparq-ai/ui/v2/keybind-v2"
+import { TooltipV2 } from "@mindsparq-ai/ui/v2/tooltip-v2"
 
 import { getProjectAvatarVariant, LayoutRoute, useLayout, type LocalProject } from "@/context/layout"
 import { usePlatform } from "@/context/platform"
@@ -30,8 +30,8 @@ import { useSettings } from "@/context/settings"
 import { WindowsAppMenu } from "./windows-app-menu"
 import { applyPath, backPath, forwardPath } from "./titlebar-history"
 import { useServerSync } from "@/context/server-sync"
-import { base64Encode } from "@opencode-ai/core/util/encode"
-import { ProjectAvatar } from "@opencode-ai/ui/v2/project-avatar-v2"
+import { base64Encode } from "@mindsparq-ai/core/util/encode"
+import { ProjectAvatar } from "@mindsparq-ai/ui/v2/project-avatar-v2"
 import { displayName, getProjectAvatarSource, projectForSession } from "@/pages/layout/helpers"
 import { useSessionTabAvatarState } from "@/pages/layout/project-avatar-state"
 import { makeEventListener } from "@solid-primitives/event-listener"
@@ -703,7 +703,7 @@ export function Titlebar(props: { update?: TitlebarUpdate }) {
                         </Tooltip>
                       </div>
                     </Show>
-                    <div id="opencode-titlebar-left" class="flex items-center gap-3 min-w-0 px-2" />
+                    <div id="mindsparq-titlebar-left" class="flex items-center gap-3 min-w-0 px-2" />
                     <ChannelIndicator />
                   </div>
                 </div>
@@ -712,7 +712,7 @@ export function Titlebar(props: { update?: TitlebarUpdate }) {
 
             <div class="min-w-0 flex items-center justify-center pointer-events-none">
               <div
-                id="opencode-titlebar-center"
+                id="mindsparq-titlebar-center"
                 class="pointer-events-auto min-w-0 flex justify-center w-fit max-w-full"
               />
             </div>
@@ -725,7 +725,7 @@ export function Titlebar(props: { update?: TitlebarUpdate }) {
               data-tauri-drag-region
               onMouseDown={drag}
             >
-              <div id="opencode-titlebar-right" class="flex items-center gap-1 shrink-0 justify-end" />
+              <div id="mindsparq-titlebar-right" class="flex items-center gap-1 shrink-0 justify-end" />
               <LegacyTitlebarRight />
               <Show when={windows()}>
                 {!tauriApi() && <div class="shrink-0" style={{ width: windowsControlsWidth() }} />}
@@ -816,7 +816,7 @@ function TitlebarV2Right(props: { state: TitlebarV2RightState }) {
           aria-label="Toggle Terminal"
         />
       </TooltipV2>
-      <div id="opencode-titlebar-right" class="flex shrink-0 items-center justify-end gap-0" />
+      <div id="mindsparq-titlebar-right" class="flex shrink-0 items-center justify-end gap-0" />
       <Show when={auth.isAuthenticated()}>
         <UserMenu />
       </Show>

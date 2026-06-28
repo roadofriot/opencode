@@ -1,6 +1,6 @@
-import { EventV2 } from "@opencode-ai/core/event"
+import { EventV2 } from "@mindsparq-ai/core/event"
 import { Schema } from "effect"
-import { NamedError } from "@opencode-ai/core/util/error"
+import { NamedError } from "@mindsparq-ai/core/util/error"
 import { Process } from "@/util/process"
 
 const SUPPORTED_IDES = [
@@ -44,7 +44,7 @@ export async function install(ide: (typeof SUPPORTED_IDES)[number]["name"]) {
   const cmd = SUPPORTED_IDES.find((i) => i.name === ide)?.cmd
   if (!cmd) throw new Error(`Unknown IDE: ${ide}`)
 
-  const p = await Process.run([cmd, "--install-extension", "sst-dev.opencode"], {
+  const p = await Process.run([cmd, "--install-extension", "sst-dev.mindsparq"], {
     nothrow: true,
   })
   const stdout = p.stdout.toString()

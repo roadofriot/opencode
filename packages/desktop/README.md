@@ -1,6 +1,6 @@
-# OpenCode Desktop
+# MindSparQ AI Desktop
 
-The OpenCode Desktop app, built with Electron.
+The MindSparQ AI Desktop app, built with Electron.
 
 ## Development
 

@@ -7,22 +7,22 @@ import { NodeHttpServer } from "@effect/platform-node"
 import { Effect, Exit, Fiber, Layer, Schema } from "effect"
 import { FetchHttpClient, HttpServer, HttpServerRequest, HttpServerResponse } from "effect/unstable/http"
 import { eq } from "drizzle-orm"
-import { FSUtil } from "@opencode-ai/core/fs-util"
+import { FSUtil } from "@mindsparq-ai/core/fs-util"
 import { GlobalBus, type GlobalEvent } from "@/bus/global"
-import { Database } from "@opencode-ai/core/database/database"
-import { ProjectV2 } from "@opencode-ai/core/project"
-import { ProjectTable } from "@opencode-ai/core/project/sql"
-import { AbsolutePath } from "@opencode-ai/core/schema"
+import { Database } from "@mindsparq-ai/core/database/database"
+import { ProjectV2 } from "@mindsparq-ai/core/project"
+import { ProjectTable } from "@mindsparq-ai/core/project/sql"
+import { AbsolutePath } from "@mindsparq-ai/core/schema"
 import { Session as SessionNs } from "@/session/session"
 import { SessionID } from "@/session/schema"
-import { SessionTable } from "@opencode-ai/core/session/sql"
-import { EventSequenceTable } from "@opencode-ai/core/event/sql"
+import { SessionTable } from "@mindsparq-ai/core/session/sql"
+import { EventSequenceTable } from "@mindsparq-ai/core/event/sql"
 import { resetDatabase } from "../fixture/db"
 import { disposeAllInstances, provideTmpdirInstance, requireInstance, TestInstance } from "../fixture/fixture"
 import { testEffect } from "../lib/effect"
 import { registerAdapter } from "../../src/control-plane/adapters"
-import { WorkspaceV2 } from "@opencode-ai/core/workspace"
-import { WorkspaceTable } from "@opencode-ai/core/control-plane/workspace.sql"
+import { WorkspaceV2 } from "@mindsparq-ai/core/workspace"
+import { WorkspaceTable } from "@mindsparq-ai/core/control-plane/workspace.sql"
 import type { Target, WorkspaceAdapter, WorkspaceInfo } from "../../src/control-plane/types"
 import * as Workspace from "../../src/control-plane/workspace"
 import { InstanceStore } from "@/project/instance-store"
@@ -33,7 +33,7 @@ import { Project } from "@/project/project"
 import { Vcs } from "@/project/vcs"
 import { RuntimeFlags } from "@/effect/runtime-flags"
 import { EventV2Bridge } from "@/event-v2-bridge"
-import { Ripgrep } from "@opencode-ai/core/ripgrep"
+import { Ripgrep } from "@mindsparq-ai/core/ripgrep"
 
 const originalEnv = {
   OPENCODE_AUTH_CONTENT: process.env.OPENCODE_AUTH_CONTENT,
@@ -123,7 +123,7 @@ async function initGitRepo(dir: string) {
   await $`git init`.cwd(dir).quiet()
   await $`git config core.fsmonitor false`.cwd(dir).quiet()
   await $`git config commit.gpgsign false`.cwd(dir).quiet()
-  await $`git config user.email "test@opencode.test"`.cwd(dir).quiet()
+  await $`git config user.email "test@mindsparq.test"`.cwd(dir).quiet()
   await $`git config user.name "Test"`.cwd(dir).quiet()
   await fs.writeFile(path.join(dir, "tracked.txt"), "base\n")
   await $`git add tracked.txt`.cwd(dir).quiet()
@@ -428,7 +428,7 @@ describe("workspace CRUD", () => {
         process.env.OPENCODE_AUTH_CONTENT = JSON.stringify({ test: { type: "api", key: "secret" } })
         process.env.OTEL_EXPORTER_OTLP_HEADERS = "authorization=otel"
         process.env.OTEL_EXPORTER_OTLP_ENDPOINT = "https://otel.test"
-        process.env.OTEL_RESOURCE_ATTRIBUTES = "service.name=opencode-test"
+        process.env.OTEL_RESOURCE_ATTRIBUTES = "service.name=mindsparq-test"
 
         const workspaceID = WorkspaceV2.ID.ascending("wrk_create_local")
         const type = unique("create-local")
@@ -491,7 +491,7 @@ describe("workspace CRUD", () => {
         expect(recorded.calls.create[0].env.OPENCODE_EXPERIMENTAL_WORKSPACES).toBe("true")
         expect(recorded.calls.create[0].env.OTEL_EXPORTER_OTLP_HEADERS).toBe("authorization=otel")
         expect(recorded.calls.create[0].env.OTEL_EXPORTER_OTLP_ENDPOINT).toBe("https://otel.test")
-        expect(recorded.calls.create[0].env.OTEL_RESOURCE_ATTRIBUTES).toBe("service.name=opencode-test")
+        expect(recorded.calls.create[0].env.OTEL_RESOURCE_ATTRIBUTES).toBe("service.name=mindsparq-test")
         expect((yield* workspace.status()).find((item) => item.workspaceID === workspaceID)?.status).toBe("connected")
 
         yield* workspace.remove(workspaceID)

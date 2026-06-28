@@ -16,12 +16,12 @@ import Http from "node:http"
 import { mkdir } from "node:fs/promises"
 import path from "node:path"
 import { registerAdapter } from "../../src/control-plane/adapters"
-import { WorkspaceV2 } from "@opencode-ai/core/workspace"
+import { WorkspaceV2 } from "@mindsparq-ai/core/workspace"
 import type { WorkspaceAdapter } from "../../src/control-plane/types"
 import { Workspace } from "../../src/control-plane/workspace"
-import { WorkspaceTable } from "@opencode-ai/core/control-plane/workspace.sql"
-import { Database } from "@opencode-ai/core/database/database"
-import { Ripgrep } from "@opencode-ai/core/ripgrep"
+import { WorkspaceTable } from "@mindsparq-ai/core/control-plane/workspace.sql"
+import { Database } from "@mindsparq-ai/core/database/database"
+import { Ripgrep } from "@mindsparq-ai/core/ripgrep"
 import { Project } from "../../src/project/project"
 import { Session } from "../../src/session/session"
 import { WorkspacePaths } from "../../src/server/routes/instance/httpapi/groups/workspace"
@@ -267,7 +267,7 @@ describe("HttpApi workspace routing middleware", () => {
       const project = yield* Project.use.fromDirectory(dir)
       let forwarded: ProxiedRequest | undefined
 
-      // This starts a second HTTP server that stands in for the opencode server
+      // This starts a second HTTP server that stands in for the mindsparq server
       // backing a remote workspace. The client below still calls the local test
       // server; only the middleware should call this server.
       const remoteUrl = yield* startRemoteWorkspaceHttpServer((request) => {
@@ -301,8 +301,8 @@ describe("HttpApi workspace routing middleware", () => {
       const body = '{"title":"Remote workspace request"}'
       const response = yield* HttpClientRequest.patch(`/probe?workspace=${workspace.id}&keep=yes`).pipe(
         HttpClientRequest.setHeaders({
-          "x-opencode-directory": "/secret/path",
-          "x-opencode-workspace": "internal",
+          "x-mindsparq-directory": "/secret/path",
+          "x-mindsparq-workspace": "internal",
         }),
         HttpClientRequest.bodyStream(
           Stream.make(new TextEncoder().encode('{"title":"Remote '), new TextEncoder().encode('workspace request"}')),
@@ -325,8 +325,8 @@ describe("HttpApi workspace routing middleware", () => {
       expect(forwarded?.body).toBe(body)
       expect(forwarded?.headers["content-type"]).toBe("application/json")
       expect(forwarded?.headers["x-target-auth"]).toBe("secret")
-      expect(forwarded?.headers["x-opencode-directory"]).toBeUndefined()
-      expect(forwarded?.headers["x-opencode-workspace"]).toBeUndefined()
+      expect(forwarded?.headers["x-mindsparq-directory"]).toBeUndefined()
+      expect(forwarded?.headers["x-mindsparq-workspace"]).toBeUndefined()
     }),
   )
 
@@ -516,7 +516,7 @@ describe("HttpApi workspace routing middleware", () => {
       // directory hints before using the process cwd.
       const queryResponse = yield* HttpClient.get(`/probe?directory=${encodeURIComponent(queryDir)}`)
       const headerResponse = yield* HttpClientRequest.get("/probe").pipe(
-        HttpClientRequest.setHeader("x-opencode-directory", headerDir),
+        HttpClientRequest.setHeader("x-mindsparq-directory", headerDir),
         HttpClient.execute,
       )
 

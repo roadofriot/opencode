@@ -1,16 +1,16 @@
 import { describe, expect } from "bun:test"
 import { Project } from "@/project/project"
-import { Database } from "@opencode-ai/core/database/database"
+import { Database } from "@mindsparq-ai/core/database/database"
 import { eq } from "drizzle-orm"
-import { SessionTable } from "@opencode-ai/core/session/sql"
-import { ProjectTable } from "@opencode-ai/core/project/sql"
-import { AbsolutePath } from "@opencode-ai/core/schema"
-import { ProjectV2 } from "@opencode-ai/core/project"
+import { SessionTable } from "@mindsparq-ai/core/session/sql"
+import { ProjectTable } from "@mindsparq-ai/core/project/sql"
+import { AbsolutePath } from "@mindsparq-ai/core/schema"
+import { ProjectV2 } from "@mindsparq-ai/core/project"
 import { SessionID } from "../../src/session/schema"
 import { $ } from "bun"
 import { tmpdirScoped } from "../fixture/fixture"
 import { Effect, Layer } from "effect"
-import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
+import { CrossSpawnSpawner } from "@mindsparq-ai/core/cross-spawn-spawner"
 import { testEffect } from "../lib/effect"
 
 const it = testEffect(Layer.mergeAll(Project.defaultLayer, CrossSpawnSpawner.defaultLayer, Database.defaultLayer))
@@ -64,7 +64,7 @@ describe("migrateFromGlobal", () => {
       const tmp = yield* tmpdirScoped()
       yield* Effect.promise(() => $`git init`.cwd(tmp).quiet())
       yield* Effect.promise(() => $`git config user.name "Test"`.cwd(tmp).quiet())
-      yield* Effect.promise(() => $`git config user.email "test@opencode.test"`.cwd(tmp).quiet())
+      yield* Effect.promise(() => $`git config user.email "test@mindsparq.test"`.cwd(tmp).quiet())
       yield* Effect.promise(() => $`git config commit.gpgsign false`.cwd(tmp).quiet())
       const projects = yield* Project.Service
       const { project: pre } = yield* projects.fromDirectory(tmp)

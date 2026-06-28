@@ -1,23 +1,23 @@
-import { LayerNode } from "@opencode-ai/core/effect/layer-node"
-import { path } from "@opencode-ai/core/effect/layer-node-platform"
-import { Global } from "@opencode-ai/core/global"
+import { LayerNode } from "@mindsparq-ai/core/effect/layer-node"
+import { path } from "@mindsparq-ai/core/effect/layer-node-platform"
+import { Global } from "@mindsparq-ai/core/global"
 import { InstanceLayer } from "@/project/instance-layer"
 import { InstanceStore } from "@/project/instance-store"
 import { Project } from "@/project/project"
-import { Database } from "@opencode-ai/core/database/database"
+import { Database } from "@mindsparq-ai/core/database/database"
 import { eq } from "drizzle-orm"
-import { ProjectTable } from "@opencode-ai/core/project/sql"
-import type { ProjectV2 } from "@opencode-ai/core/project"
-import { Slug } from "@opencode-ai/core/util/slug"
+import { ProjectTable } from "@mindsparq-ai/core/project/sql"
+import type { ProjectV2 } from "@mindsparq-ai/core/project"
+import { Slug } from "@mindsparq-ai/core/util/slug"
 import { errorMessage } from "../util/error"
-import { EventV2 } from "@opencode-ai/core/event"
+import { EventV2 } from "@mindsparq-ai/core/event"
 import { GlobalBus } from "@/bus/global"
 import { Git } from "@/git"
 import { Effect, Layer, Path, Schema, Scope, Context } from "effect"
 import { ChildProcess } from "effect/unstable/process"
 import { NodePath } from "@effect/platform-node"
-import { FSUtil } from "@opencode-ai/core/fs-util"
-import { AppProcess } from "@opencode-ai/core/process"
+import { FSUtil } from "@mindsparq-ai/core/fs-util"
+import { AppProcess } from "@mindsparq-ai/core/process"
 import { InstanceState } from "@/effect/instance-state"
 
 export const Event = {
@@ -141,7 +141,7 @@ export interface Interface {
   readonly reset: (input: ResetInput) => Effect.Effect<boolean, Error>
 }
 
-export class Service extends Context.Service<Service, Interface>()("@opencode/Worktree") {}
+export class Service extends Context.Service<Service, Interface>()("@mindsparq/Worktree") {}
 
 type GitResult = { code: number; text: string; stderr: string }
 
@@ -196,7 +196,7 @@ export const layer: Layer.Layer<
       const ctx = yield* InstanceState.context
       for (const attempt of Array.from({ length: MAX_NAME_ATTEMPTS }, (_, i) => i)) {
         const name = input.name ? (attempt === 0 ? input.name : `${input.name}-${Slug.create()}`) : Slug.create()
-        const branch = input.detached ? undefined : `opencode/${name}`
+        const branch = input.detached ? undefined : `mindsparq/${name}`
         const directory = pathSvc.join(input.root, name)
 
         if (yield* fs.exists(directory).pipe(Effect.orDie)) continue

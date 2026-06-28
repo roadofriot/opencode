@@ -5,10 +5,10 @@ import { eq } from "drizzle-orm"
 import { GlobalBus, type GlobalEvent } from "@/bus/global"
 import { ExperimentalPaths } from "../../src/server/routes/instance/httpapi/groups/experimental"
 import { Session } from "@/session/session"
-import { SessionTable } from "@opencode-ai/core/session/sql"
-import { Database } from "@opencode-ai/core/database/database"
-import { AccountV2 } from "@opencode-ai/core/account"
-import { AccountTable } from "@opencode-ai/core/account/sql"
+import { SessionTable } from "@mindsparq-ai/core/session/sql"
+import { Database } from "@mindsparq-ai/core/database/database"
+import { AccountV2 } from "@mindsparq-ai/core/account"
+import { AccountTable } from "@mindsparq-ai/core/account/sql"
 import { Worktree } from "../../src/worktree"
 import { resetDatabase } from "../fixture/db"
 import { disposeAllInstances, TestInstance } from "../fixture/fixture"
@@ -111,7 +111,7 @@ function withCreatedWorktree(
 
       expect(created.status).toBe(200)
       const info = yield* json<Worktree.Info>(created)
-      expect(info).toMatchObject({ name, branch: "opencode/api-test" })
+      expect(info).toMatchObject({ name, branch: "mindsparq/api-test" })
       yield* Fiber.join(ready)
       return info
     }),
@@ -146,7 +146,7 @@ describe("experimental HttpApi", () => {
           [
             request(ExperimentalPaths.console, directory),
             request(ExperimentalPaths.consoleOrgs, directory),
-            request(`${ExperimentalPaths.tool}?provider=opencode&model=gpt-5`, directory),
+            request(`${ExperimentalPaths.tool}?provider=mindsparq&model=gpt-5`, directory),
             request(ExperimentalPaths.toolIDs, directory),
             request(ExperimentalPaths.worktree, directory),
             request(ExperimentalPaths.resource, directory),

@@ -1,10 +1,10 @@
 import { describe, expect } from "bun:test"
 import { Effect, Layer } from "effect"
-import { AbsolutePath } from "@opencode-ai/core/schema"
-import { PluginBoot } from "@opencode-ai/core/plugin/boot"
-import { Reference } from "@opencode-ai/core/reference"
-import { ReferenceGuidance } from "@opencode-ai/core/reference/guidance"
-import { SystemContext } from "@opencode-ai/core/system-context/index"
+import { AbsolutePath } from "@mindsparq-ai/core/schema"
+import { PluginBoot } from "@mindsparq-ai/core/plugin/boot"
+import { Reference } from "@mindsparq-ai/core/reference"
+import { ReferenceGuidance } from "@mindsparq-ai/core/reference/guidance"
+import { SystemContext } from "@mindsparq-ai/core/system-context/index"
 import { it } from "./lib/effect"
 
 describe("ReferenceGuidance", () => {

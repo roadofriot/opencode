@@ -6,7 +6,7 @@ import { Effect } from "effect"
 import { PluginV2 } from "../plugin"
 import { AbsolutePath } from "../schema"
 import { SkillV2 } from "../skill"
-import customizeOpencodeContent from "./skill/customize-opencode.md" with { type: "text" }
+import customizeOpencodeContent from "./skill/customize-mindsparq.md" with { type: "text" }
 
 export const CustomizeOpencodeContent = customizeOpencodeContent
 
@@ -21,10 +21,10 @@ export const Plugin = PluginV2.define({
         new SkillV2.EmbeddedSource({
           type: "embedded",
           skill: new SkillV2.Info({
-            name: "customize-opencode",
+            name: "customize-mindsparq",
             description:
-              "Use ONLY when the user is editing or creating opencode's own configuration: opencode.json, opencode.jsonc, files under .opencode/, or files under ~/.config/opencode/. Also use when creating or fixing opencode agents, subagents, commands, skills, plugins, MCP servers, or permission rules. Do not use for the user's own application code, or for any project that is not configuring opencode itself.",
-            location: AbsolutePath.make("/builtin/customize-opencode.md"),
+              "Use ONLY when the user is editing or creating mindsparq's own configuration: mindsparq.json, mindsparq.jsonc, files under .mindsparq/, or files under ~/.config/mindsparq/. Also use when creating or fixing mindsparq agents, subagents, commands, skills, plugins, MCP servers, or permission rules. Do not use for the user's own application code, or for any project that is not configuring mindsparq itself.",
+            location: AbsolutePath.make("/builtin/customize-mindsparq.md"),
             content: CustomizeOpencodeContent,
           }),
         }),

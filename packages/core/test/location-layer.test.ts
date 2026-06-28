@@ -2,13 +2,13 @@ import fs from "fs/promises"
 import path from "path"
 import { describe, expect } from "bun:test"
 import { Effect, Equal, Hash, Layer, Schema } from "effect"
-import { Tool } from "@opencode-ai/core/public"
-import { Catalog } from "@opencode-ai/core/catalog"
-import { LocationServiceMap } from "@opencode-ai/core/location-layer"
-import { Location } from "@opencode-ai/core/location"
-import { PluginBoot } from "@opencode-ai/core/plugin/boot"
-import { ProviderV2 } from "@opencode-ai/core/provider"
-import { AbsolutePath } from "@opencode-ai/core/schema"
+import { Tool } from "@mindsparq-ai/core/public"
+import { Catalog } from "@mindsparq-ai/core/catalog"
+import { LocationServiceMap } from "@mindsparq-ai/core/location-layer"
+import { Location } from "@mindsparq-ai/core/location"
+import { PluginBoot } from "@mindsparq-ai/core/plugin/boot"
+import { ProviderV2 } from "@mindsparq-ai/core/provider"
+import { AbsolutePath } from "@mindsparq-ai/core/schema"
 import { tmpdir } from "./fixture/tmpdir"
 import { testEffect } from "./lib/effect"
 import { toolDefinitions } from "./lib/tool"
@@ -74,7 +74,7 @@ describe("LocationServiceMap", () => {
           })
           yield* Effect.promise(() =>
             fs.writeFile(
-              path.join(blocked.path, "opencode.json"),
+              path.join(blocked.path, "mindsparq.json"),
               JSON.stringify({
                 experimental: { policies: [{ effect: "deny", action: "provider.use", resource: "test" }] },
               }),

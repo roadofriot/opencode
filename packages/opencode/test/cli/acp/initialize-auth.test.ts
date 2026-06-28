@@ -4,12 +4,12 @@ import { Effect } from "effect"
 import { cliIt } from "../../lib/cli-process"
 import { createAcpClient, expectErrorCode, initialize } from "./helpers"
 
-describe("opencode acp initialize/auth subprocess", () => {
+describe("mindsparq acp initialize/auth subprocess", () => {
   cliIt.live(
     "initialize responds with capabilities",
-    ({ opencode }) =>
+    ({ mindsparq }) =>
       Effect.gen(function* () {
-        const initialized = yield* initialize(yield* createAcpClient({ opencode }))
+        const initialized = yield* initialize(yield* createAcpClient({ mindsparq }))
 
         expect(initialized.protocolVersion).toBe(1)
         expect(initialized.agentCapabilities?.promptCapabilities?.embeddedContext).toBe(true)
@@ -21,21 +21,21 @@ describe("opencode acp initialize/auth subprocess", () => {
         expect(initialized.agentCapabilities?.sessionCapabilities?.fork).toEqual({})
         expect(initialized.agentCapabilities?.sessionCapabilities?.list).toEqual({})
         expect(initialized.agentCapabilities?.sessionCapabilities?.resume).toEqual({})
-        expect(initialized.agentInfo?.name).toBe("OpenCode")
+        expect(initialized.agentInfo?.name).toBe("MindSparQ AI")
       }),
     60_000,
   )
 
   cliIt.live(
     "auth negotiation is explicit and safe",
-    ({ opencode }) =>
+    ({ mindsparq }) =>
       Effect.gen(function* () {
-        const acp = yield* createAcpClient({ opencode })
+        const acp = yield* createAcpClient({ mindsparq })
         const initialized = yield* initialize(acp)
 
-        expect(initialized.authMethods?.[0]?.id).toBe("opencode-login")
+        expect(initialized.authMethods?.[0]?.id).toBe("mindsparq-login")
         expect(initialized.authMethods?.[0]?._meta?.["terminal-auth"]).toBeDefined()
-        expect(yield* acp.request<AuthenticateResponse>("authenticate", { methodId: "opencode-login" })).toMatchObject({
+        expect(yield* acp.request<AuthenticateResponse>("authenticate", { methodId: "mindsparq-login" })).toMatchObject({
           result: {},
         })
 
@@ -48,12 +48,12 @@ describe("opencode acp initialize/auth subprocess", () => {
 
   cliIt.live(
     "initialize without terminal-auth metadata keeps auth command implicit",
-    ({ opencode }) =>
+    ({ mindsparq }) =>
       Effect.gen(function* () {
-        const acp = yield* createAcpClient({ opencode })
+        const acp = yield* createAcpClient({ mindsparq })
         const initialized = yield* acp.request<InitializeResponse>("initialize", { protocolVersion: 1 })
 
-        expect(initialized.result?.authMethods?.[0]?.id).toBe("opencode-login")
+        expect(initialized.result?.authMethods?.[0]?.id).toBe("mindsparq-login")
         expect(initialized.result?.authMethods?.[0]?._meta?.["terminal-auth"]).toBeUndefined()
       }),
     60_000,

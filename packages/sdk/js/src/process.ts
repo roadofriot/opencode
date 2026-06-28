@@ -1,7 +1,7 @@
 import { type ChildProcess, spawnSync } from "node:child_process"
 
-// Duplicated from `packages/opencode/src/util/process.ts` because the SDK cannot
-// import `opencode` without creating a cycle (`opencode` depends on `@opencode-ai/sdk`).
+// Duplicated from `packages/mindsparq/src/util/process.ts` because the SDK cannot
+// import `mindsparq` without creating a cycle (`mindsparq` depends on `@mindsparq-ai/sdk`).
 export function stop(proc: ChildProcess) {
   if (proc.exitCode !== null || proc.signalCode !== null) return
   if (process.platform === "win32" && proc.pid) {

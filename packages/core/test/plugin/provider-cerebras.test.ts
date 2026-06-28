@@ -1,9 +1,9 @@
 import { describe, expect, mock } from "bun:test"
 import { Effect } from "effect"
-import { Catalog } from "@opencode-ai/core/catalog"
-import { PluginV2 } from "@opencode-ai/core/plugin"
-import { CerebrasPlugin } from "@opencode-ai/core/plugin/provider/cerebras"
-import { ProviderV2 } from "@opencode-ai/core/provider"
+import { Catalog } from "@mindsparq-ai/core/catalog"
+import { PluginV2 } from "@mindsparq-ai/core/plugin"
+import { CerebrasPlugin } from "@mindsparq-ai/core/plugin/provider/cerebras"
+import { ProviderV2 } from "@mindsparq-ai/core/provider"
 import { it, model } from "./provider-helper"
 
 const cerebrasOptions: Record<string, unknown>[] = []
@@ -33,7 +33,7 @@ describe("CerebrasPlugin", () => {
       })
       expect((yield* catalog.provider.get(ProviderV2.ID.make("cerebras"))).request.headers).toEqual({
         Existing: "1",
-        "X-Cerebras-3rd-Party-Integration": "opencode",
+        "X-Cerebras-3rd-Party-Integration": "mindsparq",
       })
     }),
   )

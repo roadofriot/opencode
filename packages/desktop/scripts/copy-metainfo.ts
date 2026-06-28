@@ -23,7 +23,7 @@ const xml = `<?xml version="1.0" encoding="UTF-8"?>
 
   <description>
     <p>
-      OpenCode is an open source agent that helps you write and run code with any AI model.
+      MindSparQ AI is an open source agent that helps you write and run code with any AI model.
     </p>
   </description>
 
@@ -31,13 +31,13 @@ const xml = `<?xml version="1.0" encoding="UTF-8"?>
 
   <content_rating type="oars-1.1" />
 
-  <url type="bugtracker">https://github.com/anomalyco/opencode/issues</url>
-  <url type="homepage">https://opencode.ai</url>
-  <url type="vcs-browser">https://github.com/anomalyco/opencode</url>
+  <url type="bugtracker">https://github.com/anomalyco/mindsparq/issues</url>
+  <url type="homepage">https://mindsparq.ai</url>
+  <url type="vcs-browser">https://github.com/anomalyco/mindsparq</url>
 
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/anomalyco/opencode/b75d4d1c5ec449585d515c756fc81f080a157a9a/packages/web/src/assets/lander/screenshot.png</image>
+      <image>https://raw.githubusercontent.com/anomalyco/mindsparq/b75d4d1c5ec449585d515c756fc81f080a157a9a/packages/web/src/assets/lander/screenshot.png</image>
     </screenshot>
   </screenshots>
 </component>

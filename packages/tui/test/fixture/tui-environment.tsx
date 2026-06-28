@@ -19,10 +19,10 @@ export function TestTuiContexts(
     <ExitProvider exit={() => {}}>
       <TuiPathsProvider
         value={{
-          cwd: props.cwd ?? props.directory ?? "/tmp/opencode/packages/tui",
-          home: "/tmp/opencode/home",
-          state: "/tmp/opencode/state",
-          worktree: "/tmp/opencode",
+          cwd: props.cwd ?? props.directory ?? "/tmp/mindsparq/packages/tui",
+          home: "/tmp/mindsparq/home",
+          state: "/tmp/mindsparq/state",
+          worktree: "/tmp/mindsparq",
           ...props.paths,
         }}
       >

@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import { Script } from "@opencode-ai/script"
+import { Script } from "@mindsparq-ai/script"
 import path from "path"
 import { fileURLToPath } from "url"
 
@@ -24,7 +24,7 @@ await Bun.build({
     OPENCODE_CHANNEL: `'${Script.channel}'`,
   },
   files: {
-    "opencode-web-ui.gen.ts": "",
+    "mindsparq-web-ui.gen.ts": "",
   },
 })
 

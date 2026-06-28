@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, mock } from "bun:test"
 import { Context, Effect, Layer } from "effect"
-import { Flag } from "@opencode-ai/core/flag/flag"
+import { Flag } from "@mindsparq-ai/core/flag/flag"
 import { SyncPaths } from "../../src/server/routes/instance/httpapi/groups/sync"
 import { HttpApiApp } from "../../src/server/routes/instance/httpapi/server"
 import { Session } from "@/session/session"
@@ -27,7 +27,7 @@ describe("sync HttpApi", () => {
       Effect.gen(function* () {
         Flag.OPENCODE_EXPERIMENTAL_WORKSPACES = true
         const tmp = yield* TestInstance
-        const headers = { "x-opencode-directory": tmp.directory, "content-type": "application/json" }
+        const headers = { "x-mindsparq-directory": tmp.directory, "content-type": "application/json" }
         const session = yield* Session.use.create({ title: "sync" })
 
         const started = yield* requestInDirectory(SyncPaths.start, tmp.directory, { method: "POST", headers })
@@ -76,7 +76,7 @@ describe("sync HttpApi", () => {
     () =>
       Effect.gen(function* () {
         const tmp = yield* TestInstance
-        const headers = { "x-opencode-directory": tmp.directory, "content-type": "application/json" }
+        const headers = { "x-mindsparq-directory": tmp.directory, "content-type": "application/json" }
         const cases = [
           {
             path: SyncPaths.history,
@@ -130,7 +130,7 @@ describe("sync HttpApi", () => {
           HttpApiApp.webHandler().handler(
             new Request(`http://localhost${SyncPaths.history}`, {
               method: "POST",
-              headers: { "x-opencode-directory": tmp.directory, "content-type": "application/json" },
+              headers: { "x-mindsparq-directory": tmp.directory, "content-type": "application/json" },
               body: JSON.stringify({ aggregate: -1 }),
             }),
             context,

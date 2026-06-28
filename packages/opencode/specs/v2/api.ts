@@ -1,13 +1,13 @@
 // @ts-nocheck
 
-import { OpenCode } from "@opencode-ai/core"
-import { ReadTool } from "@opencode-ai/core/tools"
+import { Mindsparq } from "@mindsparq-ai/core"
+import { ReadTool } from "@mindsparq-ai/core/tools"
 
-const opencode = OpenCode.make({})
+const mindsparq = Mindsparq.make({})
 
-opencode.tool.add(ReadTool)
+mindsparq.tool.add(ReadTool)
 
-opencode.tool.add({
+mindsparq.tool.add({
   name: "bash",
   schema: {
     type: "object",
@@ -22,13 +22,13 @@ opencode.tool.add({
   execute(input, ctx) {},
 })
 
-opencode.auth.add({
+mindsparq.auth.add({
   provider: "openai",
   type: "api",
   value: process.env.OPENAI_API_KEY,
 })
 
-opencode.agent.add({
+mindsparq.agent.add({
   name: "build",
   permissions: [],
   model: {
@@ -38,20 +38,20 @@ opencode.agent.add({
   },
 })
 
-const sessionID = await opencode.session.create({
+const sessionID = await mindsparq.session.create({
   agent: "build",
 })
 
-opencode.subscribe((event) => {
+mindsparq.subscribe((event) => {
   console.log(event)
 })
 
-await opencode.session.prompt({
+await mindsparq.session.prompt({
   sessionID,
   text: "hey what is up",
 })
 
-await opencode.session.prompt({
+await mindsparq.session.prompt({
   sessionID,
   text: "what is up with this",
   files: [
@@ -62,6 +62,6 @@ await opencode.session.prompt({
   ],
 })
 
-await opencode.session.wait()
+await mindsparq.session.wait()
 
-console.log(await opencode.session.messages(sessionID))
+console.log(await mindsparq.session.messages(sessionID))

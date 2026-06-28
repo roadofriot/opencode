@@ -1,9 +1,9 @@
 import { EOL } from "os"
 import { Effect } from "effect"
-import { FileSystem } from "@opencode-ai/core/filesystem"
-import { LocationServiceMap } from "@opencode-ai/core/location-layer"
-import { Location } from "@opencode-ai/core/location"
-import { AbsolutePath, RelativePath } from "@opencode-ai/core/schema"
+import { FileSystem } from "@mindsparq-ai/core/filesystem"
+import { LocationServiceMap } from "@mindsparq-ai/core/location-layer"
+import { Location } from "@mindsparq-ai/core/location"
+import { AbsolutePath, RelativePath } from "@mindsparq-ai/core/schema"
 import { effectCmd } from "../../effect-cmd"
 import { cmd } from "../cmd"
 

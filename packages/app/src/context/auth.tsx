@@ -48,7 +48,7 @@ export function AuthProvider(props: ParentProps) {
     void initializeAuth().then((newState) => {
       setState(newState)
       if (newState.isInitialized) {
-        const hasSkipped = typeof localStorage !== "undefined" && localStorage.getItem("opencode-auth-skipped")
+        const hasSkipped = typeof localStorage !== "undefined" && localStorage.getItem("mindsparq-auth-skipped")
         if (!newState.user && !hasSkipped) {
           setShowLogin(true)
         }
@@ -89,7 +89,7 @@ export function AuthProvider(props: ParentProps) {
 
   const skipAuth = () => {
     if (typeof localStorage !== "undefined") {
-      localStorage.setItem("opencode-auth-skipped", "true")
+      localStorage.setItem("mindsparq-auth-skipped", "true")
     }
     setShowLogin(false)
   }

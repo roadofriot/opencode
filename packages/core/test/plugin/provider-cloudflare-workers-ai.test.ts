@@ -1,16 +1,16 @@
 import { describe, expect } from "bun:test"
 import { Effect, Layer } from "effect"
-import { Credential } from "@opencode-ai/core/credential"
-import { Integration } from "@opencode-ai/core/integration"
-import { Database } from "@opencode-ai/core/database/database"
-import { Catalog } from "@opencode-ai/core/catalog"
-import { Location } from "@opencode-ai/core/location"
-import { EventV2 } from "@opencode-ai/core/event"
-import { ModelV2 } from "@opencode-ai/core/model"
-import { PluginV2 } from "@opencode-ai/core/plugin"
-import { CloudflareWorkersAIPlugin } from "@opencode-ai/core/plugin/provider/cloudflare-workers-ai"
-import { ProviderV2 } from "@opencode-ai/core/provider"
-import { AbsolutePath } from "@opencode-ai/core/schema"
+import { Credential } from "@mindsparq-ai/core/credential"
+import { Integration } from "@mindsparq-ai/core/integration"
+import { Database } from "@mindsparq-ai/core/database/database"
+import { Catalog } from "@mindsparq-ai/core/catalog"
+import { Location } from "@mindsparq-ai/core/location"
+import { EventV2 } from "@mindsparq-ai/core/event"
+import { ModelV2 } from "@mindsparq-ai/core/model"
+import { PluginV2 } from "@mindsparq-ai/core/plugin"
+import { CloudflareWorkersAIPlugin } from "@mindsparq-ai/core/plugin/provider/cloudflare-workers-ai"
+import { ProviderV2 } from "@mindsparq-ai/core/provider"
+import { AbsolutePath } from "@mindsparq-ai/core/schema"
 import { location } from "../fixture/location"
 import { testEffect } from "../lib/effect"
 import { fakeSelectorSdk, it, model, npmLayer, withEnv } from "./provider-helper"
@@ -208,7 +208,7 @@ describe("CloudflareWorkersAIPlugin", () => {
         const headers = yield* Effect.promise(() => Promise.resolve(cloudflareHeaders(result.sdk)))
         expect(headers.authorization).toBe("Bearer env-key")
         expect(headers.custom).toBe("header")
-        expect(headers["user-agent"]).toMatch(/^opencode\/.* cloudflare-workers-ai \(.+\) ai-sdk\/openai-compatible\//)
+        expect(headers["user-agent"]).toMatch(/^mindsparq\/.* cloudflare-workers-ai \(.+\) ai-sdk\/openai-compatible\//)
       }),
     ),
   )

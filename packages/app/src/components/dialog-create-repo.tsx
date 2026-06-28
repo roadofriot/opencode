@@ -1,5 +1,5 @@
 import { createSignal, Show, For, createEffect } from "solid-js"
-import { Button } from "@opencode-ai/ui/button"
+import { Button } from "@mindsparq-ai/ui/button"
 import { useAuth } from "@/context/auth"
 import {
   createRepository,

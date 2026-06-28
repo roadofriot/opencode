@@ -1,26 +1,26 @@
-import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { LayerNode } from "@mindsparq-ai/core/effect/layer-node"
 import { and, eq, sql } from "drizzle-orm"
-import { Database } from "@opencode-ai/core/database/database"
-import { ProjectDirectoryTable, ProjectTable } from "@opencode-ai/core/project/sql"
-import { ProjectDirectories } from "@opencode-ai/core/project/directories"
-import { SessionTable } from "@opencode-ai/core/session/sql"
-import { WorkspaceTable } from "@opencode-ai/core/control-plane/workspace.sql"
-import { Flag } from "@opencode-ai/core/flag/flag"
+import { Database } from "@mindsparq-ai/core/database/database"
+import { ProjectDirectoryTable, ProjectTable } from "@mindsparq-ai/core/project/sql"
+import { ProjectDirectories } from "@mindsparq-ai/core/project/directories"
+import { SessionTable } from "@mindsparq-ai/core/session/sql"
+import { WorkspaceTable } from "@mindsparq-ai/core/control-plane/workspace.sql"
+import { Flag } from "@mindsparq-ai/core/flag/flag"
 import { GlobalBus } from "@/bus/global"
-import { which } from "@opencode-ai/core/util/which"
+import { which } from "@mindsparq-ai/core/util/which"
 import { Command } from "@/command"
 import { InstanceState } from "@/effect/instance-state"
 import { Effect, Layer, Scope, Context, Stream, Types, Schema } from "effect"
 import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process"
-import { FSUtil } from "@opencode-ai/core/fs-util"
-import { AppProcess } from "@opencode-ai/core/process"
-import { ProjectV2 } from "@opencode-ai/core/project"
-import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
-import { AbsolutePath, NonNegativeInt, optionalOmitUndefined } from "@opencode-ai/core/schema"
-import { serviceUse } from "@opencode-ai/core/effect/service-use"
+import { FSUtil } from "@mindsparq-ai/core/fs-util"
+import { AppProcess } from "@mindsparq-ai/core/process"
+import { ProjectV2 } from "@mindsparq-ai/core/project"
+import { CrossSpawnSpawner } from "@mindsparq-ai/core/cross-spawn-spawner"
+import { AbsolutePath, NonNegativeInt, optionalOmitUndefined } from "@mindsparq-ai/core/schema"
+import { serviceUse } from "@mindsparq-ai/core/effect/service-use"
 import { RuntimeFlags } from "@/effect/runtime-flags"
 import { EventV2Bridge } from "@/event-v2-bridge"
-import { EventV2 } from "@opencode-ai/core/event"
+import { EventV2 } from "@mindsparq-ai/core/event"
 
 const ProjectVcs = Schema.Literal("git")
 
@@ -127,7 +127,7 @@ export interface Interface {
   readonly removeSandbox: (id: ProjectV2.ID, directory: string) => Effect.Effect<void>
 }
 
-export class Service extends Context.Service<Service, Interface>()("@opencode/Project") {}
+export class Service extends Context.Service<Service, Interface>()("@mindsparq/Project") {}
 
 type GitResult = { code: number; text: string; stderr: string }
 

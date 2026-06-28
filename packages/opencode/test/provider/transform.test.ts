@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test"
 import { Effect } from "effect"
 import { ProviderTransform } from "@/provider/transform"
 import { LLMRequestPrep } from "@/session/llm/request"
-import { ProviderV2 } from "@opencode-ai/core/provider"
-import { ModelV2 } from "@opencode-ai/core/model"
+import { ProviderV2 } from "@mindsparq-ai/core/provider"
+import { ModelV2 } from "@mindsparq-ai/core/model"
 
 describe("ProviderTransform.options - setCacheKey", () => {
   const sessionID = "test-session-123"
@@ -1321,7 +1321,7 @@ describe("ProviderTransform.schema - openai supported schema subset", () => {
   })
 
   test.each([
-    ["opencode", "@ai-sdk/openai"],
+    ["mindsparq", "@ai-sdk/openai"],
     ["custom-openai-compatible", "@ai-sdk/openai"],
     ["azure", "@ai-sdk/azure"],
   ])("sanitizes %s models using %s", (providerID, npm) => {
@@ -1671,7 +1671,7 @@ describe("ProviderTransform.message - surrogate sanitization", () => {
         content: [
           { type: "text", text: text("assistant text") },
           { type: "reasoning", text: text("assistant reasoning") },
-          { type: "tool-call", toolCallId: "call-1", toolName: "Read", input: { filePath: ".opencode/tool/emoji.ts" } },
+          { type: "tool-call", toolCallId: "call-1", toolName: "Read", input: { filePath: ".mindsparq/tool/emoji.ts" } },
           {
             type: "tool-result",
             toolCallId: "call-2",
@@ -2319,12 +2319,12 @@ describe("ProviderTransform.message - strip openai metadata when store=false", (
   })
 
   test("preserves metadata using providerID key when store is false", () => {
-    const opencodeModel = {
+    const mindsparqModel = {
       ...openaiModel,
-      providerID: "opencode",
+      providerID: "mindsparq",
       api: {
-        id: "opencode-test",
-        url: "https://api.opencode.ai",
+        id: "mindsparq-test",
+        url: "https://api.mindsparq.ai",
         npm: "@ai-sdk/openai-compatible",
       },
     }
@@ -2336,7 +2336,7 @@ describe("ProviderTransform.message - strip openai metadata when store=false", (
             type: "text",
             text: "Hello",
             providerOptions: {
-              opencode: {
+              mindsparq: {
                 itemId: "msg_123",
                 otherOption: "value",
               },
@@ -2346,19 +2346,19 @@ describe("ProviderTransform.message - strip openai metadata when store=false", (
       },
     ] as any[]
 
-    const result = ProviderTransform.message(msgs, opencodeModel, { store: false }) as any[]
+    const result = ProviderTransform.message(msgs, mindsparqModel, { store: false }) as any[]
 
-    expect(result[0].content[0].providerOptions?.opencode?.itemId).toBe("msg_123")
-    expect(result[0].content[0].providerOptions?.opencode?.otherOption).toBe("value")
+    expect(result[0].content[0].providerOptions?.mindsparq?.itemId).toBe("msg_123")
+    expect(result[0].content[0].providerOptions?.mindsparq?.otherOption).toBe("value")
   })
 
   test("preserves itemId across all providerOptions keys", () => {
-    const opencodeModel = {
+    const mindsparqModel = {
       ...openaiModel,
-      providerID: "opencode",
+      providerID: "mindsparq",
       api: {
-        id: "opencode-test",
-        url: "https://api.opencode.ai",
+        id: "mindsparq-test",
+        url: "https://api.mindsparq.ai",
         npm: "@ai-sdk/openai-compatible",
       },
     }
@@ -2367,7 +2367,7 @@ describe("ProviderTransform.message - strip openai metadata when store=false", (
         role: "assistant",
         providerOptions: {
           openai: { itemId: "msg_root" },
-          opencode: { itemId: "msg_opencode" },
+          mindsparq: { itemId: "msg_mindsparq" },
           extra: { itemId: "msg_extra" },
         },
         content: [
@@ -2376,7 +2376,7 @@ describe("ProviderTransform.message - strip openai metadata when store=false", (
             text: "Hello",
             providerOptions: {
               openai: { itemId: "msg_openai_part" },
-              opencode: { itemId: "msg_opencode_part" },
+              mindsparq: { itemId: "msg_mindsparq_part" },
               extra: { itemId: "msg_extra_part" },
             },
           },
@@ -2384,13 +2384,13 @@ describe("ProviderTransform.message - strip openai metadata when store=false", (
       },
     ] as any[]
 
-    const result = ProviderTransform.message(msgs, opencodeModel, { store: false }) as any[]
+    const result = ProviderTransform.message(msgs, mindsparqModel, { store: false }) as any[]
 
     expect(result[0].providerOptions?.openai?.itemId).toBe("msg_root")
-    expect(result[0].providerOptions?.opencode?.itemId).toBe("msg_opencode")
+    expect(result[0].providerOptions?.mindsparq?.itemId).toBe("msg_mindsparq")
     expect(result[0].providerOptions?.extra?.itemId).toBe("msg_extra")
     expect(result[0].content[0].providerOptions?.openai?.itemId).toBe("msg_openai_part")
-    expect(result[0].content[0].providerOptions?.opencode?.itemId).toBe("msg_opencode_part")
+    expect(result[0].content[0].providerOptions?.mindsparq?.itemId).toBe("msg_mindsparq_part")
     expect(result[0].content[0].providerOptions?.extra?.itemId).toBe("msg_extra_part")
   })
 

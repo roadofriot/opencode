@@ -2,7 +2,7 @@ import { afterEach, expect } from "bun:test"
 import { existsSync } from "node:fs"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
-import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
+import { CrossSpawnSpawner } from "@mindsparq-ai/core/cross-spawn-spawner"
 import { Cause, Effect, Exit, Fiber, Layer } from "effect"
 import { bootstrap as cliBootstrap } from "../../src/cli/bootstrap"
 import { InstanceLayer } from "../../src/project/instance-layer"
@@ -45,9 +45,9 @@ const bootstrapFixture = Effect.gen(function* () {
   )
   yield* Effect.promise(() =>
     Bun.write(
-      path.join(dir, "opencode.json"),
+      path.join(dir, "mindsparq.json"),
       JSON.stringify({
-        $schema: "https://opencode.ai/config.json",
+        $schema: "https://mindsparq.ai/config.json",
         plugin: [pathToFileURL(pluginFile).href],
       }),
     ),

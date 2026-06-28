@@ -1,6 +1,6 @@
-import { LayerNode } from "@opencode-ai/core/effect/layer-node"
-import { SessionV1 } from "@opencode-ai/core/v1/session"
-import { ConfigV1 } from "@opencode-ai/core/v1/config/config"
+import { LayerNode } from "@mindsparq-ai/core/effect/layer-node"
+import { SessionV1 } from "@mindsparq-ai/core/v1/session"
+import { ConfigV1 } from "@mindsparq-ai/core/v1/config/config"
 import { Session } from "./session"
 import { SessionID, MessageID, PartID } from "./schema"
 import { Provider } from "@/provider/provider"
@@ -16,15 +16,15 @@ import { Effect, Layer, Context } from "effect"
 import * as DateTime from "effect/DateTime"
 import { InstanceState } from "@/effect/instance-state"
 import { isOverflow as overflow, usable } from "./overflow"
-import { serviceUse } from "@opencode-ai/core/effect/service-use"
+import { serviceUse } from "@mindsparq-ai/core/effect/service-use"
 import { RuntimeFlags } from "@/effect/runtime-flags"
 import { EventV2Bridge } from "@/event-v2-bridge"
-import { SessionEvent } from "@opencode-ai/core/session/event"
-import { SessionMessage } from "@opencode-ai/core/session/message"
-import { ProviderV2 } from "@opencode-ai/core/provider"
-import { ModelV2 } from "@opencode-ai/core/model"
-import { EventV2 } from "@opencode-ai/core/event"
-import { buildPrompt } from "@opencode-ai/core/session/compaction"
+import { SessionEvent } from "@mindsparq-ai/core/session/event"
+import { SessionMessage } from "@mindsparq-ai/core/session/message"
+import { ProviderV2 } from "@mindsparq-ai/core/provider"
+import { ModelV2 } from "@mindsparq-ai/core/model"
+import { EventV2 } from "@mindsparq-ai/core/event"
+import { buildPrompt } from "@mindsparq-ai/core/session/compaction"
 
 export const Event = {
   Compacted: EventV2.define({
@@ -159,7 +159,7 @@ export interface Interface {
   }) => Effect.Effect<void>
 }
 
-export class Service extends Context.Service<Service, Interface>()("@opencode/SessionCompaction") {}
+export class Service extends Context.Service<Service, Interface>()("@mindsparq/SessionCompaction") {}
 
 export const use = serviceUse(Service)
 

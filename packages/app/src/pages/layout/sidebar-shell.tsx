@@ -8,8 +8,8 @@ import {
   type DragEvent,
 } from "@thisbeyond/solid-dnd"
 import { ConstrainDragXAxis } from "@/utils/solid-dnd"
-import { IconButton } from "@opencode-ai/ui/icon-button"
-import { Tooltip, TooltipKeybind } from "@opencode-ai/ui/tooltip"
+import { IconButton } from "@mindsparq-ai/ui/icon-button"
+import { Tooltip, TooltipKeybind } from "@mindsparq-ai/ui/tooltip"
 import { UserMenu } from "@/components/auth/user-menu"
 import { type LocalProject } from "@/context/layout"
 

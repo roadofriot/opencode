@@ -7,8 +7,8 @@
 
 ## Do Not Translate (Locale Additions)
 
-- `OpenCode` (preserve casing in prose; keep `opencode` only in commands, package names, paths, or code)
-- `OpenCode CLI`
+- `MindSparQ AI` (preserve casing in prose; keep `opencode` only in commands, package names, paths, or code)
+- `MindSparQ AI CLI`
 - `CLI`, `TUI`, `MCP`, `OAuth`
 - Commands, flags, file paths, and code literals (keep exactly as written)
 

@@ -1,13 +1,13 @@
-import { AppIcon } from "@opencode-ai/ui/app-icon"
-import { Button } from "@opencode-ai/ui/button"
-import { DropdownMenu } from "@opencode-ai/ui/dropdown-menu"
-import { Icon } from "@opencode-ai/ui/icon"
-import { IconButton } from "@opencode-ai/ui/icon-button"
-import { Keybind } from "@opencode-ai/ui/keybind"
-import { Spinner } from "@opencode-ai/ui/spinner"
+import { AppIcon } from "@mindsparq-ai/ui/app-icon"
+import { Button } from "@mindsparq-ai/ui/button"
+import { DropdownMenu } from "@mindsparq-ai/ui/dropdown-menu"
+import { Icon } from "@mindsparq-ai/ui/icon"
+import { IconButton } from "@mindsparq-ai/ui/icon-button"
+import { Keybind } from "@mindsparq-ai/ui/keybind"
+import { Spinner } from "@mindsparq-ai/ui/spinner"
 import { showToast } from "@/utils/toast"
-import { Tooltip, TooltipKeybind } from "@opencode-ai/ui/tooltip"
-import { getFilename } from "@opencode-ai/core/util/path"
+import { Tooltip, TooltipKeybind } from "@mindsparq-ai/ui/tooltip"
+import { getFilename } from "@mindsparq-ai/core/util/path"
 import { createEffect, createMemo, createSignal, For, onMount, Show } from "solid-js"
 import { createStore } from "solid-js/store"
 import { Portal } from "solid-js/web"
@@ -25,8 +25,8 @@ import { messageAgentColor } from "@/utils/agent"
 import { decode64 } from "@/utils/base64"
 import { Persist, persisted } from "@/utils/persist"
 import { StatusPopover, StatusPopoverV2 } from "../status-popover"
-import { IconButtonV2 } from "@opencode-ai/ui/v2/icon-button-v2"
-import { Icon as IconV2 } from "@opencode-ai/ui/v2/icon"
+import { IconButtonV2 } from "@mindsparq-ai/ui/v2/icon-button-v2"
+import { Icon as IconV2 } from "@mindsparq-ai/ui/v2/icon"
 import { toggleRunPanel } from "@/utils/run-panel-events"
 import { RunDebugButton } from "@/components/run-debug-button"
 
@@ -277,8 +277,8 @@ export function SessionHeader() {
   const [centerMount, setCenterMount] = createSignal<HTMLElement | null>(null)
   const [rightMount, setRightMount] = createSignal<HTMLElement | null>(null)
   onMount(() => {
-    setCenterMount(document.getElementById("opencode-titlebar-center"))
-    setRightMount(document.getElementById("opencode-titlebar-right"))
+    setCenterMount(document.getElementById("mindsparq-titlebar-center"))
+    setRightMount(document.getElementById("mindsparq-titlebar-right"))
   })
 
   return (

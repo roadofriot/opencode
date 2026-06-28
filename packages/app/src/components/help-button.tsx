@@ -1,4 +1,4 @@
-import { Icon } from "@opencode-ai/ui/v2/icon"
+import { Icon } from "@mindsparq-ai/ui/v2/icon"
 import { createSignal, Show } from "solid-js"
 import { createStore } from "solid-js/store"
 
@@ -18,7 +18,7 @@ export function HelpButton() {
             onClick={() => setExpanded(false)}
           >
             <div class="flex items-center justify-between pb-1 border-b border-border-weak-base">
-              <span class="text-14-medium text-text-strong">OpenCode Help & Tips</span>
+              <span class="text-14-medium text-text-strong">MindSparQ AI Help & Tips</span>
               <button
                 type="button"
                 aria-label="Close"

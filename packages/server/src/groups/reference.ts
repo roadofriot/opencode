@@ -1,5 +1,5 @@
-import { Location } from "@opencode-ai/core/location"
-import { Reference } from "@opencode-ai/core/reference"
+import { Location } from "@mindsparq-ai/core/location"
+import { Reference } from "@mindsparq-ai/core/reference"
 import { Schema } from "effect"
 import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/unstable/httpapi"
 import { LocationMiddleware, LocationQuery, locationQueryOpenApi } from "./location"

@@ -1,5 +1,5 @@
 {
-  "name": "@opencode-ai/app",
+  "name": "@mindsparq-ai/app",
   "version": "1.17.8",
   "description": "",
   "type": "module",
@@ -45,10 +45,10 @@
   },
   "dependencies": {
     "@kobalte/core": "catalog:",
-    "@opencode-ai/core": "workspace:*",
-    "@opencode-ai/sdk": "workspace:*",
-    "@opencode-ai/supabase": "workspace:*",
-    "@opencode-ai/ui": "workspace:*",
+    "@mindsparq-ai/core": "workspace:*",
+    "@mindsparq-ai/sdk": "workspace:*",
+    "@mindsparq-ai/supabase": "workspace:*",
+    "@mindsparq-ai/ui": "workspace:*",
     "@pierre/trees": "1.0.0-beta.4",
     "firebase": "11.5.0",
     "@sentry/solid": "catalog:",

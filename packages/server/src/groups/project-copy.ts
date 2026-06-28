@@ -1,5 +1,5 @@
-import { ProjectCopy } from "@opencode-ai/core/project/copy"
-import { ProjectV2 } from "@opencode-ai/core/project"
+import { ProjectCopy } from "@mindsparq-ai/core/project/copy"
+import { ProjectV2 } from "@mindsparq-ai/core/project"
 import { Schema, Struct } from "effect"
 import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "effect/unstable/httpapi"
 import { LocationMiddleware, LocationQuery, locationQueryOpenApi } from "./location"

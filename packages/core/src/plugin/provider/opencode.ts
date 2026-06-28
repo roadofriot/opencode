@@ -4,13 +4,13 @@ import { PluginV2 } from "../../plugin"
 import { ProviderV2 } from "../../provider"
 
 export const OpencodePlugin = PluginV2.define({
-  id: PluginV2.ID.make("opencode"),
+  id: PluginV2.ID.make("mindsparq"),
   effect: Effect.gen(function* () {
     const integrations = yield* Integration.Service
     let hasKey = false
     return {
       "catalog.transform": Effect.fn(function* (evt) {
-        const item = evt.provider.get(ProviderV2.ID.opencode)
+        const item = evt.provider.get(ProviderV2.ID.mindsparq)
         if (!item) return
         const integration = yield* integrations.get(Integration.ID.make(item.provider.id))
         hasKey = Boolean(

@@ -6,9 +6,9 @@
 
 ## Do Not Translate (Locale Additions)
 
-- `OpenCode` (preserve casing in prose; keep `opencode` only when it is part of commands, package names, paths, or code)
-- `OpenCode Zen`
-- `OpenCode CLI`
+- `MindSparQ AI` (preserve casing in prose; keep `opencode` only when it is part of commands, package names, paths, or code)
+- `MindSparQ AI Zen`
+- `MindSparQ AI CLI`
 - `CLI`, `TUI`, `MCP`, `OAuth`
 - `Model Context Protocol` (prefer the English expansion when introducing `MCP`)
 
@@ -38,5 +38,5 @@ These are preferred terms for docs/UI prose and may evolve.
 
 ## Avoid
 
-- Avoid `opencode` in prose when referring to the product name; use `OpenCode`
+- Avoid `opencode` in prose when referring to the product name; use `MindSparQ AI`
 - Avoid mixing alternative terms for the same concept across docs when a preferred term is already established

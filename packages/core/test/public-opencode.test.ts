@@ -2,20 +2,20 @@ import fs from "fs/promises"
 import path from "path"
 import { describe, expect } from "bun:test"
 import { Effect, Schema } from "effect"
-import { AbsolutePath, Location, Model, OpenCode, Session, Tool } from "@opencode-ai/core/public"
+import { AbsolutePath, Location, Model, Mindsparq, Session, Tool } from "@mindsparq-ai/core/public"
 import { tmpdir } from "./fixture/tmpdir"
 import { testEffect } from "./lib/effect"
 
-const it = testEffect(OpenCode.layer)
+const it = testEffect(Mindsparq.layer)
 
-describe("public native OpenCode API", () => {
+describe("public native MindSparQ AI API", () => {
   it.effect("exposes only the intentional Session capabilities", () =>
     Effect.gen(function* () {
-      const opencode = yield* OpenCode.Service
+      const mindsparq = yield* Mindsparq.Service
 
-      expect(Object.keys(opencode).sort()).toEqual(["sessions", "tools"])
+      expect(Object.keys(mindsparq).sort()).toEqual(["sessions", "tools"])
 
-      expect(Object.keys(opencode.sessions).sort()).toEqual([
+      expect(Object.keys(mindsparq.sessions).sort()).toEqual([
         "context",
         "create",
         "events",
@@ -29,8 +29,8 @@ describe("public native OpenCode API", () => {
       ])
       expect(Session.ID.create()).toStartWith("ses_")
       expect(Session.MessageID.create()).toStartWith("msg_")
-      expect(yield* opencode.sessions.list()).toBeArray()
-      yield* opencode.tools.register({
+      expect(yield* mindsparq.sessions.list()).toBeArray()
+      yield* mindsparq.tools.register({
         public_tool: Tool.make({
           description: "Public tool",
           input: Schema.Struct({}),
@@ -49,17 +49,17 @@ describe("public native OpenCode API", () => {
       Effect.flatMap((tmp) =>
         Effect.gen(function* () {
           yield* writeProvider(tmp.path)
-          const opencode = yield* OpenCode.Service
+          const mindsparq = yield* Mindsparq.Service
           const sessionID = Session.ID.make("ses_public_switch_available")
           const model = ref({ variant: "fast" })
-          yield* opencode.sessions.create({
+          yield* mindsparq.sessions.create({
             id: sessionID,
             location: Location.Ref.make({ directory: AbsolutePath.make(tmp.path) }),
           })
 
-          yield* opencode.sessions.switchModel({ sessionID, model })
+          yield* mindsparq.sessions.switchModel({ sessionID, model })
 
-          expect((yield* opencode.sessions.get(sessionID)).model).toEqual(model)
+          expect((yield* mindsparq.sessions.get(sessionID)).model).toEqual(model)
         }),
       ),
     ),
@@ -74,30 +74,30 @@ describe("public native OpenCode API", () => {
         Effect.gen(function* () {
           yield* writeProvider(available.path)
           yield* writeProvider(disabled.path, true)
-          const opencode = yield* OpenCode.Service
+          const mindsparq = yield* Mindsparq.Service
           const availableID = Session.ID.make("ses_public_switch_exact_available")
           const disabledID = Session.ID.make("ses_public_switch_exact_disabled")
-          yield* opencode.sessions.create({
+          yield* mindsparq.sessions.create({
             id: availableID,
             location: Location.Ref.make({ directory: AbsolutePath.make(available.path) }),
           })
-          yield* opencode.sessions.create({
+          yield* mindsparq.sessions.create({
             id: disabledID,
             location: Location.Ref.make({ directory: AbsolutePath.make(disabled.path) }),
           })
 
-          yield* opencode.sessions.switchModel({ sessionID: availableID, model: ref({ variant: "default" }) })
-          const disabledError = yield* opencode.sessions
+          yield* mindsparq.sessions.switchModel({ sessionID: availableID, model: ref({ variant: "default" }) })
+          const disabledError = yield* mindsparq.sessions
             .switchModel({ sessionID: disabledID, model: ref() })
             .pipe(Effect.flip)
-          const missingError = yield* opencode.sessions
+          const missingError = yield* mindsparq.sessions
             .switchModel({ sessionID: disabledID, model: ref({ id: "missing" }) })
             .pipe(Effect.flip)
 
           expect(disabledError).toBeInstanceOf(Session.ModelUnavailableError)
           expect(missingError).toBeInstanceOf(Session.ModelUnavailableError)
-          expect((yield* opencode.sessions.get(availableID)).model).toEqual(ref({ variant: "default" }))
-          expect((yield* opencode.sessions.get(disabledID)).model).toBeUndefined()
+          expect((yield* mindsparq.sessions.get(availableID)).model).toEqual(ref({ variant: "default" }))
+          expect((yield* mindsparq.sessions.get(disabledID)).model).toBeUndefined()
         }),
       ),
     ),
@@ -111,21 +111,21 @@ describe("public native OpenCode API", () => {
       Effect.flatMap((tmp) =>
         Effect.gen(function* () {
           yield* writeProvider(tmp.path)
-          const opencode = yield* OpenCode.Service
+          const mindsparq = yield* Mindsparq.Service
           const sessionID = Session.ID.make("ses_public_switch_variant")
           const selected = ref({ variant: "fast" })
-          yield* opencode.sessions.create({
+          yield* mindsparq.sessions.create({
             id: sessionID,
             location: Location.Ref.make({ directory: AbsolutePath.make(tmp.path) }),
           })
-          yield* opencode.sessions.switchModel({ sessionID, model: selected })
+          yield* mindsparq.sessions.switchModel({ sessionID, model: selected })
 
-          const error = yield* opencode.sessions
+          const error = yield* mindsparq.sessions
             .switchModel({ sessionID, model: ref({ variant: "unknown" }) })
             .pipe(Effect.flip)
 
           expect(error).toBeInstanceOf(Session.VariantUnavailableError)
-          expect((yield* opencode.sessions.get(sessionID)).model).toEqual(selected)
+          expect((yield* mindsparq.sessions.get(sessionID)).model).toEqual(selected)
         }),
       ),
     ),
@@ -133,9 +133,9 @@ describe("public native OpenCode API", () => {
 
   it.effect("preserves the typed not-found error for a missing Session", () =>
     Effect.gen(function* () {
-      const opencode = yield* OpenCode.Service
+      const mindsparq = yield* Mindsparq.Service
       const sessionID = Session.ID.make("ses_public_switch_missing")
-      const error = yield* opencode.sessions
+      const error = yield* mindsparq.sessions
         .switchModel({
           sessionID,
           model: Schema.decodeUnknownSync(Model.Ref)({ id: "claude-sonnet-4-5", providerID: "anthropic" }),
@@ -158,7 +158,7 @@ const ref = (input: { id?: string; variant?: string } = {}) =>
 const writeProvider = (directory: string, disabled = false) =>
   Effect.promise(() =>
     fs.writeFile(
-      path.join(directory, "opencode.json"),
+      path.join(directory, "mindsparq.json"),
       JSON.stringify({
         providers: {
           "public-test": {

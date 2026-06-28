@@ -2,9 +2,9 @@ import { useIsRouting, useLocation } from "@solidjs/router"
 import { batch, createEffect, onCleanup, onMount, createSignal, Show } from "solid-js"
 import { createStore } from "solid-js/store"
 import { makeEventListener } from "@solid-primitives/event-listener"
-import { Tooltip } from "@opencode-ai/ui/tooltip"
+import { Tooltip } from "@mindsparq-ai/ui/tooltip"
 import { useLanguage } from "@/context/language"
-import { Icon } from "@opencode-ai/ui/v2/icon"
+import { Icon } from "@mindsparq-ai/ui/v2/icon"
 
 type Mem = Performance & {
   memory?: {
@@ -102,11 +102,11 @@ export function DebugBar() {
     },
   })
 
-  const [minimized, setMinimized] = createSignal(localStorage.getItem("opencode:debug-bar-minimized") === "true")
+  const [minimized, setMinimized] = createSignal(localStorage.getItem("mindsparq:debug-bar-minimized") === "true")
   const [position, setPosition] = createSignal<{ x: number; y: number } | undefined>(undefined)
 
   createEffect(() => {
-    localStorage.setItem("opencode:debug-bar-minimized", minimized() ? "true" : "false")
+    localStorage.setItem("mindsparq:debug-bar-minimized", minimized() ? "true" : "false")
   })
 
   let containerRef!: HTMLElement
@@ -162,8 +162,8 @@ export function DebugBar() {
       document.removeEventListener("mouseup", handleMouseUp)
 
       if (hasMoved && position()) {
-        localStorage.setItem("opencode:debug-bar-x", position()!.x.toString())
-        localStorage.setItem("opencode:debug-bar-y", position()!.y.toString())
+        localStorage.setItem("mindsparq:debug-bar-x", position()!.x.toString())
+        localStorage.setItem("mindsparq:debug-bar-y", position()!.y.toString())
       } else if (!hasMoved) {
         setMinimized(!minimized())
       }
@@ -217,8 +217,8 @@ export function DebugBar() {
       document.removeEventListener("touchend", handleTouchEnd)
 
       if (hasMoved && position()) {
-        localStorage.setItem("opencode:debug-bar-x", position()!.x.toString())
-        localStorage.setItem("opencode:debug-bar-y", position()!.y.toString())
+        localStorage.setItem("mindsparq:debug-bar-x", position()!.x.toString())
+        localStorage.setItem("mindsparq:debug-bar-y", position()!.y.toString())
       } else if (!hasMoved) {
         setMinimized(!minimized())
       }
@@ -492,8 +492,8 @@ export function DebugBar() {
     makeEventListener(document, "visibilitychange", vis)
     makeEventListener(window, "resize", handleResize)
 
-    const storedX = localStorage.getItem("opencode:debug-bar-x")
-    const storedY = localStorage.getItem("opencode:debug-bar-y")
+    const storedX = localStorage.getItem("mindsparq:debug-bar-x")
+    const storedY = localStorage.getItem("mindsparq:debug-bar-y")
     if (storedX !== null && storedY !== null) {
       setPosition({ x: parseFloat(storedX), y: parseFloat(storedY) })
       requestAnimationFrame(() => {

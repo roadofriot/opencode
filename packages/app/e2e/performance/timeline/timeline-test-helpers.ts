@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test"
-import { base64Encode } from "@opencode-ai/core/util/encode"
-import { mockOpenCodeServer } from "../../utils/mock-server"
+import { base64Encode } from "@mindsparq-ai/core/util/encode"
+import { mockMindsparqServer } from "../../utils/mock-server"
 import { fixture } from "./session-timeline-stress.fixture"
 
 export async function installTimelineSettings(page: Page) {
@@ -20,7 +20,7 @@ export async function installTimelineSettings(page: Page) {
 }
 
 export function mockStressTimeline(page: Page) {
-  return mockOpenCodeServer(page, {
+  return mockMindsparqServer(page, {
     sessions: fixture.sessions,
     provider: fixture.provider,
     directory: fixture.directory,
@@ -34,14 +34,14 @@ export async function installStressSessionTabs(page: Page) {
   await page.addInitScript(
     ({ directory, sourceID, targetID, dirBase64, server }) => {
       localStorage.setItem(
-        "opencode.global.dat:server",
+        "mindsparq.global.dat:server",
         JSON.stringify({
           projects: { local: [{ worktree: directory, expanded: true }] },
           lastProject: { local: directory },
         }),
       )
       localStorage.setItem(
-        "opencode.global.dat:tabs",
+        "mindsparq.global.dat:tabs",
         JSON.stringify(
           [sourceID, targetID].map((sessionId) => ({
             type: "session",

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test"
 import path from "path"
 import { Server } from "../../src/server/server"
-import { Global } from "@opencode-ai/core/global"
+import { Global } from "@mindsparq-ai/core/global"
 import { resetDatabase } from "../fixture/db"
 import { disposeAllInstances, tmpdir } from "../fixture/fixture"
 
@@ -25,7 +25,7 @@ describe("reference HttpApi", () => {
     })
 
     const response = await Server.Default().app.request("/api/reference", {
-      headers: { "x-opencode-directory": tmp.path },
+      headers: { "x-mindsparq-directory": tmp.path },
     })
 
     expect(response.status).toBe(200)

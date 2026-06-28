@@ -1,6 +1,6 @@
 import { createSignal, For, Show, createMemo, onMount, onCleanup } from "solid-js"
-import { Icon } from "@opencode-ai/ui/icon"
-import { IconButton } from "@opencode-ai/ui/icon-button"
+import { Icon } from "@mindsparq-ai/ui/icon"
+import { IconButton } from "@mindsparq-ai/ui/icon-button"
 
 export interface PortEntry {
   port: number

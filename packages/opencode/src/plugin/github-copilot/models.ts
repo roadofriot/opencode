@@ -1,4 +1,4 @@
-import type { Model } from "@opencode-ai/sdk/v2"
+import type { Model } from "@mindsparq-ai/sdk/v2"
 import { Option, Schema } from "effect"
 
 const item = Schema.Struct({
@@ -87,7 +87,7 @@ function build(key: string, remote: SelectableItem, url: string, prev?: Model): 
 
   const isMsgApi = remote.supported_endpoints?.includes("/v1/messages")
   const prices = remote.billing?.token_prices
-  // Copilot prices are AIC per billing batch; OpenCode stores USD per million tokens.
+  // Copilot prices are AIC per billing batch; MindSparQ AI stores USD per million tokens.
   const usdPerMillion = prices ? 10_000 / prices.batch_size : 0
 
   const model: Model = {

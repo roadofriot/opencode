@@ -112,8 +112,8 @@ const icons = {
   "network": `<circle cx="8" cy="4" r="1.5" stroke="currentColor"/><circle cx="4" cy="10" r="1.5" stroke="currentColor"/><circle cx="12" cy="10" r="1.5" stroke="currentColor"/><circle cx="8" cy="14" r="1.5" stroke="currentColor"/><path d="M8 5.5V8.5M5.5 9.5L6.5 5.5M10.5 9.5L9.5 5.5M5.5 10.5V12.5L8 12.5M10.5 10.5V12.5L8 12.5" stroke="currentColor" stroke-linecap="round"/>`,
 }
 
-const spriteID = "opencode-icon-sprite"
-const symbol = (name: keyof typeof icons) => `opencode-icon-${name}`
+const spriteID = "mindsparq-icon-sprite"
+const symbol = (name: keyof typeof icons) => `mindsparq-icon-${name}`
 let spriteInserted = false
 
 function viewBox(name: keyof typeof icons) {

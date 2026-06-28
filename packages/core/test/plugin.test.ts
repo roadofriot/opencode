@@ -1,8 +1,8 @@
 import { describe, expect } from "bun:test"
 import { Context, Deferred, Effect, Exit, Fiber, Layer, Scope } from "effect"
-import { EventV2 } from "@opencode-ai/core/event"
-import { PluginV2 } from "@opencode-ai/core/plugin"
-import { State } from "@opencode-ai/core/state"
+import { EventV2 } from "@mindsparq-ai/core/event"
+import { PluginV2 } from "@mindsparq-ai/core/plugin"
+import { State } from "@mindsparq-ai/core/state"
 import { it } from "./lib/effect"
 
 const events = Layer.mock(EventV2.Service)({

@@ -13,11 +13,11 @@
       "outputs": [],
       "passThroughEnv": ["*"]
     },
-    "@opencode-ai/app#test": {
+    "@mindsparq-ai/app#test": {
       "dependsOn": ["^build"],
       "outputs": []
     },
-    "@opencode-ai/ui#test": {
+    "@mindsparq-ai/ui#test": {
       "dependsOn": ["^build"],
       "outputs": []
     }

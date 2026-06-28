@@ -1,6 +1,6 @@
 [Desktop Entry]
-Name=OpenCode
-Exec=/opt/OpenCode/ai.opencode.desktop %U
+Name=MindSparQ AI
+Exec=/opt/MindSparQ/mindsparq-ai.desktop %U
 Terminal=false
 Type=Application
 Icon=ai.opencode.desktop

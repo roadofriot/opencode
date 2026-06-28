@@ -1,15 +1,15 @@
 import { describe, expect } from "bun:test"
 import { DateTime, Effect, Layer, Option } from "effect"
-import { Catalog } from "@opencode-ai/core/catalog"
-import { Credential } from "@opencode-ai/core/credential"
-import { EventV2 } from "@opencode-ai/core/event"
-import { Integration } from "@opencode-ai/core/integration"
-import { Location } from "@opencode-ai/core/location"
-import { ModelV2 } from "@opencode-ai/core/model"
-import { PluginV2 } from "@opencode-ai/core/plugin"
-import { OpencodePlugin } from "@opencode-ai/core/plugin/provider/opencode"
-import { ProviderV2 } from "@opencode-ai/core/provider"
-import { AbsolutePath } from "@opencode-ai/core/schema"
+import { Catalog } from "@mindsparq-ai/core/catalog"
+import { Credential } from "@mindsparq-ai/core/credential"
+import { EventV2 } from "@mindsparq-ai/core/event"
+import { Integration } from "@mindsparq-ai/core/integration"
+import { Location } from "@mindsparq-ai/core/location"
+import { ModelV2 } from "@mindsparq-ai/core/model"
+import { PluginV2 } from "@mindsparq-ai/core/plugin"
+import { OpencodePlugin } from "@mindsparq-ai/core/plugin/provider/opencode"
+import { ProviderV2 } from "@mindsparq-ai/core/provider"
+import { AbsolutePath } from "@mindsparq-ai/core/schema"
 import { location } from "../fixture/location"
 import { it, model, provider, withEnv } from "./provider-helper"
 
@@ -33,15 +33,15 @@ describe("OpencodePlugin", () => {
         yield* plugin.add(pluginWithIntegrations(yield* Integration.Service))
         const transform = yield* catalog.transform()
         yield* transform((catalog) => {
-          const item = provider("opencode")
+          const item = provider("mindsparq")
           catalog.provider.update(item.id, () => {})
-          const paid = model("opencode", "paid", { cost: cost(1) })
+          const paid = model("mindsparq", "paid", { cost: cost(1) })
           catalog.model.update(item.id, paid.id, (draft) => {
             draft.cost = [...paid.cost]
           })
         })
-        expect((yield* catalog.provider.get(ProviderV2.ID.opencode)).request.body.apiKey).toBe("public")
-        expect((yield* catalog.model.get(ProviderV2.ID.opencode, ModelV2.ID.make("paid"))).enabled).toBe(false)
+        expect((yield* catalog.provider.get(ProviderV2.ID.mindsparq)).request.body.apiKey).toBe("public")
+        expect((yield* catalog.model.get(ProviderV2.ID.mindsparq, ModelV2.ID.make("paid"))).enabled).toBe(false)
       }),
     ),
   )
@@ -54,15 +54,15 @@ describe("OpencodePlugin", () => {
         yield* plugin.add(pluginWithIntegrations(yield* Integration.Service))
         const transform = yield* catalog.transform()
         yield* transform((catalog) => {
-          const item = provider("opencode")
+          const item = provider("mindsparq")
           catalog.provider.update(item.id, () => {})
-          const free = model("opencode", "free", { cost: cost(0) })
+          const free = model("mindsparq", "free", { cost: cost(0) })
           catalog.model.update(item.id, free.id, (draft) => {
             draft.cost = [...free.cost]
           })
         })
-        expect((yield* catalog.provider.get(ProviderV2.ID.opencode)).request.body.apiKey).toBe("public")
-        expect((yield* catalog.model.get(ProviderV2.ID.opencode, ModelV2.ID.make("free"))).enabled).toBe(true)
+        expect((yield* catalog.provider.get(ProviderV2.ID.mindsparq)).request.body.apiKey).toBe("public")
+        expect((yield* catalog.model.get(ProviderV2.ID.mindsparq, ModelV2.ID.make("free"))).enabled).toBe(true)
       }),
     ),
   )
@@ -75,15 +75,15 @@ describe("OpencodePlugin", () => {
         yield* plugin.add(pluginWithIntegrations(yield* Integration.Service))
         const transform = yield* catalog.transform()
         yield* transform((catalog) => {
-          const item = provider("opencode")
+          const item = provider("mindsparq")
           catalog.provider.update(item.id, () => {})
-          const outputOnly = model("opencode", "output-only", { cost: cost(0, 1) })
+          const outputOnly = model("mindsparq", "output-only", { cost: cost(0, 1) })
           catalog.model.update(item.id, outputOnly.id, (draft) => {
             draft.cost = [...outputOnly.cost]
           })
         })
-        expect((yield* catalog.provider.get(ProviderV2.ID.opencode)).request.body.apiKey).toBe("public")
-        expect((yield* catalog.model.get(ProviderV2.ID.opencode, ModelV2.ID.make("output-only"))).enabled).toBe(true)
+        expect((yield* catalog.provider.get(ProviderV2.ID.mindsparq)).request.body.apiKey).toBe("public")
+        expect((yield* catalog.model.get(ProviderV2.ID.mindsparq, ModelV2.ID.make("output-only"))).enabled).toBe(true)
       }),
     ),
   )
@@ -96,15 +96,15 @@ describe("OpencodePlugin", () => {
         yield* plugin.add(pluginWithIntegrations(yield* Integration.Service))
         const transform = yield* catalog.transform()
         yield* transform((catalog) => {
-          const item = provider("opencode")
+          const item = provider("mindsparq")
           catalog.provider.update(item.id, () => {})
-          const paid = model("opencode", "paid", { cost: cost(1) })
+          const paid = model("mindsparq", "paid", { cost: cost(1) })
           catalog.model.update(item.id, paid.id, (draft) => {
             draft.cost = [...paid.cost]
           })
         })
-        expect((yield* catalog.provider.get(ProviderV2.ID.opencode)).request.body.apiKey).toBeUndefined()
-        expect((yield* catalog.model.get(ProviderV2.ID.opencode, ModelV2.ID.make("paid"))).enabled).toBe(true)
+        expect((yield* catalog.provider.get(ProviderV2.ID.mindsparq)).request.body.apiKey).toBeUndefined()
+        expect((yield* catalog.model.get(ProviderV2.ID.mindsparq, ModelV2.ID.make("paid"))).enabled).toBe(true)
       }),
     ),
   )
@@ -118,21 +118,21 @@ describe("OpencodePlugin", () => {
         yield* plugin.add(pluginWithIntegrations(integrations))
         yield* integrations.update((editor) => {
           editor.method.update({
-            integrationID: Integration.ID.make("opencode"),
+            integrationID: Integration.ID.make("mindsparq"),
             method: { type: "env", names: ["CUSTOM_OPENCODE_API_KEY"] },
           })
         })
         const transform = yield* catalog.transform()
         yield* transform((catalog) => {
-          const item = provider("opencode")
+          const item = provider("mindsparq")
           catalog.provider.update(item.id, () => {})
-          const paid = model("opencode", "paid", { cost: cost(1) })
+          const paid = model("mindsparq", "paid", { cost: cost(1) })
           catalog.model.update(item.id, paid.id, (draft) => {
             draft.cost = [...paid.cost]
           })
         })
-        expect((yield* catalog.provider.get(ProviderV2.ID.opencode)).request.body.apiKey).toBeUndefined()
-        expect((yield* catalog.model.get(ProviderV2.ID.opencode, ModelV2.ID.make("paid"))).enabled).toBe(true)
+        expect((yield* catalog.provider.get(ProviderV2.ID.mindsparq)).request.body.apiKey).toBeUndefined()
+        expect((yield* catalog.model.get(ProviderV2.ID.mindsparq, ModelV2.ID.make("paid"))).enabled).toBe(true)
       }),
     ),
   )
@@ -145,7 +145,7 @@ describe("OpencodePlugin", () => {
         yield* plugin.add(pluginWithIntegrations(yield* Integration.Service))
         const transform = yield* catalog.transform()
         yield* transform((catalog) => {
-          const item = provider("opencode", {
+          const item = provider("mindsparq", {
             request: {
               headers: {},
               body: { apiKey: "configured" },
@@ -154,18 +154,18 @@ describe("OpencodePlugin", () => {
           catalog.provider.update(item.id, (draft) => {
             draft.request = item.request
           })
-          const paid = model("opencode", "paid", { cost: cost(1) })
+          const paid = model("mindsparq", "paid", { cost: cost(1) })
           catalog.model.update(item.id, paid.id, (draft) => {
             draft.cost = [...paid.cost]
           })
         })
-        expect((yield* catalog.provider.get(ProviderV2.ID.opencode)).request.body.apiKey).toBe("configured")
-        expect((yield* catalog.model.get(ProviderV2.ID.opencode, ModelV2.ID.make("paid"))).enabled).toBe(true)
+        expect((yield* catalog.provider.get(ProviderV2.ID.mindsparq)).request.body.apiKey).toBe("configured")
+        expect((yield* catalog.model.get(ProviderV2.ID.mindsparq, ModelV2.ID.make("paid"))).enabled).toBe(true)
       }),
     ),
   )
 
-  it.effect("ignores non-opencode providers and models", () =>
+  it.effect("ignores non-mindsparq providers and models", () =>
     withEnv({ OPENCODE_API_KEY: undefined }, () =>
       Effect.gen(function* () {
         const plugin = yield* PluginV2.Service
@@ -186,10 +186,10 @@ describe("OpencodePlugin", () => {
     ),
   )
 
-  it.effect("prefers gpt-5-nano as the opencode small model", () =>
+  it.effect("prefers gpt-5-nano as the mindsparq small model", () =>
     Effect.gen(function* () {
       const catalog = yield* Catalog.Service
-      const providerID = ProviderV2.ID.opencode
+      const providerID = ProviderV2.ID.mindsparq
 
       const transform = yield* catalog.transform()
       yield* transform((catalog) => {

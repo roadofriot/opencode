@@ -1,15 +1,15 @@
-import { PermissionV1 } from "@opencode-ai/core/v1/permission"
+import { PermissionV1 } from "@mindsparq-ai/core/v1/permission"
 import { afterEach, describe, expect } from "bun:test"
 import { NodeHttpServer, NodeServices } from "@effect/platform-node"
-import { SessionV1 } from "@opencode-ai/core/v1/session"
+import { SessionV1 } from "@mindsparq-ai/core/v1/session"
 import { mkdir } from "node:fs/promises"
 import path from "node:path"
 import { Cause, Config, Effect, Exit, Layer } from "effect"
 import { HttpClient, HttpClientRequest, HttpClientResponse, HttpRouter, HttpServer } from "effect/unstable/http"
 import { layerWebSocketConstructorGlobal } from "effect/unstable/socket/Socket"
-import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
-import { Flag } from "@opencode-ai/core/flag/flag"
-import { Ripgrep } from "@opencode-ai/core/ripgrep"
+import { CrossSpawnSpawner } from "@mindsparq-ai/core/cross-spawn-spawner"
+import { Flag } from "@mindsparq-ai/core/flag/flag"
+import { Ripgrep } from "@mindsparq-ai/core/ripgrep"
 import { registerAdapter } from "../../src/control-plane/adapters"
 import type { WorkspaceAdapter } from "../../src/control-plane/types"
 import { Workspace } from "../../src/control-plane/workspace"
@@ -24,11 +24,11 @@ import { SessionPaths } from "../../src/server/routes/instance/httpapi/groups/se
 import { Session } from "@/session/session"
 import { MessageID, PartID, SessionID, type SessionID as SessionIDType } from "../../src/session/schema"
 import { MessageV2 } from "../../src/session/message-v2"
-import { Database } from "@opencode-ai/core/database/database"
-import { SessionInputTable, SessionMessageTable, SessionTable } from "@opencode-ai/core/session/sql"
-import { SessionMessage } from "@opencode-ai/core/session/message"
-import { ModelV2 } from "@opencode-ai/core/model"
-import { ProviderV2 } from "@opencode-ai/core/provider"
+import { Database } from "@mindsparq-ai/core/database/database"
+import { SessionInputTable, SessionMessageTable, SessionTable } from "@mindsparq-ai/core/session/sql"
+import { SessionMessage } from "@mindsparq-ai/core/session/message"
+import { ModelV2 } from "@mindsparq-ai/core/model"
+import { ProviderV2 } from "@mindsparq-ai/core/provider"
 import * as DateTime from "effect/DateTime"
 import { eq } from "drizzle-orm"
 import { resetDatabase } from "../fixture/db"
@@ -265,7 +265,7 @@ describe("session HttpApi", () => {
     () =>
       Effect.gen(function* () {
         const test = yield* TestInstance
-        const headers = { "x-opencode-directory": test.directory }
+        const headers = { "x-mindsparq-directory": test.directory }
         const missingSession = SessionID.descending()
         const missingSessionBody = {
           name: "NotFoundError",
@@ -330,7 +330,7 @@ describe("session HttpApi", () => {
     () =>
       Effect.gen(function* () {
         const test = yield* TestInstance
-        const headers = { "x-opencode-directory": test.directory }
+        const headers = { "x-mindsparq-directory": test.directory }
         const parent = yield* createSession({ title: "parent" })
         const child = yield* createSession({ title: "child", parentID: parent.id })
         const message = yield* createTextMessage(parent.id, "hello")
@@ -441,7 +441,7 @@ describe("session HttpApi", () => {
     () =>
       Effect.gen(function* () {
         const test = yield* TestInstance
-        const headers = { "x-opencode-directory": test.directory }
+        const headers = { "x-mindsparq-directory": test.directory }
         const session = yield* createSession({ title: "v2 cursor" })
         const firstMessage = yield* insertLegacyAssistantMessage(session.id, 1, 2)
         const secondMessage = yield* insertLegacyAssistantMessage(session.id, 2, 1)
@@ -535,7 +535,7 @@ describe("session HttpApi", () => {
     () =>
       Effect.gen(function* () {
         const test = yield* TestInstance
-        const headers = { "x-opencode-directory": test.directory }
+        const headers = { "x-mindsparq-directory": test.directory }
         const missing = SessionID.descending()
         const expected = {
           _tag: "SessionNotFoundError",
@@ -575,7 +575,7 @@ describe("session HttpApi", () => {
     () =>
       Effect.gen(function* () {
         const test = yield* TestInstance
-        const headers = { "x-opencode-directory": test.directory }
+        const headers = { "x-mindsparq-directory": test.directory }
         const session = yield* createSession({ title: "v2 prompt recording" })
 
         const recordPrompt = () =>
@@ -634,7 +634,7 @@ describe("session HttpApi", () => {
     () =>
       Effect.gen(function* () {
         const test = yield* TestInstance
-        const headers = { "x-opencode-directory": test.directory }
+        const headers = { "x-mindsparq-directory": test.directory }
         const session = yield* createSession({ title: "v2 unavailable" })
 
         const compact = yield* request(`/api/session/${session.id}/compact`, { method: "POST", headers })
@@ -665,7 +665,7 @@ describe("session HttpApi", () => {
         yield* insertCorruptV2Message(session.id)
 
         const messages = yield* request(`/api/session/${session.id}/message`, {
-          headers: { "x-opencode-directory": test.directory },
+          headers: { "x-mindsparq-directory": test.directory },
         })
         const messagesBody = yield* responseJson(messages)
         expect(messages.status).toBe(500)
@@ -677,7 +677,7 @@ describe("session HttpApi", () => {
         expect(JSON.stringify(messagesBody)).not.toContain("assistant")
 
         const context = yield* request(`/api/session/${session.id}/context`, {
-          headers: { "x-opencode-directory": test.directory },
+          headers: { "x-mindsparq-directory": test.directory },
         })
         const contextBody = yield* responseJson(context)
         expect(context.status).toBe(500)
@@ -700,7 +700,7 @@ describe("session HttpApi", () => {
         yield* setLegacySummaryDiff(session.id)
 
         const response = yield* request(pathFor(SessionPaths.get, { sessionID: session.id }), {
-          headers: { "x-opencode-directory": test.directory },
+          headers: { "x-mindsparq-directory": test.directory },
         })
 
         expect(response.status).toBe(200)
@@ -714,7 +714,7 @@ describe("session HttpApi", () => {
     () =>
       Effect.gen(function* () {
         const test = yield* TestInstance
-        const headers = { "x-opencode-directory": test.directory, "content-type": "application/json" }
+        const headers = { "x-mindsparq-directory": test.directory, "content-type": "application/json" }
 
         const createdEmpty = yield* requestJson<Session.Info>(SessionPaths.create, {
           method: "POST",
@@ -746,7 +746,7 @@ describe("session HttpApi", () => {
           pathFor(SessionPaths.fork, { sessionID: created.id }),
           {
             method: "POST",
-            headers: { "x-opencode-directory": test.directory },
+            headers: { "x-mindsparq-directory": test.directory },
           },
         )
         expect(forkedWithoutContentType.id).not.toBe(created.id)
@@ -800,13 +800,13 @@ describe("session HttpApi", () => {
 
         const created = yield* requestJson<Session.Info>(`${SessionPaths.create}?workspace=${workspace.id}`, {
           method: "POST",
-          headers: { "x-opencode-directory": test.directory, "content-type": "application/json" },
+          headers: { "x-mindsparq-directory": test.directory, "content-type": "application/json" },
           body: JSON.stringify({ title: "workspace session" }),
         })
         const messages = yield* request(
           `${pathFor(SessionPaths.messages, { sessionID: created.id })}?workspace=${workspace.id}`,
           {
-            headers: { "x-opencode-directory": test.directory },
+            headers: { "x-mindsparq-directory": test.directory },
           },
         )
 
@@ -822,7 +822,7 @@ describe("session HttpApi", () => {
     () =>
       Effect.gen(function* () {
         const test = yield* TestInstance
-        const headers = { "x-opencode-directory": test.directory, "content-type": "application/json" }
+        const headers = { "x-mindsparq-directory": test.directory, "content-type": "application/json" }
         const session = yield* createSession({ title: "archived" })
         const body = JSON.stringify({ time: { archived: -1 } })
 
@@ -842,7 +842,7 @@ describe("session HttpApi", () => {
     () =>
       Effect.gen(function* () {
         const test = yield* TestInstance
-        const currentDir = path.join(test.directory, "packages", "opencode", "src")
+        const currentDir = path.join(test.directory, "packages", "mindsparq", "src")
         yield* Effect.promise(() => mkdir(currentDir, { recursive: true }))
 
         const store = yield* InstanceStore.Service
@@ -859,10 +859,10 @@ describe("session HttpApi", () => {
 
         const query = new URLSearchParams({
           scope: "project",
-          path: "packages/opencode/src",
+          path: "packages/mindsparq/src",
           directory: currentDir,
         })
-        const headers = { "x-opencode-directory": test.directory }
+        const headers = { "x-mindsparq-directory": test.directory }
         const sessions = (yield* json<Session.Info[]>(
           yield* request(`${SessionPaths.list}?${query}`, { headers }),
         )).map((item) => item.id)
@@ -878,7 +878,7 @@ describe("session HttpApi", () => {
     () =>
       Effect.gen(function* () {
         const test = yield* TestInstance
-        const headers = { "x-opencode-directory": test.directory }
+        const headers = { "x-mindsparq-directory": test.directory }
         const session = yield* createSession({ title: "messages" })
         yield* createTextMessage(session.id, "first")
         yield* createTextMessage(session.id, "second")
@@ -898,7 +898,7 @@ describe("session HttpApi", () => {
     () =>
       Effect.gen(function* () {
         const test = yield* TestInstance
-        const headers = { "x-opencode-directory": test.directory, "content-type": "application/json" }
+        const headers = { "x-mindsparq-directory": test.directory, "content-type": "application/json" }
         const session = yield* createSession({ title: "messages" })
         const first = yield* createTextMessage(session.id, "first")
         const second = yield* createTextMessage(session.id, "second")
@@ -943,7 +943,7 @@ describe("session HttpApi", () => {
     () =>
       Effect.gen(function* () {
         const test = yield* TestInstance
-        const headers = { "x-opencode-directory": test.directory, "content-type": "application/json" }
+        const headers = { "x-mindsparq-directory": test.directory, "content-type": "application/json" }
         const session = yield* createSession({ title: "part mismatch" })
         const message = yield* createTextMessage(session.id, "first")
         const response = yield* request(
@@ -969,7 +969,7 @@ describe("session HttpApi", () => {
     () =>
       Effect.gen(function* () {
         const test = yield* TestInstance
-        const headers = { "x-opencode-directory": test.directory, "content-type": "application/json" }
+        const headers = { "x-mindsparq-directory": test.directory, "content-type": "application/json" }
         const session = yield* createSession({ title: "remaining" })
 
         expect(

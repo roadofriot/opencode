@@ -1,4 +1,4 @@
-import { PermissionV1 } from "@opencode-ai/core/v1/permission"
+import { PermissionV1 } from "@mindsparq-ai/core/v1/permission"
 import { describe, test, expect } from "bun:test"
 import { Effect } from "effect"
 import { Permission } from "../src/permission"
@@ -145,7 +145,7 @@ describe("Permission.disabled for task tool", () => {
 // Integration tests that load permissions from real config files
 describe("permission.task with real config files", () => {
   it.instance(
-    "loads task permissions from opencode.json config",
+    "loads task permissions from mindsparq.json config",
     () =>
       Effect.gen(function* () {
         const config = yield* load

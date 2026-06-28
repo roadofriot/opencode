@@ -1,11 +1,11 @@
 import { afterEach, describe, expect } from "bun:test"
 import { Effect, Layer } from "effect"
 import { FetchHttpClient } from "effect/unstable/http"
-import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
-import { Database } from "@opencode-ai/core/database/database"
-import { FSUtil } from "@opencode-ai/core/fs-util"
-import { Ripgrep } from "@opencode-ai/core/ripgrep"
-import { EffectFlock } from "@opencode-ai/core/util/effect-flock"
+import { CrossSpawnSpawner } from "@mindsparq-ai/core/cross-spawn-spawner"
+import { Database } from "@mindsparq-ai/core/database/database"
+import { FSUtil } from "@mindsparq-ai/core/fs-util"
+import { Ripgrep } from "@mindsparq-ai/core/ripgrep"
+import { EffectFlock } from "@mindsparq-ai/core/util/effect-flock"
 import path from "path"
 import { pathToFileURL } from "url"
 import { Auth } from "../../src/auth"
@@ -100,10 +100,10 @@ describe("plugin.workspace", () => {
 
       yield* Effect.promise(() =>
         Bun.write(
-          path.join(dir, "opencode.json"),
+          path.join(dir, "mindsparq.json"),
           JSON.stringify(
             {
-              $schema: "https://opencode.ai/config.json",
+              $schema: "https://mindsparq.ai/config.json",
               plugin: [pathToFileURL(file).href],
             },
             null,

@@ -1,12 +1,12 @@
 import path from "path"
 import { describe, expect } from "bun:test"
 import { Effect, Layer } from "effect"
-import { AgentV2 } from "@opencode-ai/core/agent"
-import { PluginBoot } from "@opencode-ai/core/plugin/boot"
-import { AbsolutePath } from "@opencode-ai/core/schema"
-import { SkillV2 } from "@opencode-ai/core/skill"
-import { SystemContext } from "@opencode-ai/core/system-context"
-import { SkillGuidance } from "@opencode-ai/core/skill/guidance"
+import { AgentV2 } from "@mindsparq-ai/core/agent"
+import { PluginBoot } from "@mindsparq-ai/core/plugin/boot"
+import { AbsolutePath } from "@mindsparq-ai/core/schema"
+import { SkillV2 } from "@mindsparq-ai/core/skill"
+import { SystemContext } from "@mindsparq-ai/core/system-context"
+import { SkillGuidance } from "@mindsparq-ai/core/skill/guidance"
 import { it } from "../lib/effect"
 
 const build = AgentV2.ID.make("build")

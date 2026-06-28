@@ -1,7 +1,7 @@
-import { LayerNode } from "@opencode-ai/core/effect/layer-node"
-import { PermissionV1 } from "@opencode-ai/core/v1/permission"
+import { LayerNode } from "@mindsparq-ai/core/effect/layer-node"
+import { PermissionV1 } from "@mindsparq-ai/core/v1/permission"
 import { Image } from "@/image/image"
-import { SessionV1 } from "@opencode-ai/core/v1/session"
+import { SessionV1 } from "@mindsparq-ai/core/v1/session"
 import { Cause, Deferred, Effect, Exit, Layer, Context, Scope, Schema } from "effect"
 import * as Stream from "effect/Stream"
 import { Agent } from "@/agent/agent"
@@ -23,14 +23,14 @@ import { Question } from "@/question"
 import { errorMessage } from "@/util/error"
 import { isRecord } from "@/util/record"
 import { EventV2Bridge } from "@/event-v2-bridge"
-import { Database } from "@opencode-ai/core/database/database"
-import { SessionEvent } from "@opencode-ai/core/session/event"
-import { SessionMessage } from "@opencode-ai/core/session/message"
-import { ModelV2 } from "@opencode-ai/core/model"
-import { ProviderV2 } from "@opencode-ai/core/provider"
+import { Database } from "@mindsparq-ai/core/database/database"
+import { SessionEvent } from "@mindsparq-ai/core/session/event"
+import { SessionMessage } from "@mindsparq-ai/core/session/message"
+import { ModelV2 } from "@mindsparq-ai/core/model"
+import { ProviderV2 } from "@mindsparq-ai/core/provider"
 import * as DateTime from "effect/DateTime"
 import { RuntimeFlags } from "@/effect/runtime-flags"
-import { ToolOutput, Usage, type LLMEvent } from "@opencode-ai/llm"
+import { ToolOutput, Usage, type LLMEvent } from "@mindsparq-ai/llm"
 
 const DOOM_LOOP_THRESHOLD = 3
 export type Result = "compact" | "stop" | "continue"
@@ -87,7 +87,7 @@ interface ProcessorContext extends Input {
 
 type StreamEvent = LLMEvent
 
-export class Service extends Context.Service<Service, Interface>()("@opencode/SessionProcessor") {}
+export class Service extends Context.Service<Service, Interface>()("@mindsparq/SessionProcessor") {}
 
 export const layer = Layer.effect(
   Service,

@@ -1,6 +1,6 @@
 import { createSignal, Show } from "solid-js"
-import { Button } from "@opencode-ai/ui/button"
-import { Card } from "@opencode-ai/ui/card"
+import { Button } from "@mindsparq-ai/ui/button"
+import { Card } from "@mindsparq-ai/ui/card"
 
 type AuthDialogProps = {
   onClose: () => void

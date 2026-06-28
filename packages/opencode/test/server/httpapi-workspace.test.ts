@@ -2,16 +2,16 @@ import { afterEach, describe, expect, mock } from "bun:test"
 import { mkdir } from "node:fs/promises"
 import path from "node:path"
 import { Effect, Layer, Stream } from "effect"
-import { Flag } from "@opencode-ai/core/flag/flag"
+import { Flag } from "@mindsparq-ai/core/flag/flag"
 import { registerAdapter } from "../../src/control-plane/adapters"
-import { WorkspaceV2 } from "@opencode-ai/core/workspace"
+import { WorkspaceV2 } from "@mindsparq-ai/core/workspace"
 import type { WorkspaceAdapter } from "../../src/control-plane/types"
 import { Workspace } from "../../src/control-plane/workspace"
 import { WorkspacePaths } from "../../src/server/routes/instance/httpapi/groups/workspace"
 import { EventPaths } from "../../src/server/routes/instance/httpapi/groups/event"
 import { Session } from "@/session/session"
-import { Database } from "@opencode-ai/core/database/database"
-import { Ripgrep } from "@opencode-ai/core/ripgrep"
+import { Database } from "@mindsparq-ai/core/database/database"
+import { Ripgrep } from "@mindsparq-ai/core/ripgrep"
 import { Server } from "../../src/server/server"
 import { resetDatabase } from "../fixture/db"
 import { disposeAllInstances, provideInstance, tmpdirScoped } from "../fixture/fixture"
@@ -48,7 +48,7 @@ function requestDefault(path: string, directory: string, init: RequestInit = {})
 
 function requestServer(path: string, directory: string, init: RequestInit = {}) {
   const headers = new Headers(init.headers)
-  headers.set("x-opencode-directory", directory)
+  headers.set("x-mindsparq-directory", directory)
   return Effect.promise(() => Promise.resolve(Server.Default().app.request(path, { ...init, headers })))
 }
 
@@ -404,9 +404,9 @@ describe("workspace HttpApi", () => {
           headers: {
             "accept-encoding": "br",
             "content-type": "application/json",
-            "x-opencode-workspace": "internal",
+            "x-mindsparq-workspace": "internal",
           },
-          body: JSON.stringify({ $schema: "https://opencode.ai/config.json" }),
+          body: JSON.stringify({ $schema: "https://mindsparq.ai/config.json" }),
         })
 
         const responseBody = yield* response.text
@@ -423,11 +423,11 @@ describe("workspace HttpApi", () => {
               "content-type": "application/json",
               "x-target-auth": "secret",
             }),
-            body: JSON.stringify({ $schema: "https://opencode.ai/config.json" }),
+            body: JSON.stringify({ $schema: "https://mindsparq.ai/config.json" }),
           },
         ])
-        expect(forwarded[0]?.headers).not.toHaveProperty("x-opencode-directory")
-        expect(forwarded[0]?.headers).not.toHaveProperty("x-opencode-workspace")
+        expect(forwarded[0]?.headers).not.toHaveProperty("x-mindsparq-directory")
+        expect(forwarded[0]?.headers).not.toHaveProperty("x-mindsparq-workspace")
 
         const eventURL = new URL(`http://localhost${EventPaths.event}`)
         eventURL.searchParams.set("workspace", workspace.id)

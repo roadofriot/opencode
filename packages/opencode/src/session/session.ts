@@ -1,19 +1,19 @@
-import { LayerNode } from "@opencode-ai/core/effect/layer-node"
-import { PermissionV1 } from "@opencode-ai/core/v1/permission"
-import { Slug } from "@opencode-ai/core/util/slug"
-import { SessionV1 } from "@opencode-ai/core/v1/session"
-import { serviceUse } from "@opencode-ai/core/effect/service-use"
+import { LayerNode } from "@mindsparq-ai/core/effect/layer-node"
+import { PermissionV1 } from "@mindsparq-ai/core/v1/permission"
+import { Slug } from "@mindsparq-ai/core/util/slug"
+import { SessionV1 } from "@mindsparq-ai/core/v1/session"
+import { serviceUse } from "@mindsparq-ai/core/effect/service-use"
 import path from "path"
 import { BackgroundJob } from "@/background/job"
 import { Decimal } from "decimal.js"
-import type { ProviderMetadata, Usage } from "@opencode-ai/llm"
-import { InstallationVersion } from "@opencode-ai/core/installation/version"
-import { Database } from "@opencode-ai/core/database/database"
-import { makeRuntime } from "@opencode-ai/core/effect/runtime"
+import type { ProviderMetadata, Usage } from "@mindsparq-ai/llm"
+import { InstallationVersion } from "@mindsparq-ai/core/installation/version"
+import { Database } from "@mindsparq-ai/core/database/database"
+import { makeRuntime } from "@mindsparq-ai/core/effect/runtime"
 import { EventV2Bridge } from "@/event-v2-bridge"
-import { EventV2 } from "@opencode-ai/core/event"
-import { SessionV2 } from "@opencode-ai/core/session"
-import { SessionExecution } from "@opencode-ai/core/session/execution"
+import { EventV2 } from "@mindsparq-ai/core/event"
+import { SessionV2 } from "@mindsparq-ai/core/session"
+import { SessionExecution } from "@mindsparq-ai/core/session/execution"
 
 import { NotFoundError } from "@/storage/storage"
 import { eq } from "drizzle-orm"
@@ -27,24 +27,24 @@ import { inArray } from "drizzle-orm"
 import { lt } from "drizzle-orm"
 import { or } from "drizzle-orm"
 import type { SQL } from "drizzle-orm"
-import { PartTable, SessionTable } from "@opencode-ai/core/session/sql"
-import { ProjectTable } from "@opencode-ai/core/project/sql"
+import { PartTable, SessionTable } from "@mindsparq-ai/core/session/sql"
+import { ProjectTable } from "@mindsparq-ai/core/project/sql"
 import { MessageV2 } from "./message-v2"
 import type { InstanceContext } from "../project/instance-context"
 import { InstanceState } from "@/effect/instance-state"
 import { Snapshot } from "@/snapshot"
-import { ProjectV2 } from "@opencode-ai/core/project"
-import { WorkspaceV2 } from "@opencode-ai/core/workspace"
+import { ProjectV2 } from "@mindsparq-ai/core/project"
+import { WorkspaceV2 } from "@mindsparq-ai/core/workspace"
 import { SessionID, MessageID, PartID } from "./schema"
 
 import type { Provider } from "@/provider/provider"
 import { Permission } from "@/permission"
-import { Global } from "@opencode-ai/core/global"
+import { Global } from "@mindsparq-ai/core/global"
 import { Effect, Layer, Option, Context, Schema, Types } from "effect"
-import { NonNegativeInt, optionalOmitUndefined } from "@opencode-ai/core/schema"
+import { NonNegativeInt, optionalOmitUndefined } from "@mindsparq-ai/core/schema"
 import { RuntimeFlags } from "@/effect/runtime-flags"
-import { ProviderV2 } from "@opencode-ai/core/provider"
-import { ModelV2 } from "@opencode-ai/core/model"
+import { ProviderV2 } from "@mindsparq-ai/core/provider"
+import { ModelV2 } from "@mindsparq-ai/core/model"
 
 const runtime = makeRuntime(Database.Service, Database.defaultLayer)
 
@@ -376,7 +376,7 @@ export const Event = {
 
 export function plan(input: { slug: string; time: { created: number } }, instance: InstanceContext) {
   const base = instance.project.vcs
-    ? path.join(instance.worktree, ".opencode", "plans")
+    ? path.join(instance.worktree, ".mindsparq", "plans")
     : path.join(Global.Path.data, "plans")
   return path.join(base, [input.time.created, input.slug].join("-") + ".md")
 }
@@ -513,7 +513,7 @@ export interface Interface {
   ) => Effect.Effect<Option.Option<SessionV1.WithParts>, NotFound>
 }
 
-export class Service extends Context.Service<Service, Interface>()("@opencode/Session") {}
+export class Service extends Context.Service<Service, Interface>()("@mindsparq/Session") {}
 
 export const use = serviceUse(Service)
 

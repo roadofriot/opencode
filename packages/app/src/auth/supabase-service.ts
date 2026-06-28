@@ -1,5 +1,5 @@
-import { initSupabase, getClient, type SupabaseConfig } from "@opencode-ai/supabase/client"
-import { getCurrentUser, getSessionToken, onAuthStateChange, signOut as supabaseSignOut } from "@opencode-ai/supabase/auth"
+import { initSupabase, getClient, type SupabaseConfig } from "@mindsparq-ai/supabase/client"
+import { getCurrentUser, getSessionToken, onAuthStateChange, signOut as supabaseSignOut } from "@mindsparq-ai/supabase/auth"
 import type { AuthProvider, AuthUser } from "./types"
 
 let initialized = false
@@ -43,7 +43,7 @@ export async function signInWithSupabase(provider: AuthProvider): Promise<AuthUs
     return null
   }
 
-  const { signInWithProvider } = await import("@opencode-ai/supabase/auth")
+  const { signInWithProvider } = await import("@mindsparq-ai/supabase/auth")
   try {
     await signInWithProvider(provider)
   } catch (e) {

@@ -1,29 +1,29 @@
-import { LayerNode } from "@opencode-ai/core/effect/layer-node"
-import { httpClient } from "@opencode-ai/core/effect/layer-node-platform"
+import { LayerNode } from "@mindsparq-ai/core/effect/layer-node"
+import { httpClient } from "@mindsparq-ai/core/effect/layer-node-platform"
 import { Context, Effect, FiberMap, Iterable, Layer, Schema, Stream } from "effect"
-import { serviceUse } from "@opencode-ai/core/effect/service-use"
+import { serviceUse } from "@mindsparq-ai/core/effect/service-use"
 import { FetchHttpClient, HttpBody, HttpClient, HttpClientError, HttpClientRequest } from "effect/unstable/http"
-import { Database } from "@opencode-ai/core/database/database"
+import { Database } from "@mindsparq-ai/core/database/database"
 import { asc } from "drizzle-orm"
 import { eq } from "drizzle-orm"
 import { inArray } from "drizzle-orm"
 import { Project } from "@/project/project"
 import { GlobalBus } from "@/bus/global"
 import { Auth } from "@/auth"
-import { EventV2 } from "@opencode-ai/core/event"
+import { EventV2 } from "@mindsparq-ai/core/event"
 import { EventV2Bridge } from "@/event-v2-bridge"
-import { EventSequenceTable, EventTable } from "@opencode-ai/core/event/sql"
-import { FSUtil } from "@opencode-ai/core/fs-util"
+import { EventSequenceTable, EventTable } from "@mindsparq-ai/core/event/sql"
+import { FSUtil } from "@mindsparq-ai/core/fs-util"
 import { RuntimeFlags } from "@/effect/runtime-flags"
-import { ProjectV2 } from "@opencode-ai/core/project"
-import { Slug } from "@opencode-ai/core/util/slug"
-import { WorkspaceTable } from "@opencode-ai/core/control-plane/workspace.sql"
+import { ProjectV2 } from "@mindsparq-ai/core/project"
+import { Slug } from "@mindsparq-ai/core/util/slug"
+import { WorkspaceTable } from "@mindsparq-ai/core/control-plane/workspace.sql"
 import { getAdapter, registeredAdapters } from "./adapters"
 import { type Target, type WorkspaceInfo, WorkspaceInfo as WorkspaceInfoSchema } from "./types"
-import { WorkspaceV2 } from "@opencode-ai/core/workspace"
+import { WorkspaceV2 } from "@mindsparq-ai/core/workspace"
 import { Session } from "@/session/session"
 import { SessionPrompt } from "@/session/prompt"
-import { SessionTable } from "@opencode-ai/core/session/sql"
+import { SessionTable } from "@mindsparq-ai/core/session/sql"
 import { SessionID } from "@/session/schema"
 import { NotFoundError } from "@/storage/storage"
 import { errorData } from "@/util/error"
@@ -162,7 +162,7 @@ export interface Interface {
   readonly startWorkspaceSyncing: (projectID: ProjectV2.ID) => Effect.Effect<void>
 }
 
-export class Service extends Context.Service<Service, Interface>()("@opencode/Workspace") {}
+export class Service extends Context.Service<Service, Interface>()("@mindsparq/Workspace") {}
 
 export const use = serviceUse(Service)
 

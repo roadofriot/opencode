@@ -1,12 +1,12 @@
 import { createSignal, Show, createEffect, createMemo, For } from "solid-js"
-import { Button } from "@opencode-ai/ui/button"
+import { Button } from "@mindsparq-ai/ui/button"
 import { useAuth } from "@/context/auth"
-import { Avatar } from "@opencode-ai/ui/avatar"
+import { Avatar } from "@mindsparq-ai/ui/avatar"
 import { useGlobal } from "@/context/global"
 import { useServer, ServerConnection } from "@/context/server"
-import { getFilename } from "@opencode-ai/core/util/path"
+import { getFilename } from "@mindsparq-ai/core/util/path"
 import { useNavigate } from "@solidjs/router"
-import { base64Encode } from "@opencode-ai/core/util/encode"
+import { base64Encode } from "@mindsparq-ai/core/util/encode"
 
 type DialogProfileProps = {
   open: boolean

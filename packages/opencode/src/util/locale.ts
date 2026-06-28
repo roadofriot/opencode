@@ -1,2 +1,2 @@
-export * from "@opencode-ai/tui/util/locale"
-export { Locale } from "@opencode-ai/tui/util/locale"
+export * from "@mindsparq-ai/tui/util/locale"
+export { Locale } from "@mindsparq-ai/tui/util/locale"

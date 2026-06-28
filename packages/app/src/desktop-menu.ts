@@ -200,19 +200,19 @@ export const DESKTOP_MENU: DesktopMenu[] = [
     id: "help",
     label: "Help",
     items: [
-      { type: "item", label: "MindSparq AI Documentation", href: "https://opencode.ai/docs" },
-      { type: "item", label: "Community Discord", href: "https://discord.com/invite/opencode" },
+      { type: "item", label: "MindSparq AI Documentation", href: "https://mindsparq.ai/docs" },
+      { type: "item", label: "Community Discord", href: "https://discord.com/invite/mindsparq" },
       { type: "item", label: "Export Logs...", command: "logs.export" },
       { type: "separator" },
       {
         type: "item",
         label: "Share Feedback",
-        href: "https://github.com/anomalyco/opencode/issues/new?template=feature_request.yml",
+        href: "https://github.com/anomalyco/mindsparq/issues/new?template=feature_request.yml",
       },
       {
         type: "item",
         label: "Report a Bug",
-        href: "https://github.com/anomalyco/opencode/issues/new?template=bug_report.yml",
+        href: "https://github.com/anomalyco/mindsparq/issues/new?template=bug_report.yml",
       },
     ],
   },

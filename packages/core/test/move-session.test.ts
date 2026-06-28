@@ -4,20 +4,20 @@ import fs from "fs/promises"
 import path from "path"
 import { eq } from "drizzle-orm"
 import { Effect, Layer } from "effect"
-import { MoveSession } from "@opencode-ai/core/control-plane/move-session"
-import { Database } from "@opencode-ai/core/database/database"
-import { FSUtil } from "@opencode-ai/core/fs-util"
-import { Git } from "@opencode-ai/core/git"
-import { EventV2 } from "@opencode-ai/core/event"
-import { Project } from "@opencode-ai/core/project"
-import { ProjectTable } from "@opencode-ai/core/project/sql"
-import { ProjectDirectories } from "@opencode-ai/core/project/directories"
-import { AbsolutePath } from "@opencode-ai/core/schema"
-import { SessionV2 } from "@opencode-ai/core/session"
-import { SessionExecution } from "@opencode-ai/core/session/execution"
-import { SessionProjector } from "@opencode-ai/core/session/projector"
-import { SessionTable } from "@opencode-ai/core/session/sql"
-import { SessionStore } from "@opencode-ai/core/session/store"
+import { MoveSession } from "@mindsparq-ai/core/control-plane/move-session"
+import { Database } from "@mindsparq-ai/core/database/database"
+import { FSUtil } from "@mindsparq-ai/core/fs-util"
+import { Git } from "@mindsparq-ai/core/git"
+import { EventV2 } from "@mindsparq-ai/core/event"
+import { Project } from "@mindsparq-ai/core/project"
+import { ProjectTable } from "@mindsparq-ai/core/project/sql"
+import { ProjectDirectories } from "@mindsparq-ai/core/project/directories"
+import { AbsolutePath } from "@mindsparq-ai/core/schema"
+import { SessionV2 } from "@mindsparq-ai/core/session"
+import { SessionExecution } from "@mindsparq-ai/core/session/execution"
+import { SessionProjector } from "@mindsparq-ai/core/session/projector"
+import { SessionTable } from "@mindsparq-ai/core/session/sql"
+import { SessionStore } from "@mindsparq-ai/core/session/store"
 import { tmpdir } from "./fixture/tmpdir"
 import { testEffect } from "./lib/effect"
 
@@ -60,7 +60,7 @@ async function initRepo(directory: string) {
   await $`git config core.autocrlf false`.cwd(directory).quiet()
   await $`git config core.fsmonitor false`.cwd(directory).quiet()
   await $`git config commit.gpgsign false`.cwd(directory).quiet()
-  await $`git config user.email test@opencode.test`.cwd(directory).quiet()
+  await $`git config user.email test@mindsparq.test`.cwd(directory).quiet()
   await $`git config user.name Test`.cwd(directory).quiet()
   await fs.writeFile(path.join(directory, "tracked.txt"), "initial\n")
   await $`git add tracked.txt`.cwd(directory).quiet()

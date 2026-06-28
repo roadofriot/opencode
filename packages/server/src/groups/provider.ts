@@ -1,5 +1,5 @@
-import { ProviderV2 } from "@opencode-ai/core/provider"
-import { Location } from "@opencode-ai/core/location"
+import { ProviderV2 } from "@mindsparq-ai/core/provider"
+import { Location } from "@mindsparq-ai/core/location"
 import { Schema } from "effect"
 import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/unstable/httpapi"
 import { ProviderNotFoundError, ServiceUnavailableError } from "../errors"

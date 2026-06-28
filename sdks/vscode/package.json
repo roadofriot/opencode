@@ -1,12 +1,12 @@
 {
-  "name": "opencode",
+  "name": "mindsparq",
   "displayName": "opencode",
   "description": "opencode for VS Code",
   "version": "1.17.8",
   "publisher": "sst-dev",
   "repository": {
     "type": "git",
-    "url": "https://github.com/anomalyco/opencode"
+    "url": "https://github.com/mindsparq/mindsparq-ai"
   },
   "license": "MIT",
   "icon": "images/icon.png",

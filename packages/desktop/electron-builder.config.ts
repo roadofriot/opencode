@@ -10,10 +10,10 @@ const packageDir = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.resolve(packageDir, "../..")
 const signScript = path.join(rootDir, "script", "sign-windows.ps1")
 // The Electron 42 packaging update briefly installed Linux launchers/icons under
-// "opencode-desktop". Keep that hidden desktop entry around so existing GNOME/KDE
+// "mindsparq-desktop". Keep that hidden desktop entry around so existing GNOME/KDE
 // pins still resolve after the canonical app id changes back to MindSparQ.desktop.
-const legacyDesktopEntry = path.join(packageDir, "resources", "linux", "opencode-desktop.desktop")
-const legacyDesktopEntryFpm = `${legacyDesktopEntry}=/usr/share/applications/opencode-desktop.desktop`
+const legacyDesktopEntry = path.join(packageDir, "resources", "linux", "mindsparq-desktop.desktop")
+const legacyDesktopEntryFpm = `${legacyDesktopEntry}=/usr/share/applications/mindsparq-desktop.desktop`
 
 async function signWindows(configuration: { path: string }) {
   if (process.platform !== "win32") return
@@ -74,8 +74,8 @@ const getBase = (appId: string): Configuration => ({
     sign: true,
   },
   protocols: {
-    name: "OpenCode",
-    schemes: ["opencode"],
+    name: "MindSparQ AI",
+    schemes: ["mindsparq"],
   },
   win: {
     icon: `resources/icons/icon.ico`,
@@ -125,7 +125,7 @@ function getConfig() {
         appId,
         productName: "MindSparQ AI Beta",
         protocols: { name: "MindSparQ AI Beta", schemes: ["mindsparq"] },
-        publish: { provider: "github", owner: "anomalyco", repo: "opencode-beta", channel: "latest" },
+        publish: { provider: "github", owner: "anomalyco", repo: "mindsparq-beta", channel: "latest" },
         rpm: { packageName: "mindsparq-ai-beta" },
       }
     }
@@ -135,7 +135,7 @@ function getConfig() {
         appId,
         productName: "MindSparQ AI",
         protocols: { name: "MindSparQ AI", schemes: ["mindsparq"] },
-        publish: { provider: "github", owner: "anomalyco", repo: "opencode", channel: "latest" },
+        publish: { provider: "github", owner: "anomalyco", repo: "mindsparq", channel: "latest" },
         deb: { fpm: [legacyDesktopEntryFpm] },
         rpm: { packageName: "mindsparq-ai", fpm: [legacyDesktopEntryFpm] },
       }

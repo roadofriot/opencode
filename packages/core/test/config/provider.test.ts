@@ -1,12 +1,12 @@
 import { describe, expect } from "bun:test"
 import { Effect, Option, Schema } from "effect"
-import { Catalog } from "@opencode-ai/core/catalog"
-import { Config } from "@opencode-ai/core/config"
-import { ConfigProviderPlugin } from "@opencode-ai/core/config/plugin/provider"
-import { Integration } from "@opencode-ai/core/integration"
-import { ModelV2 } from "@opencode-ai/core/model"
-import { PluginV2 } from "@opencode-ai/core/plugin"
-import { ProviderV2 } from "@opencode-ai/core/provider"
+import { Catalog } from "@mindsparq-ai/core/catalog"
+import { Config } from "@mindsparq-ai/core/config"
+import { ConfigProviderPlugin } from "@mindsparq-ai/core/config/plugin/provider"
+import { Integration } from "@mindsparq-ai/core/integration"
+import { ModelV2 } from "@mindsparq-ai/core/model"
+import { PluginV2 } from "@mindsparq-ai/core/plugin"
+import { ProviderV2 } from "@mindsparq-ai/core/provider"
 import { it, withEnv } from "../plugin/provider-helper"
 
 function request(headers: Record<string, string>, variant?: string) {
@@ -24,7 +24,7 @@ describe("ConfigProviderPlugin.Plugin", () => {
       const catalog = yield* Catalog.Service
       const integrations = yield* Integration.Service
       const plugin = yield* PluginV2.Service
-      const providerID = ProviderV2.ID.opencode
+      const providerID = ProviderV2.ID.mindsparq
       const modelID = ModelV2.ID.make("alpha-gpt-next")
       const config = Config.Service.of({
         entries: () =>
@@ -33,8 +33,8 @@ describe("ConfigProviderPlugin.Plugin", () => {
               type: "document",
               info: decode({
                 providers: {
-                  opencode: {
-                    api: { type: "aisdk", package: "@ai-sdk/openai", url: "https://opencode.test/v1" },
+                  mindsparq: {
+                    api: { type: "aisdk", package: "@ai-sdk/openai", url: "https://mindsparq.test/v1" },
                     models: {
                       "alpha-gpt-next": {
                         variants: [
@@ -85,7 +85,7 @@ describe("ConfigProviderPlugin.Plugin", () => {
       const catalog = yield* Catalog.Service
       const integrations = yield* Integration.Service
       const plugin = yield* PluginV2.Service
-      const providerID = ProviderV2.ID.opencode
+      const providerID = ProviderV2.ID.mindsparq
       const modelID = ModelV2.ID.make("alpha-gpt-next")
       const config = Config.Service.of({
         entries: () =>
@@ -94,8 +94,8 @@ describe("ConfigProviderPlugin.Plugin", () => {
               type: "document",
               info: decode({
                 providers: {
-                  opencode: {
-                    api: { type: "aisdk", package: "@ai-sdk/openai", url: "https://opencode.test/v1" },
+                  mindsparq: {
+                    api: { type: "aisdk", package: "@ai-sdk/openai", url: "https://mindsparq.test/v1" },
                   },
                 },
               }),
@@ -104,7 +104,7 @@ describe("ConfigProviderPlugin.Plugin", () => {
               type: "document",
               info: decode({
                 providers: {
-                  opencode: {
+                  mindsparq: {
                     models: {
                       "alpha-gpt-next": {
                         variants: [{ id: "high", body: { reasoningEffort: "high" } }],

@@ -1,8 +1,8 @@
 import { type Component, For, Show, createSignal, onMount, onCleanup } from "solid-js"
-import { Button } from "@opencode-ai/ui/button"
-import { Icon } from "@opencode-ai/ui/icon"
-import { Select } from "@opencode-ai/ui/select"
-import { useDialog } from "@opencode-ai/ui/context/dialog"
+import { Button } from "@mindsparq-ai/ui/button"
+import { Icon } from "@mindsparq-ai/ui/icon"
+import { Select } from "@mindsparq-ai/ui/select"
+import { useDialog } from "@mindsparq-ai/ui/context/dialog"
 import { useSettings } from "@/context/settings"
 import { WhisperTranscriber } from "@/utils/whisper-transcriber"
 import { SettingsList } from "./settings-list"
@@ -117,7 +117,7 @@ export const SettingsAIFeatures: Component = () => {
       title: "Multi-Agent Loop Engineering",
       badge: "Advanced",
       description:
-        "OpenCode supports running multiple specialized agents in parallel. Use the agent selector in the chat prompt bar to switch between \"build\", \"research\", and custom agent modes. Agents can be chained through tool calls and MCP servers to create complex automated workflows.",
+        "MindSparQ AI supports running multiple specialized agents in parallel. Use the agent selector in the chat prompt bar to switch between \"build\", \"research\", and custom agent modes. Agents can be chained through tool calls and MCP servers to create complex automated workflows.",
       actions: [
         {
           label: "Open Agent Selector",
@@ -151,7 +151,7 @@ export const SettingsAIFeatures: Component = () => {
       title: "Anthropic Claude Skills",
       badge: "Claude",
       description:
-        "Claude Skills let you define reusable, parameterized capabilities that Claude can invoke across conversations. Skills are defined as structured prompts with typed inputs and can call tools, perform web searches, read files, or chain other agents. Configure them in your OpenCode config file under the `skills` section.",
+        "Claude Skills let you define reusable, parameterized capabilities that Claude can invoke across conversations. Skills are defined as structured prompts with typed inputs and can call tools, perform web searches, read files, or chain other agents. Configure them in your MindSparQ AI config file under the `skills` section.",
       actions: [
         {
           label: "Claude Skills Docs",
@@ -175,7 +175,7 @@ export const SettingsAIFeatures: Component = () => {
       title: "Groq, xAI (Grok), OpenRouter & More",
       badge: "Multi-Provider",
       description:
-        "OpenCode connects to any OpenAI-compatible provider. In Settings → Providers, you can add API keys for Anthropic Claude, Google Gemini, Groq (ultra-fast LLaMA), OpenRouter (multi-model gateway), xAI Grok, and many more. Each provider has its own API key format which is validated before saving.",
+        "MindSparQ AI connects to any OpenAI-compatible provider. In Settings → Providers, you can add API keys for Anthropic Claude, Google Gemini, Groq (ultra-fast LLaMA), OpenRouter (multi-model gateway), xAI Grok, and many more. Each provider has its own API key format which is validated before saving.",
       actions: [
         {
           label: "Manage Providers",

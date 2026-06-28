@@ -1,11 +1,11 @@
 import { createSignal, Show, onMount } from "solid-js"
-import { Button } from "@opencode-ai/ui/button"
-import { Card } from "@opencode-ai/ui/card"
-import { Mark } from "@opencode-ai/ui/logo"
+import { Button } from "@mindsparq-ai/ui/button"
+import { Card } from "@mindsparq-ai/ui/card"
+import { Mark } from "@mindsparq-ai/ui/logo"
 import { useAuth } from "@/context/auth"
 import type { AuthProvider } from "@/auth/types"
 import { isSupabaseConfigured } from "@/auth/supabase-service"
-import { showToast } from "@opencode-ai/ui/toast"
+import { showToast } from "@mindsparq-ai/ui/toast"
 
 export function LoginOverlay() {
   const auth = useAuth()
