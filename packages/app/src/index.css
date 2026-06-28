@@ -172,6 +172,23 @@
       opacity: 1;
     }
   }
+
+  @keyframes run-glow-pulse {
+    0%, 100% {
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.4), 0 0 16px rgba(34, 197, 94, 0.2);
+    }
+    50% {
+      box-shadow: 0 0 12px rgba(34, 197, 94, 0.6), 0 0 24px rgba(34, 197, 94, 0.3);
+    }
+  }
+}
+
+.run-debug-button.run-glow {
+  animation: run-glow-pulse 2s ease-in-out infinite;
+}
+
+.run-debug-dropdown {
+  transition: background-color 0.15s ease;
 }
 
 /* Force show scrollbars override */

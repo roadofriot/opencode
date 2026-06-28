@@ -8,6 +8,7 @@ import { type ComponentProps, createEffect, createMemo, onCleanup, onMount, spli
 import { SerializeAddon } from "@/addons/serialize"
 import { matchKeybind, parseKeybind } from "@/context/command"
 import { useLanguage } from "@/context/language"
+import { flushTerminalCommands } from "@/context/terminal"
 import { usePlatform } from "@/context/platform"
 import { useSDK } from "@/context/sdk"
 import { useServer } from "@/context/server"
@@ -551,6 +552,10 @@ export const Terminal = (props: TerminalProps) => {
           tries = 0
           local.onConnect?.()
           scheduleSize(t.cols, t.rows)
+          const pending = flushTerminalCommands(id)
+          for (const cmd of pending) {
+            term?.paste(cmd + "\n")
+          }
         }
 
         const handleMessage = (event: MessageEvent) => {

@@ -28,6 +28,7 @@ import { StatusPopover, StatusPopoverV2 } from "../status-popover"
 import { IconButtonV2 } from "@opencode-ai/ui/v2/icon-button-v2"
 import { Icon as IconV2 } from "@opencode-ai/ui/v2/icon"
 import { toggleRunPanel } from "@/utils/run-panel-events"
+import { RunDebugButton } from "@/components/run-debug-button"
 
 const OPEN_APPS = [
   "vscode",
@@ -206,13 +207,7 @@ export function SessionHeader() {
   })
 
   const toggleTerminal = () => {
-    const next = !view().terminal.opened()
-    view().terminal.toggle()
-    if (!next) return
-
-    const id = terminal.active()
-    if (!id) return
-    focusTerminalById(id)
+    layout.bottomPanel.toggle("terminal")
   }
 
   const [prefs, setPrefs] = persisted(Persist.global("open.app"), createStore({ app: "finder" as OpenApp }))
@@ -239,6 +234,7 @@ export function SessionHeader() {
     reviewKeybind: command.keybind("review.toggle"),
     reviewOpened: view().reviewPanel.opened(),
     onReviewToggle: () => view().reviewPanel.toggle(),
+    directory: params.dir,
   }))
 
   const selectApp = (app: OpenApp) => {
@@ -452,10 +448,10 @@ export function SessionHeader() {
                         class="group/terminal-toggle titlebar-icon w-8 h-6 p-0 box-border shrink-0"
                         onClick={toggleTerminal}
                         aria-label={language.t("command.terminal.toggle")}
-                        aria-expanded={view().terminal.opened()}
-                        aria-controls="terminal-panel"
+                        aria-expanded={layout.bottomPanel.opened() && layout.bottomPanel.activeTab() === "terminal"}
+                        aria-controls="bottom-panel"
                       >
-                        <Icon size="small" name={view().terminal.opened() ? "terminal-active" : "terminal"} />
+                        <Icon size="small" name={layout.bottomPanel.opened() && layout.bottomPanel.activeTab() === "terminal" ? "terminal-active" : "terminal"} />
                       </Button>
                     </TooltipKeybind>
 
@@ -501,21 +497,9 @@ export function SessionHeader() {
                         </Button>
                       </TooltipKeybind>
 
-                      <TooltipKeybind
-                        title={language.t("command.run.toggle")}
-                        keybind=""
-                      >
-                        <Button
-                          variant="ghost"
-                          class="titlebar-icon w-8 h-6 p-0 box-border"
-                          onClick={() => toggleRunPanel()}
-                          aria-label={language.t("command.run.toggle")}
-                        >
-                          <div class="relative flex items-center justify-center size-4">
-                            <Icon size="small" name="terminal" />
-                          </div>
-                        </Button>
-                      </TooltipKeybind>
+                      <RunDebugButton
+                        directory={params.dir}
+                      />
                     </div>
                   </div>
                 </div>
@@ -537,11 +521,15 @@ type SessionHeaderV2ActionsState = {
   reviewKeybind: string
   reviewOpened: boolean
   onReviewToggle: () => void
+  directory?: string
 }
 
 function SessionHeaderV2Actions(props: { state: SessionHeaderV2ActionsState }) {
   return (
     <div class="flex items-center gap-2">
+      <RunDebugButton
+        directory={props.state.directory}
+      />
       <Show when={props.state.statusVisible}>
         <Tooltip placement="bottom" value={props.state.statusLabel}>
           <StatusPopoverV2 />

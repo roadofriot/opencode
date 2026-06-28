@@ -77,6 +77,38 @@ const icons = {
     viewBox: "0 0 16 16",
     body: `<rect x="1.5" y="2.5" width="13" height="9" rx="1" stroke="currentColor"/><path d="M5.5 13.5h5M8 11.5v2" stroke="currentColor" stroke-linecap="round"/>`,
   },
+  terminal: {
+    viewBox: "0 0 20 20",
+    body: `<path d="M1.66663 5L7.49996 10L1.66663 15" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.8333 15H18.3333" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
+  "terminal-active": {
+    viewBox: "0 0 20 20",
+    body: `<path d="M1.66663 5L7.49996 10L1.66663 15" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.8333 15H18.3333" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/><path d="M1.66663 5L7.49996 10L1.66663 15" fill="currentColor"/><path d="M10.8333 15H18.3333" fill="currentColor"/>`,
+  },
+  person_outline: {
+    viewBox: "0 0 20 20",
+    body: `<path d="M10 9C11.6569 9 13 7.65685 13 6C13 4.34315 11.6569 3 10 3C8.34315 3 7 4.34315 7 6C7 7.65685 8.34315 9 10 9Z" stroke="currentColor"/><path d="M16 17C16 14.2386 13.3137 12 10 12C6.68629 12 4 14.2386 4 17V18H16V17Z" stroke="currentColor"/><path d="M18 18V17C18 15.4477 16.821 14.0524 15.1707 13.1716" stroke="currentColor" stroke-linecap="round"/><path d="M18 8V10" stroke="currentColor" stroke-linecap="round"/><path d="M17 9H19" stroke="currentColor" stroke-linecap="round"/>`,
+  },
+  developer_mode: {
+    viewBox: "0 0 20 20",
+    body: `<path d="M7.5 14L3.5 10L7.5 6M12.5 14L16.5 10L12.5 6" stroke="currentColor" stroke-linecap="square"/>`,
+  },
+  bug: {
+    viewBox: "0 0 20 20",
+    body: `<path d="M8 2L8 4M8 14L8 16M2 8L4 8M14 8L16 8M3.75736 3.75736L5.17157 5.17157M10.8284 10.8284L12.2426 12.2426M3.75736 12.2426L5.17157 10.8284M10.8284 5.17157L12.2426 3.75736" stroke="currentColor" stroke-linecap="round"/><path d="M5 6C5 4.34315 6.34315 3 8 3C9.65685 3 11 4.34315 11 6V10C11 11.6569 9.65685 13 8 13C6.34315 13 5 11.6569 5 10V6Z" stroke="currentColor"/><path d="M4 8H2V10C2 11.6569 3.34315 13 5 13" stroke="currentColor" stroke-linecap="round"/><path d="M12 8H14V10C14 11.6569 12.6569 13 11 13" stroke="currentColor" stroke-linecap="round"/>`,
+  },
+  "scroll-text": {
+    viewBox: "0 0 20 20",
+    body: `<path d="M5 2H14V16H5V2Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 6H12M9 9H12M9 12H10" stroke="currentColor" stroke-linecap="round"/><path d="M3 6L5 4L3 2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 16L5 18L3 20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
+  "play-circle": {
+    viewBox: "0 0 20 20",
+    body: `<path d="M8 14C11.3137 14 14 11.3137 14 8C14 4.68629 11.3137 2 8 2C4.68629 2 2 4.68629 2 8C2 11.3137 4.68629 14 8 14Z" stroke="currentColor"/><path d="M6.5 5.5L11 8L6.5 10.5V5.5Z" fill="currentColor"/>`,
+  },
+  network: {
+    viewBox: "0 0 20 20",
+    body: `<circle cx="8" cy="4" r="1.5" stroke="currentColor"/><circle cx="4" cy="10" r="1.5" stroke="currentColor"/><circle cx="12" cy="10" r="1.5" stroke="currentColor"/><circle cx="8" cy="14" r="1.5" stroke="currentColor"/><path d="M8 5.5V8.5M5.5 9.5L6.5 5.5M10.5 9.5L9.5 5.5M5.5 10.5V12.5L8 12.5M10.5 10.5V12.5L8 12.5" stroke="currentColor" stroke-linecap="round"/>`,
+  },
 }
 
 const spriteID = "opencode-v2-icon-sprite"

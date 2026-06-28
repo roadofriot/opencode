@@ -101,6 +101,22 @@ type TerminalCacheEntry = {
 }
 
 const caches = new Set<Map<string, TerminalCacheEntry>>()
+const pendingCommands = new Map<string, string[]>()
+
+export function sendTerminalCommand(terminalId: string, command: string) {
+  const queue = pendingCommands.get(terminalId)
+  if (queue) {
+    queue.push(command)
+  } else {
+    pendingCommands.set(terminalId, [command])
+  }
+}
+
+export function flushTerminalCommands(terminalId: string): string[] {
+  const commands = pendingCommands.get(terminalId) ?? []
+  pendingCommands.delete(terminalId)
+  return commands
+}
 
 const trimTerminal = (pty: LocalPTY) => {
   if (!pty.buffer && pty.cursor === undefined && pty.scrollY === undefined) return pty

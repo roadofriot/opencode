@@ -392,6 +392,15 @@ export default function FileTree(props: {
           const kind = () => visibleKind(node, kinds(), marks())
           const active = () => !!kind() && !node.ignored
 
+          let lastToggle = 0
+          const handleOpenChange = (open: boolean) => {
+            const now = Date.now()
+            if (now - lastToggle < 200) return
+            lastToggle = now
+            if (open) file.tree.expand(node.path)
+            else file.tree.collapse(node.path)
+          }
+
           return (
             <Switch>
               <Match when={node.type === "directory"}>
@@ -401,7 +410,7 @@ export default function FileTree(props: {
                   data-scope="filetree"
                   forceMount={false}
                   open={expanded()}
-                  onOpenChange={(open) => (open ? file.tree.expand(node.path) : file.tree.collapse(node.path))}
+                  onOpenChange={handleOpenChange}
                 >
                   <Collapsible.Trigger>
                     <FileTreeNode

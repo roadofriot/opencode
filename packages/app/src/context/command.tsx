@@ -13,7 +13,15 @@ const IS_MAC = typeof navigator === "object" && /(Mac|iPod|iPhone|iPad)/.test(na
 const PALETTE_ID = "command.palette"
 const DEFAULT_PALETTE_KEYBIND = "mod+shift+p"
 const SUGGESTED_PREFIX = "suggested."
-const EDITABLE_KEYBIND_IDS = new Set(["terminal.toggle", "terminal.new", "file.attach"])
+const EDITABLE_KEYBIND_IDS = new Set([
+  "terminal.toggle",
+  "terminal.new",
+  "file.attach",
+  "bottomPanel.problems",
+  "bottomPanel.output",
+  "bottomPanel.debug",
+  "bottomPanel.ports",
+])
 
 type KeyLabel =
   | "common.key.ctrl"

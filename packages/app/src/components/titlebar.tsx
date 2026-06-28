@@ -827,7 +827,7 @@ function TitlebarV2Right(props: { state: TitlebarV2RightState }) {
             variant="ghost-muted"
             size="large"
             class="!w-9 shrink-0"
-            icon={<IconV2 name="brain" />}
+            icon={<IconV2 name="person_outline" />}
             onClick={() => auth.setShowLogin(true)}
             aria-label="Sign In"
           />
@@ -898,7 +898,7 @@ function LegacyTitlebarRight() {
             onClick={() => auth.setShowLogin(true)}
             aria-label="Sign In"
           >
-            <Icon size="small" name="brain" />
+            <Icon size="small" name="person_outline" />
           </Button>
         </Tooltip>
       </Show>

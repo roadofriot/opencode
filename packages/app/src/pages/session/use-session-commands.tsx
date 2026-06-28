@@ -246,7 +246,7 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
 
   const openTerminal = () => {
     if (terminal.all().length > 0) terminal.new()
-    view().terminal.open()
+    layout.bottomPanel.open("terminal")
   }
 
   const chooseModel = () => {
@@ -455,7 +455,31 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
       title: language.t("command.terminal.toggle"),
       keybind: "ctrl+`",
       slash: "terminal",
-      onSelect: () => view().terminal.toggle(),
+      onSelect: () => layout.bottomPanel.toggle("terminal"),
+    }),
+    viewCommand({
+      id: "bottomPanel.problems",
+      title: "Toggle Problems Panel",
+      keybind: "ctrl+shift+m",
+      onSelect: () => layout.bottomPanel.toggle("problems"),
+    }),
+    viewCommand({
+      id: "bottomPanel.output",
+      title: "Toggle Output Panel",
+      keybind: "ctrl+shift+u",
+      onSelect: () => layout.bottomPanel.toggle("output"),
+    }),
+    viewCommand({
+      id: "bottomPanel.debug",
+      title: "Toggle Debug Console",
+      keybind: "ctrl+shift+y",
+      onSelect: () => layout.bottomPanel.toggle("debug"),
+    }),
+    viewCommand({
+      id: "bottomPanel.ports",
+      title: "Toggle Ports Panel",
+      keybind: "ctrl+shift+p",
+      onSelect: () => layout.bottomPanel.toggle("ports"),
     }),
     viewCommand({
       id: "review.toggle",

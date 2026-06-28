@@ -61,6 +61,7 @@ import { useServer } from "@/context/server"
 import { syncSessionModel } from "@/pages/session/session-model-helpers"
 import { SessionSidePanel } from "@/pages/session/session-side-panel"
 import { TerminalPanel } from "@/pages/session/terminal-panel"
+import { BottomPanel } from "@/pages/session/bottom-panel/bottom-panel"
 import { RunPanel } from "@/pages/session/run-panel"
 import { useSessionCommands } from "@/pages/session/use-session-commands"
 import { useSessionHashScroll } from "@/pages/session/use-session-hash-scroll"
@@ -684,7 +685,7 @@ export default function Page() {
     }
 
     // Prefer the open terminal over the composer when it can take focus
-    if (view().terminal.opened()) {
+    if (layout.bottomPanel.opened() && layout.bottomPanel.activeTab() === "terminal") {
       const id = terminal.active()
       if (id && shouldFocusTerminalOnKeyDown(event) && focusTerminalById(id)) return
     }
@@ -1730,7 +1731,7 @@ export default function Page() {
         />
       </div>
 
-      <TerminalPanel />
+      <BottomPanel />
       <Show when={runPanelOpen()}>
         <RunPanel
           directory={params.dir ?? ""}

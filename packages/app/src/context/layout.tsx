@@ -26,6 +26,8 @@ const DEFAULT_SIDEBAR_WIDTH = 344
 const DEFAULT_FILE_TREE_WIDTH = 200
 const DEFAULT_SESSION_WIDTH = 600
 const DEFAULT_TERMINAL_HEIGHT = 280
+const DEFAULT_BOTTOM_PANEL_HEIGHT = 280
+export type BottomPanelTab = "terminal" | "problems" | "output" | "debug" | "ports"
 export type AvatarColorKey = (typeof AVATAR_COLOR_KEYS)[number]
 
 export function getAvatarColors(key?: string) {
@@ -259,6 +261,11 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
         terminal: {
           height: DEFAULT_TERMINAL_HEIGHT,
           opened: false,
+        },
+        bottomPanel: {
+          height: DEFAULT_BOTTOM_PANEL_HEIGHT,
+          opened: false,
+          activeTab: "terminal" as BottomPanelTab,
         },
         review: {
           diffStyle: "split" as ReviewDiffStyle,
@@ -630,6 +637,32 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
         height: createMemo(() => store.terminal.height),
         resize(height: number) {
           setStore("terminal", "height", height)
+        },
+      },
+      bottomPanel: {
+        height: createMemo(() => store.bottomPanel?.height ?? DEFAULT_BOTTOM_PANEL_HEIGHT),
+        opened: createMemo(() => store.bottomPanel?.opened ?? false),
+        activeTab: createMemo(() => store.bottomPanel?.activeTab ?? "terminal" as BottomPanelTab),
+        resize(height: number) {
+          setStore("bottomPanel", "height", height)
+        },
+        open(tab?: BottomPanelTab) {
+          if (tab) setStore("bottomPanel", "activeTab", tab)
+          setStore("bottomPanel", "opened", true)
+        },
+        close() {
+          setStore("bottomPanel", "opened", false)
+        },
+        toggle(tab?: BottomPanelTab) {
+          if (store.bottomPanel?.opened && (!tab || store.bottomPanel?.activeTab === tab)) {
+            setStore("bottomPanel", "opened", false)
+          } else {
+            if (tab) setStore("bottomPanel", "activeTab", tab)
+            setStore("bottomPanel", "opened", true)
+          }
+        },
+        setActiveTab(tab: BottomPanelTab) {
+          setStore("bottomPanel", "activeTab", tab)
         },
       },
       review: {

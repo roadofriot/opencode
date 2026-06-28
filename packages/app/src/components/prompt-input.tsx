@@ -2543,14 +2543,13 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                         variant="ghost"
                         class="size-7 p-0 box-border shrink-0"
                         onClick={() => {
-                          const sessionID = props.controls.session.id
-                          if (sessionID) layout.view(sessionID).terminal.toggle()
+                          layout.bottomPanel.toggle("terminal")
                         }}
                         aria-label={language.t("command.terminal.toggle")}
-                        aria-expanded={props.controls.session.id ? layout.view(props.controls.session.id).terminal.opened() : false}
-                        aria-controls="terminal-panel"
+                        aria-expanded={layout.bottomPanel.opened()}
+                        aria-controls="bottom-panel"
                       >
-                        <Icon name={props.controls.session.id && layout.view(props.controls.session.id).terminal.opened() ? "terminal-active" : "terminal"} />
+                        <Icon name={layout.bottomPanel.opened() ? "terminal-active" : "developer_mode"} />
                       </Button>
                     </TooltipKeybind>
                   </div>
