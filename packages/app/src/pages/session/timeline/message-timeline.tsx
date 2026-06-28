@@ -656,6 +656,7 @@ export function MessageTimeline(props: {
     mutationFn: (id: string) => serverSDK().client.session.share({ sessionID: id, directory: sdk().directory }),
     onError: (err) => {
       console.error("Failed to share session", err)
+      showToast({ title: language.t("common.requestFailed"), description: errorMessage(err) })
     },
   }))
 
@@ -663,6 +664,7 @@ export function MessageTimeline(props: {
     mutationFn: (id: string) => serverSDK().client.session.unshare({ sessionID: id, directory: sdk().directory }),
     onError: (err) => {
       console.error("Failed to unshare session", err)
+      showToast({ title: language.t("common.requestFailed"), description: errorMessage(err) })
     },
   }))
 

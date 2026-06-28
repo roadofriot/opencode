@@ -594,6 +594,7 @@ export const dict = {
   "home.sessions.search.sessions": "Sessions",
   "home.sessions.search.noResults": "No sessions found for {{query}}",
   "home.sessions.empty": "No sessions found",
+  "home.sessions.loadError": "Failed to load sessions",
   "home.sessions.empty.description": "Start a new session for this project",
   "home.sessions.group.today": "Today",
   "home.sessions.group.yesterday": "Yesterday",

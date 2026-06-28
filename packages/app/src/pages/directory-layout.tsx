@@ -31,7 +31,7 @@ export function DirectoryDataProvider(props: ParentProps<{ directory: string; dr
     (id) =>
       sync()
         .session.sync(id)
-        .catch(() => {}),
+        .catch((e) => console.error("Session sync failed", e)),
   )
 
   return (

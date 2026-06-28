@@ -42,7 +42,7 @@ export function DebugConsolePanel() {
     setHistoryIndex(-1)
 
     try {
-      const result = new Function(`return (${expr})`)()
+      const result = (0, eval)(`"use strict"; (${expr})`)
       addEntry("output", String(result))
     } catch (e) {
       addEntry("error", e instanceof Error ? e.message : String(e))

@@ -11,6 +11,7 @@ import {
   createMemo,
   createEffect,
   createComputed,
+  ErrorBoundary,
   on,
   onMount,
   untrack,
@@ -1345,7 +1346,7 @@ export default function Page() {
     busy(sessionID)
       ? sdk()
           .client.session.abort({ sessionID })
-          .catch(() => {})
+          .catch((e) => console.error("Session abort failed", e))
       : Promise.resolve()
 
   const revertMutation = useMutation(() => ({
@@ -1716,33 +1717,51 @@ export default function Page() {
           </Show>
         </div>
 
-        <SessionSidePanel
-          canReview={canReview}
-          diffs={reviewDiffs}
-          diffsReady={reviewReady}
-          empty={reviewEmptyText}
-          hasReview={hasReview}
-          reviewCount={reviewCount}
-          reviewPanel={reviewPanel}
-          activeDiff={tree.activeDiff}
-          focusReviewDiff={focusReviewDiff}
-          reviewSnap={ui.reviewSnap}
-          size={size}
-        />
+        <ErrorBoundary
+          fallback={
+            <div class="flex items-center justify-center p-4 text-text-weak text-13-regular">
+              Side panel error
+            </div>
+          }
+        >
+          <SessionSidePanel
+            canReview={canReview}
+            diffs={reviewDiffs}
+            diffsReady={reviewReady}
+            empty={reviewEmptyText}
+            hasReview={hasReview}
+            reviewCount={reviewCount}
+            reviewPanel={reviewPanel}
+            activeDiff={tree.activeDiff}
+            focusReviewDiff={focusReviewDiff}
+            reviewSnap={ui.reviewSnap}
+            size={size}
+          />
+        </ErrorBoundary>
       </div>
 
-      <BottomPanel />
+      <ErrorBoundary
+        fallback={
+          <div class="border-t border-border-base p-4 text-text-weak text-13-regular">
+            Bottom panel error
+          </div>
+        }
+      >
+        <BottomPanel />
+      </ErrorBoundary>
       <Show when={runPanelOpen()}>
-        <RunPanel
-          directory={params.dir ?? ""}
-          files={[]}
-          onRun={() => {
-            terminal.new()
-            const all = terminal.all()
-            const latest = all[all.length - 1]
-            if (latest) terminal.open(latest.id)
-          }}
-        />
+        <ErrorBoundary
+          fallback={
+            <div class="border-t border-border-base p-4 text-text-weak text-13-regular">
+              Run panel error
+            </div>
+          }
+        >
+          <RunPanel
+            directory={params.dir ?? ""}
+            files={tabState.openedTabs()}
+          />
+        </ErrorBoundary>
       </Show>
     </div>
   )

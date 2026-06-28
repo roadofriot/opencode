@@ -59,7 +59,7 @@ async function connectDerivedServices(supabaseToken: string, provider: AuthProvi
 
   const firebaseOk = await initFirebase()
   if (firebaseOk && supabaseToken) {
-    await signInToFirebase(supabaseToken).catch(() => {})
+    await signInToFirebase(supabaseToken).catch((e) => console.error("Firebase sign-in failed", e))
   }
 }
 
@@ -113,7 +113,7 @@ export async function signOut(): Promise<void> {
 
   if (isDesktop()) {
     const { default: desktopAuth } = await import("./desktop-auth")
-    await desktopAuth.signOut().catch(() => {})
+    await desktopAuth.signOut().catch((e) => console.error("Desktop sign-out failed", e))
   }
 
   await Promise.allSettled([signOutSupabase(), signOutFirebase()])

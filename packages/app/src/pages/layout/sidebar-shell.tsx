@@ -12,6 +12,7 @@ import { IconButton } from "@mindsparq-ai/ui/icon-button"
 import { Tooltip, TooltipKeybind } from "@mindsparq-ai/ui/tooltip"
 import { UserMenu } from "@/components/auth/user-menu"
 import { type LocalProject } from "@/context/layout"
+import { WorkspaceOverview } from "@/pages/layout/workspace-overview"
 
 export const SidebarContent = (props: {
   mobile?: boolean
@@ -117,10 +118,15 @@ export const SidebarContent = (props: {
         ref={(el) => {
           panel = el
         }}
-        classList={{ "flex-1 flex h-full min-h-0 min-w-0 overflow-hidden": true, "pointer-events-none": !expanded() }}
+        classList={{ "flex-1 flex flex-col h-full min-h-0 min-w-0 overflow-hidden": true, "pointer-events-none": !expanded() }}
         aria-hidden={!expanded()}
       >
-        {props.renderPanel()}
+        <div class="flex-1 min-h-0 overflow-hidden">
+          {props.renderPanel()}
+        </div>
+        <Show when={expanded()}>
+          <WorkspaceOverview />
+        </Show>
       </div>
     </div>
   )

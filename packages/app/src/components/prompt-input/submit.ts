@@ -252,7 +252,7 @@ export function createPromptSubmit(input: PromptSubmitInput) {
       .client.session.abort({
         sessionID,
       })
-      .catch(() => {})
+      .catch((e) => console.error("Session abort failed", e))
   }
 
   const restoreCommentItems = (items: CommentItem[]) => {

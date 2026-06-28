@@ -391,17 +391,18 @@ function HomeDesign() {
                 when={!sessionLoad.isLoading}
                 fallback={<HomeSessionSkeleton label={language.t("common.loading")} />}
               >
-                <Show
-                  when={groups().length > 0}
-                  fallback={
-                    <div class="flex min-w-0 flex-col gap-4">
-                      <HomeSessionGroupHeader
-                        title={language.t("home.sessions.empty")}
-                        onNewSession={newSessionProject() ? openNewSession : undefined}
-                      />
-                    </div>
-                  }
-                >
+                <Show when={!sessionLoad.error}>
+                  <Show
+                    when={groups().length > 0}
+                    fallback={
+                      <div class="flex min-w-0 flex-col gap-4">
+                        <HomeSessionGroupHeader
+                          title={language.t("home.sessions.empty")}
+                          onNewSession={newSessionProject() ? openNewSession : undefined}
+                        />
+                      </div>
+                    }
+                  >
                   <For each={groups()}>
                     {(group, index) => (
                       <div class="flex min-w-0 flex-col gap-4">
@@ -426,6 +427,12 @@ function HomeDesign() {
                   </For>
                 </Show>
               </Show>
+              <Show when={sessionLoad.error}>
+                <div class="flex min-w-0 flex-col gap-4">
+                  <HomeSessionGroupHeader title={language.t("home.sessions.loadError")} />
+                </div>
+              </Show>
+            </Show>
             </div>
           </ScrollView>
         </section>

@@ -3,7 +3,7 @@ import { defineConfig } from "electron-vite"
 import appPlugin from "@mindsparq-ai/app/vite"
 import * as fs from "node:fs/promises"
 
-const OPENCODE_SERVER_DIST = "../mindsparq/dist/node"
+const OPENCODE_SERVER_DIST = "../opencode/dist/node"
 
 const channel = (() => {
   const raw = process.env.OPENCODE_CHANNEL

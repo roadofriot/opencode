@@ -7,6 +7,8 @@ import { useTerminal, sendTerminalCommand } from "@/context/terminal"
 import { useLanguage } from "@/context/language"
 import { useLayout } from "@/context/layout"
 import { useSDK } from "@/context/sdk"
+import { ProjectBadge } from "@/components/project-badge"
+import { displayName } from "@/pages/layout/helpers"
 
 export interface RunDebugButtonProps {
   directory?: string
@@ -21,6 +23,9 @@ export function RunDebugButton(props: RunDebugButtonProps) {
   const [isOpen, setIsOpen] = createSignal(false)
   const [activeSection, setActiveSection] = createSignal<"targets" | "configs" | "recent">("targets")
   const [projectFiles, setProjectFiles] = createSignal<string[]>([])
+  // Multi-project: track which project is selected for run
+  const projects = createMemo(() => layout.projects.list())
+  const [selectedProjectDir, setSelectedProjectDir] = createSignal<string | undefined>(props.directory)
 
   onMount(() => {
     const dir = props.directory
@@ -31,7 +36,7 @@ export function RunDebugButton(props: RunDebugButtonProps) {
         const files = (x.data ?? []).map((f: any) => f.name ?? f.path ?? "")
         setProjectFiles(files)
       })
-      .catch(() => {})
+      .catch((e) => console.error("Failed to list project files", e))
   })
 
   const detectedFramework = createMemo(() => {
@@ -203,6 +208,16 @@ export function RunDebugButton(props: RunDebugButtonProps) {
               <Icon name="play-circle" size="small" class="text-green-500" />
               <span class="text-13-semibold text-text-base">Run & Debug</span>
               <div class="flex-1" />
+              {/* Manual refresh button — Feature 7 */}
+              <Button
+                variant="ghost"
+                size="small"
+                class="text-10-medium text-text-weaker hover:text-text-base"
+                onClick={() => run.refreshDevices?.()}
+                title="Refresh device list"
+              >
+                <Icon name="arrow-undo-down" size="small" />
+              </Button>
               <Show when={run.isRunning()}>
                 <Button
                   variant="ghost"
@@ -215,6 +230,36 @@ export function RunDebugButton(props: RunDebugButtonProps) {
                 </Button>
               </Show>
             </div>
+
+            {/* Projects section — Feature 6 */}
+            <Show when={projects().length > 1}>
+              <div data-component="run-level-2" class="px-3 py-2 border-b border-border-weaker-base">
+                <div class="text-10-medium text-text-weaker uppercase tracking-wider mb-1.5">Projects</div>
+                <div class="flex flex-wrap gap-1.5">
+                  <For each={projects()}>
+                    {(project) => {
+                      const dir = project.worktree
+                      const isSelected = createMemo(() => selectedProjectDir() === dir || (!selectedProjectDir() && dir === projects()[0]?.worktree))
+                      return (
+                        <button
+                          type="button"
+                          class="flex items-center gap-1 rounded-[5px] border px-2 py-1 text-[11px] font-medium transition-all duration-100"
+                          classList={{
+                            "ring-2 ring-offset-1 ring-offset-transparent opacity-100": isSelected(),
+                            "opacity-60 hover:opacity-100": !isSelected(),
+                          }}
+                          style={isSelected() ? { outline: "2px solid var(--accent-base)", "outline-offset": "1px" } : {}}
+                          onClick={() => setSelectedProjectDir(dir)}
+                          title={dir}
+                        >
+                          <ProjectBadge project={project} size="xs" />
+                        </button>
+                      )
+                    }}
+                  </For>
+                </div>
+              </div>
+            </Show>
 
             <Show when={detectedFramework()}>
               <div class="px-3 py-2 border-b border-border-weaker-base bg-surface-base">

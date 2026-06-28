@@ -286,7 +286,7 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
     if (sync().data.session_working(params.id ?? "")) {
       await sdk()
         .client.session.abort({ sessionID })
-        .catch(() => {})
+        .catch((e) => console.error("Session abort failed", e))
     }
 
     const revert = info()?.revert?.messageID

@@ -23,6 +23,7 @@ import { KeybindV2 } from "@mindsparq-ai/ui/v2/keybind-v2"
 import { TooltipV2 } from "@mindsparq-ai/ui/v2/tooltip-v2"
 
 import { getProjectAvatarVariant, LayoutRoute, useLayout, type LocalProject } from "@/context/layout"
+import { ProjectBadge, ActiveProjectChip } from "@/components/project-badge"
 import { usePlatform } from "@/context/platform"
 import { useCommand } from "@/context/command"
 import { useLanguage } from "@/context/language"
@@ -571,6 +572,32 @@ export function Titlebar(props: { update?: TitlebarUpdate }) {
                   />
                 </Show>
                 <div class="flex-1" />
+                {/* Active Project Chip — center indicator */}
+                <Show when={layout.projects.list().length > 0}>
+                  {(_) => {
+                    // Derive active project from current URL param
+                    const activeProject = createMemo(() => {
+                      const dir = params.dir ? decode64(params.dir) : undefined
+                      if (!dir) return layout.projects.list()[0]
+                      return layout.projects.list().find((p) => p.worktree === dir || p.sandboxes?.includes(dir)) ?? layout.projects.list()[0]
+                    })
+                    return (
+                      <div class="shrink-0 px-2">
+                        <ActiveProjectChip
+                          project={activeProject()}
+                          onClick={() => {
+                            const projects = layout.projects.list()
+                            if (projects.length <= 1) return
+                            const current = activeProject()?.worktree
+                            const idx = projects.findIndex((p) => p.worktree === current)
+                            const next = projects[(idx + 1) % projects.length]
+                            if (next) navigate(`/${base64Encode(next.worktree)}/session`)
+                          }}
+                        />
+                      </div>
+                    )
+                  }}
+                </Show>
                 <TitlebarV2Right state={v2RightState()} />
                 <Show when={windows() && !electronWindows()}>
                   <div data-tauri-decorum-tb class="flex flex-row" />
@@ -938,7 +965,7 @@ function TabNavItem(props: {
       return [props.sessionId, ctx] as const
     },
     async ([sessionId, dirSyncCtx]) => {
-      await dirSyncCtx.session.sync(sessionId).catch(() => {})
+      await dirSyncCtx.session.sync(sessionId).catch((e) => console.error("Session sync failed", e))
       return dirSyncCtx.session.get(sessionId)
     },
     { initialValue: props.sessionId ? dirSyncCtx()?.session.get(props.sessionId) : undefined },
@@ -965,9 +992,11 @@ function TabNavItem(props: {
                 event.preventDefault()
                 props.onNavigate()
               }}
-              class="flex h-full min-w-0 flex-1 flex-row items-center gap-1.5 text-[13px] font-medium text-v2-text-text-faint group-data-[active='true']:text-v2-text-text-base"
+              class="flex h-full min-w-0 flex-1 flex-row items-center gap-1 text-[13px] font-medium text-v2-text-text-faint group-data-[active='true']:text-v2-text-text-base"
+              data-component="tab-item"
+              data-active={props.active}
             >
-              <span data-slot="project-avatar-slot">
+              <span data-slot="project-avatar-slot" class="shrink-0">
                 <ProjectTabAvatar
                   project={project()}
                   directory={props.directory}
@@ -975,7 +1004,10 @@ function TabNavItem(props: {
                   activeServer={props.activeServer}
                 />
               </span>
-              <span class="min-w-0 flex-1">{session().title}</span>
+              <span data-slot="project-badge-in-tab" class="shrink-0">
+                <ProjectBadge project={project() as LocalProject | undefined} size="xs" />
+              </span>
+              <span class="min-w-0 flex-1 truncate">{session().title}</span>
             </a>
           )
         }}

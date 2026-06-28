@@ -21,10 +21,10 @@ const SEVERITY_COLORS: Record<ProblemSeverity, string> = {
   info: "text-blue-500",
 }
 
-const SEVERITY_ICONS: Record<ProblemSeverity, "close-small" | "close-small" | "close-small"> = {
-  error: "close-small",
-  warning: "close-small",
-  info: "close-small",
+const SEVERITY_ICONS: Record<ProblemSeverity, string> = {
+  error: "stop",
+  warning: "warning",
+  info: "circle-check",
 }
 
 export function ProblemsPanel() {

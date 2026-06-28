@@ -282,14 +282,14 @@ function createWorkspaceTerminalSession(
         setStore("all", [])
       })
     },
-    new() {
+    new(): Promise<string | undefined> {
       const nextNumber = pickNextTerminalNumber()
 
-      sdk.client.pty
+      return sdk.client.pty
         .create({ title: defaultTitle(nextNumber) })
         .then((pty: { data?: { id?: string; title?: string } }) => {
           const id = pty.data?.id
-          if (!id) return
+          if (!id) return undefined
           const newTerminal = {
             id,
             title: pty.data?.title ?? defaultTitle(nextNumber),
@@ -297,9 +297,11 @@ function createWorkspaceTerminalSession(
           }
           setStore("all", store.all.length, newTerminal)
           setStore("active", id)
+          return id
         })
         .catch((error: unknown) => {
           console.error("Failed to create terminal", error)
+          return undefined
         })
     },
     update(pty: Partial<LocalPTY> & { id: string }) {

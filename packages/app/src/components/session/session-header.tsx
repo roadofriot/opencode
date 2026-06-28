@@ -29,6 +29,8 @@ import { IconButtonV2 } from "@mindsparq-ai/ui/v2/icon-button-v2"
 import { Icon as IconV2 } from "@mindsparq-ai/ui/v2/icon"
 import { toggleRunPanel } from "@/utils/run-panel-events"
 import { RunDebugButton } from "@/components/run-debug-button"
+import { ProjectBadge } from "@/components/project-badge"
+import type { LocalProject } from "@/context/layout"
 
 const OPEN_APPS = [
   "vscode",
@@ -235,6 +237,7 @@ export function SessionHeader() {
     reviewOpened: view().reviewPanel.opened(),
     onReviewToggle: () => view().reviewPanel.toggle(),
     directory: params.dir,
+    project: project(),
   }))
 
   const selectApp = (app: OpenApp) => {
@@ -522,11 +525,25 @@ type SessionHeaderV2ActionsState = {
   reviewOpened: boolean
   onReviewToggle: () => void
   directory?: string
+  project?: LocalProject | null
 }
 
 function SessionHeaderV2Actions(props: { state: SessionHeaderV2ActionsState }) {
   return (
     <div class="flex items-center gap-2">
+      {/* Project context tag — Feature 2 */}
+      <Show when={props.state.project}>
+        {(proj) => (
+          <div
+            data-component="project-context-bar"
+            class="hidden md:flex items-center gap-1.5 shrink-0 border-r border-[var(--v2-border-border-muted)] pr-2 mr-0.5"
+            title={proj().worktree}
+          >
+            <span class="text-[11px] text-v2-text-text-muted whitespace-nowrap leading-none">Working on:</span>
+            <ProjectBadge project={proj() as LocalProject} size="xs" />
+          </div>
+        )}
+      </Show>
       <RunDebugButton
         directory={props.state.directory}
       />

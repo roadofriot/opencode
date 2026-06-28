@@ -3,7 +3,7 @@ import { Button } from "@mindsparq-ai/ui/button"
 import { Card } from "@mindsparq-ai/ui/card"
 import { IconButton } from "@mindsparq-ai/ui/icon-button"
 import { Tooltip } from "@mindsparq-ai/ui/tooltip"
-import { useTerminal } from "@/context/terminal"
+import { sendTerminalCommand, useTerminal } from "@/context/terminal"
 import { useLanguage } from "@/context/language"
 import { detectProjectLanguage } from "@/utils/filetype"
 import { getRunConfig, detectEntryFile, hasBuildFile } from "@/utils/run-config"
@@ -46,16 +46,12 @@ export function RunPanel(props: RunPanelProps) {
     return config.debugCommand
   })
 
-  function executeRun(command: string) {
+  async function executeRun(command: string) {
     setIsRunning(true)
-    terminal.new()
-
-    const allTerminals = terminal.all()
-    const latestTerminal = allTerminals[allTerminals.length - 1]
-    if (latestTerminal) {
-      terminal.open(latestTerminal.id)
+    const id = await terminal.new()
+    if (id) {
+      sendTerminalCommand(id, command)
     }
-
     props.onRun?.(command)
   }
 
