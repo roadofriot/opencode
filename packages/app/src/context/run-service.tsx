@@ -250,110 +250,123 @@ export const { use: useRunService, provider: RunServiceProvider } = createSimple
     const allTargets = createMemo<RunTarget[]>(() => {
       const targets: RunTarget[] = []
       const flutterConf = deviceStore.flutterConfig()
-      const flutterDevics = deviceStore.flutterDevices()
+      const flutterDevices = deviceStore.flutterDevices()
+      const detectedBrowsers = browserStore.browsers()
 
-      // Add discovered Flutter devices first
-      for (const dev of flutterDevics) {
-        let cat: RunTarget["category"] = "Desktop"
-        if (dev.platform === "android" || dev.platform === "ios") cat = "Mobile"
-        else if (dev.platform === "web") cat = "Web"
-        else if (["linux", "windows", "macos"].includes(dev.platform)) cat = "Desktop"
+      // Desktop Targets — always available when Flutter SDK is present
+      targets.push({
+        id: "linux-desktop",
+        name: "Linux Desktop",
+        type: "desktop",
+        platform: "linux",
+        available: true,
+        icon: "monitor",
+        category: "Desktop",
+        flutterId: "linux",
+      })
 
-        let icon = "play-circle"
-        if (dev.emulator || dev.simulator) icon = "play-circle"
-        else if (dev.platform === "android" || dev.platform === "ios") icon = "smartphone"
-        else if (dev.platform === "web") icon = "globe"
-        else if (["linux", "windows", "macos"].includes(dev.platform)) icon = "monitor"
+      targets.push({
+        id: "windows-desktop",
+        name: "Windows Desktop",
+        type: "desktop",
+        platform: "windows",
+        available: true,
+        icon: "monitor",
+        category: "Desktop",
+        flutterId: "windows",
+      })
 
+      targets.push({
+        id: "macos-desktop",
+        name: "macOS Desktop",
+        type: "desktop",
+        platform: "macos",
+        available: true,
+        icon: "monitor",
+        category: "Desktop",
+        flutterId: "macos",
+      })
+
+      // Mobile Targets
+      // Android Emulator
+      const activeAndroidEmulator = flutterDevices.find((d) => d.platform === "android" && d.emulator)
+      targets.push({
+        id: activeAndroidEmulator?.id ?? "android-emulator",
+        name: activeAndroidEmulator ? activeAndroidEmulator.name : "Android Emulator",
+        type: "emulator",
+        platform: "android",
+        available: !!activeAndroidEmulator,
+        icon: "smartphone",
+        category: "Mobile",
+        flutterId: activeAndroidEmulator?.id ?? "android",
+        isEmulator: true,
+      })
+
+      // Android Physical Device / Connected Android Device
+      const activeAndroidDevice = flutterDevices.find((d) => d.platform === "android" && !d.emulator)
+      targets.push({
+        id: activeAndroidDevice?.id ?? "android-device",
+        name: activeAndroidDevice ? activeAndroidDevice.name : "Android Physical Device",
+        type: "device",
+        platform: "android",
+        available: !!activeAndroidDevice,
+        icon: "smartphone",
+        category: "Mobile",
+        flutterId: activeAndroidDevice?.id ?? "android",
+      })
+
+      // iOS Simulator
+      const activeIosSimulator = flutterDevices.find((d) => d.platform === "ios" && d.simulator)
+      targets.push({
+        id: activeIosSimulator?.id ?? "ios-simulator",
+        name: activeIosSimulator ? activeIosSimulator.name : "iOS Simulator",
+        type: "emulator",
+        platform: "ios",
+        available: !!activeIosSimulator,
+        icon: "smartphone",
+        category: "Mobile",
+        flutterId: activeIosSimulator?.id ?? "ios",
+        isSimulator: true,
+      })
+
+      // Connected iPhone
+      const activeIosDevice = flutterDevices.find((d) => d.platform === "ios" && !d.simulator)
+      targets.push({
+        id: activeIosDevice?.id ?? "ios-device",
+        name: activeIosDevice ? activeIosDevice.name : "Connected iPhone",
+        type: "device",
+        platform: "ios",
+        available: !!activeIosDevice,
+        icon: "smartphone",
+        category: "Mobile",
+        flutterId: activeIosDevice?.id ?? "ios",
+      })
+
+      // Web Targets
+      const browsersList = ["chrome", "edge", "firefox", "safari"]
+      for (const browserId of browsersList) {
+        const activeBrowser = detectedBrowsers.find((b) => b.id === browserId)
+        const isDiscoveredWeb = flutterDevices.some((d) => d.platform === "web" && d.id === browserId)
+        const available = (activeBrowser?.available ?? false) || isDiscoveredWeb
+        const nameMap: Record<string, string> = {
+          chrome: "Google Chrome",
+          edge: "Microsoft Edge",
+          firefox: "Mozilla Firefox",
+          safari: "Safari",
+        }
         targets.push({
-          id: dev.id,
-          name: dev.name,
-          type: dev.emulator || dev.simulator ? "emulator" : "device",
-          platform: dev.platform,
-          available: true,
-          icon,
-          category: cat,
-          flutterId: dev.id,
-          isEmulator: dev.emulator,
-          isSimulator: dev.simulator,
-        })
-      }
-
-      // Add web browsers
-      for (const b of browserStore.browsers()) {
-        targets.push({
-          id: b.id,
-          name: b.name,
+          id: browserId,
+          name: nameMap[browserId] ?? browserId,
           type: "browser",
           platform: "web",
-          available: b.available,
+          available,
           icon: "globe",
           category: "Web",
-          flutterId: b.id,
+          flutterId: browserId,
         })
       }
 
-      // Add desktop targets based on Flutter config
-      const desktopTargets: RunTarget[] = []
-      if (flutterConf.enableLinuxDesktop) {
-        desktopTargets.push({
-          id: "linux-desktop",
-          name: "Linux Desktop",
-          type: "desktop",
-          platform: "linux",
-          available: true,
-          icon: "monitor",
-          category: "Desktop",
-          flutterId: "linux",
-        })
-      }
-      if (flutterConf.enableWindowsDesktop) {
-        desktopTargets.push({
-          id: "windows-desktop",
-          name: "Windows Desktop",
-          type: "desktop",
-          platform: "windows",
-          available: true,
-          icon: "monitor",
-          category: "Desktop",
-          flutterId: "windows",
-        })
-      }
-      if (flutterConf.enableMacosDesktop) {
-        desktopTargets.push({
-          id: "macos-desktop",
-          name: "macOS Desktop",
-          type: "desktop",
-          platform: "macos",
-          available: true,
-          icon: "monitor",
-          category: "Desktop",
-          flutterId: "macos",
-        })
-      }
-
-      // If no Flutter desktop targets enabled, show them as disabled
-      const hasFlutterDesktop = desktopTargets.length > 0
-      if (!hasFlutterDesktop) {
-        const platforms: Array<{ id: string; name: string; platform: string; flutterId: string }> = [
-          { id: "linux-desktop", name: "Linux Desktop", platform: "linux", flutterId: "linux" },
-          { id: "windows-desktop", name: "Windows Desktop", platform: "windows", flutterId: "windows" },
-          { id: "macos-desktop", name: "macOS Desktop", platform: "macos", flutterId: "macos" },
-        ]
-        for (const p of platforms) {
-          desktopTargets.push({
-            ...p,
-            type: "desktop",
-            available: false,
-            icon: "monitor",
-            category: "Desktop",
-          })
-        }
-      }
-
-      targets.push(...desktopTargets)
-
-      // Add terminal target
+      // Add terminal target always available
       targets.push({
         id: "terminal",
         name: "Terminal",

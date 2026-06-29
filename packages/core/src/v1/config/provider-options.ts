@@ -123,6 +123,22 @@ const openaiCompatible: Lowerer = {
   },
 }
 
+// Groq API rejects reasoning_effort for models that don't support it.
+// Only send reasoning_effort when the model explicitly supports reasoning.
+const groq: Lowerer = {
+  provider(options) {
+    return { ...direct(options, ["baseURL"]), url: string(options.baseURL) }
+  },
+  request(options) {
+    const result = clone(options)
+    if (options.reasoningEffort !== undefined && options.reasoningEffort !== "none") {
+      result.reasoning_effort = options.reasoningEffort
+    }
+    delete result.reasoningEffort
+    return result
+  },
+}
+
 const lowerers: Readonly<Record<string, Lowerer>> = {
   "@ai-sdk/openai": openai,
   "@ai-sdk/anthropic": anthropic,
@@ -134,7 +150,7 @@ const lowerers: Readonly<Record<string, Lowerer>> = {
   "@ai-sdk/openai-compatible": openaiCompatible,
   "@ai-sdk/cerebras": openaiCompatible,
   "@ai-sdk/deepinfra": openaiCompatible,
-  "@ai-sdk/groq": openaiCompatible,
+  "@ai-sdk/groq": groq,
   "@ai-sdk/mistral": openaiCompatible,
   "@ai-sdk/togetherai": openaiCompatible,
   "@ai-sdk/xai": openaiCompatible,

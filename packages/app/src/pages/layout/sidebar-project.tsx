@@ -12,6 +12,7 @@ import { useLanguage } from "@/context/language"
 import { useNotification } from "@/context/notification"
 import { ProjectIcon, SessionItem, type SessionItemProps } from "./sidebar-items"
 import { displayName, sortedRootSessions } from "./helpers"
+import { getProjectColors, colorKeyFromIconColor } from "@/utils/project-color"
 
 export type ProjectSidebarContext = {
   currentDir: Accessor<string>
@@ -145,6 +146,14 @@ const ProjectTile = (props: {
         onBlur={() => props.setOpen(false)}
       >
         <ProjectIcon project={props.project} notify working={props.isWorking()} />
+        {/* Active project status dot — Feature 4 */}
+        <Show when={props.active()}>
+          <span
+            class="project-status-dot absolute bottom-0.5 left-0.5 size-1.5 rounded-full ring-[1.5px] ring-[var(--background-base)]"
+            style={{ background: getProjectColors(colorKeyFromIconColor(props.project.icon?.color)).accent }}
+            aria-label="Active project"
+          />
+        </Show>
       </ContextMenu.Trigger>
       <ContextMenu.Portal>
         <ContextMenu.Content>

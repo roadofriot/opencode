@@ -44,6 +44,8 @@ export function classifyMessage(text: string): { class: "casual" | "simple" | "c
 
   if (text.length > 200) return { class: "complex", score: 0.6 }
 
+  if (text.split(/\s+/).length <= 20) return { class: "simple", score: 0.5 }
+
   return { class: "complex", score: 0.4 }
 }
 

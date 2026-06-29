@@ -991,9 +991,8 @@ export function variants(model: Provider.Model): Record<string, Record<string, a
 
     case "@ai-sdk/groq":
       // https://v5.ai-sdk.dev/providers/ai-sdk-providers/groq
-      const groqEffort = ["none", ...WIDELY_SUPPORTED_EFFORTS]
       return Object.fromEntries(
-        groqEffort.map((effort) => [
+        WIDELY_SUPPORTED_EFFORTS.map((effort) => [
           effort,
           {
             reasoningEffort: effort,

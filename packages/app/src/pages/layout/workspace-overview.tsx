@@ -133,26 +133,26 @@ export function WorkspaceOverview() {
           </Show>
 
           {/* AI Sessions (open tabs) */}
-          <Show when={openTabs.length > 0}>
+          <Show when={openTabs().length > 0}>
             <section>
               <p data-component="overview-section-header" class="text-v2-text-text-muted px-1 mb-1">
-                Sessions ({openTabs.length})
+                Sessions ({openTabs().length})
               </p>
               <div class="flex flex-col gap-0.5">
-                <For each={openTabs.slice(0, 4)}>
+                <For each={openTabs().slice(0, 4)}>
                   {(tab) => (
                     <div class="flex items-center gap-2 rounded-[5px] px-2 py-1">
                       <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true" class="shrink-0 opacity-50">
                         <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.2" />
                       </svg>
                       <span class="min-w-0 flex-1 truncate text-[12px] font-medium text-v2-text-text-base">
-                        {tab.type === "draft" ? "New Session" : tab.type === "session" ? tab.sessionId.slice(0, 8) + "…" : "Tab"}
+                        {tab.type === "draft" ? "New Session" : tab.type === "session" ? tab.sessionId.slice(0, 8) + "\u2026" : "Tab"}
                       </span>
                     </div>
                   )}
                 </For>
-                <Show when={openTabs.length > 4}>
-                  <p class="text-[11px] text-v2-text-text-muted opacity-50 px-2">+{openTabs.length - 4} more</p>
+                <Show when={openTabs().length > 4}>
+                  <p class="text-[11px] text-v2-text-text-muted opacity-50 px-2">+{openTabs().length - 4} more</p>
                 </Show>
               </div>
             </section>

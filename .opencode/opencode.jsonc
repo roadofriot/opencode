@@ -1,6 +1,44 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "provider": {},
+  "model": "groq/llama-3.3-70b-versatile",
+  "small_model": "groq/llama-3.1-8b-instant",
+  "provider": {
+    "groq": {
+      "options": {}
+    },
+    "cerebras": {
+      "options": {}
+    },
+    "deepinfra": {
+      "options": {}
+    },
+    "togetherai": {
+      "options": {}
+    }
+  },
+  "enabled_providers": ["groq", "cerebras", "deepinfra", "togetherai"],
+  "disabled_providers": [
+    "openai",
+    "anthropic",
+    "google",
+    "google-vertex",
+    "azure",
+    "amazon-bedrock",
+    "xai",
+    "mistral",
+    "cohere",
+    "perplexity",
+    "vercel",
+    "alibaba",
+    "nvidia",
+    "openrouter",
+    "github-copilot",
+    "venice-ai-sdk-provider",
+    "cloudflare-workers-ai",
+    "cloudflare-ai-gateway",
+    "snowflake-cortex",
+    "mindsparq"
+  ],
   "permission": {},
   "references": {
     "effect": {

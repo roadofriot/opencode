@@ -44,10 +44,8 @@ export function suggestVariant(messages: ModelMessage[], config: ClassifyConfig 
   const text = extractText(lastUserMessage)
   const classification = classifyMessage(text)
 
-  if (conversationLength <= config.shortConversationThreshold) {
-    if (classification.class === "casual") return "none"
-    if (classification.class === "simple") return "low"
-  }
+  if (classification.class === "casual") return "none"
+  if (classification.class === "simple") return "low"
 
   if (conversationLength > config.longConversationThreshold) {
     return "high"

@@ -75,10 +75,10 @@ export function RunPanel(props: RunPanelProps) {
       class="flex flex-col"
       classList={{
         "fixed inset-0 z-[9998] bg-background-base": isFullscreen(),
-        "border-t border-border-base": !isFullscreen(),
+        "border-t border-border-base bg-background-stronger": !isFullscreen(),
       }}
     >
-      <div class="flex items-center justify-between px-3 py-2 border-b border-border-base">
+      <div class="flex items-center justify-between px-3 py-2 border-b border-border-base bg-surface-base/30">
         <div class="flex items-center gap-2">
           <Show
             when={runConfig()}

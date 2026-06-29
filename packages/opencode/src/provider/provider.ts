@@ -1580,6 +1580,11 @@ export const layer = Layer.effect(
               delete provider.models[modelID]
             if (model.status === "alpha" && !runtimeFlags.enableExperimentalModels) delete provider.models[modelID]
             if (model.status === "deprecated") delete provider.models[modelID]
+            // Filter out non-chat models (e.g. whisper STT, audio-only models)
+            if (!model.capabilities.input.text || !model.capabilities.toolcall) {
+              delete provider.models[modelID]
+              continue
+            }
             if (
               (configProvider?.blacklist && configProvider.blacklist.includes(modelID)) ||
               (configProvider?.whitelist && !configProvider.whitelist.includes(modelID))

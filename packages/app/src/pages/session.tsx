@@ -1627,7 +1627,7 @@ export default function Page() {
           <div
             classList={{
               "flex-1 min-h-0 flex flex-col bg-background-stronger": true,
-              "rounded-[10px] overflow-hidden": settings.general.newLayoutDesigns(),
+              "rounded-[12px] overflow-hidden border border-border-weaker-base shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)]": settings.general.newLayoutDesigns(),
               "shadow-[var(--v2-elevation-raised)]": settings.general.newLayoutDesigns() && !!params.id,
             }}
           >

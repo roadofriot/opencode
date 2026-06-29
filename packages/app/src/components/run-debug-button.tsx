@@ -14,6 +14,23 @@ export interface RunDebugButtonProps {
   directory?: string
 }
 
+function generateFallbackCommand(target: { id: string; name: string; platform: string; flutterId?: string }, debug = false): string {
+  // For Flutter targets, generate flutter run command directly
+  if (target.platform === "linux" || target.platform === "windows" || target.platform === "macos") {
+    const flutterId = target.flutterId ?? target.platform
+    return debug ? `flutter run -d ${flutterId} --start-paused` : `flutter run -d ${flutterId}`
+  }
+  if (target.platform === "android" || target.platform === "ios") {
+    const flutterId = target.flutterId ?? target.platform
+    return debug ? `flutter run -d ${flutterId} --start-paused` : `flutter run -d ${flutterId}`
+  }
+  if (target.platform === "chrome" || target.platform === "firefox" || target.platform === "edge") {
+    return debug ? `flutter run -d ${target.platform} --start-paused` : `flutter run -d ${target.platform}`
+  }
+  // Non-flutter: echo what we'd run
+  return `echo 'Run on ${target.name}'`
+}
+
 export function RunDebugButton(props: RunDebugButtonProps) {
   const run = useRunService()
   const terminal = useTerminal()
@@ -56,10 +73,11 @@ export function RunDebugButton(props: RunDebugButtonProps) {
     const target = run.selectedTarget()
     const config = runCommand()
     if (config?.command) {
-      // Use the command from runConfig (which includes target-specific flutter command)
       executeCommand(config.command, { target: target?.id })
     } else if (target) {
-      executeCommand(`echo 'Run on ${target.name}'`, { target: target.id })
+      // Fallback: generate command from target even without framework detection
+      const cmd = generateFallbackCommand(target)
+      executeCommand(cmd, { target: target.id })
     } else {
       executeCommand("echo 'No run command configured. Open the dropdown to select a target.'")
     }
@@ -70,6 +88,9 @@ export function RunDebugButton(props: RunDebugButtonProps) {
     const target = run.selectedTarget()
     if (config?.debugCommand) {
       executeCommand(config.debugCommand, { debug: true, target: target?.id })
+    } else if (target) {
+      const cmd = generateFallbackCommand(target, true)
+      executeCommand(cmd, { debug: true, target: target.id })
     } else {
       executeCommand("echo 'No debug command configured.'", { debug: true })
     }
@@ -162,12 +183,12 @@ export function RunDebugButton(props: RunDebugButtonProps) {
       <div class="flex items-center">
         <Button
           variant="ghost"
-          class="run-debug-button group relative h-7 px-2.5 gap-1.5 text-12-medium rounded-l-[10px] rounded-r-none border-0"
+          class="run-debug-button group relative h-7 px-2.5 gap-1.5 text-12-medium rounded-l-[10px] rounded-r-none border-0 transition-all duration-150"
           classList={{
-            "bg-green-600 hover:bg-green-500 text-white": run.state() === "idle",
-            "bg-green-700 hover:bg-green-600 text-white": run.state() === "running",
-            "bg-amber-600 hover:bg-amber-500 text-white": run.state() === "debugging",
-            "bg-red-600 hover:bg-red-500 text-white": run.state() === "error",
+            "bg-green-600 hover:bg-green-500 text-white shadow-[0_0_8px_rgba(34,197,94,0.3)]": run.state() === "idle",
+            "bg-green-700 hover:bg-green-600 text-white shadow-[0_0_12px_rgba(34,197,94,0.4)]": run.state() === "running",
+            "bg-amber-600 hover:bg-amber-500 text-white shadow-[0_0_8px_rgba(245,158,11,0.3)]": run.state() === "debugging",
+            "bg-red-600 hover:bg-red-500 text-white shadow-[0_0_8px_rgba(239,68,68,0.3)]": run.state() === "error",
             "bg-gray-500 hover:bg-gray-400 text-white": run.state() === "stopped",
             "run-glow": run.state() === "running" || run.state() === "debugging",
           }}
@@ -182,7 +203,7 @@ export function RunDebugButton(props: RunDebugButtonProps) {
         <TargetSelector run={run} onRun={handleRun} />
         <Button
           variant="ghost"
-          class="run-debug-dropdown h-7 w-6 px-0 rounded-l-none rounded-r-[10px] border-0"
+          class="run-debug-dropdown h-7 w-6 px-0 rounded-l-none rounded-r-[10px] border-0 transition-all duration-150"
           classList={{
             "bg-green-600 hover:bg-green-500 text-white": run.state() === "idle",
             "bg-green-700 hover:bg-green-600 text-white": run.state() === "running",
@@ -200,11 +221,11 @@ export function RunDebugButton(props: RunDebugButtonProps) {
       <Show when={isOpen()}>
         <div class="fixed inset-0 z-40" onClick={close} />
         <Card
-          class="absolute top-full right-0 mt-1 z-50 w-[420px] max-h-[500px] overflow-hidden shadow-xl border border-border-weak-base"
+          class="absolute top-full right-0 mt-1 z-50 w-[420px] max-h-[500px] overflow-hidden shadow-xl border border-border-weak-base rounded-[12px]"
           style={{ "clip-path": "none" }}
         >
           <div class="flex flex-col">
-            <div class="flex items-center gap-2 px-3 py-2 border-b border-border-weaker-base">
+            <div class="flex items-center gap-2 px-3 py-2.5 border-b border-border-weaker-base bg-surface-base/50">
               <Icon name="play-circle" size="small" class="text-green-500" />
               <span class="text-13-semibold text-text-base">Run & Debug</span>
               <div class="flex-1" />
@@ -376,9 +397,7 @@ export function RunDebugButton(props: RunDebugButtonProps) {
 
 function TargetSelector(props: { run: ReturnType<typeof useRunService>; onRun: () => void }) {
   const [isOpen, setIsOpen] = createSignal(false)
-  const selectedTarget = props.run.selectedTarget()
   const targetsByCategory = props.run.targetsByCategory
-  const allTargets = props.run.allTargets()
 
   const handleSelect = (target: { id: string; name: string }) => {
     props.run.selectTarget(target.id)
@@ -386,9 +405,8 @@ function TargetSelector(props: { run: ReturnType<typeof useRunService>; onRun: (
   }
 
   const targetLabel = (target: any) => {
-    if (target.isEmulator) return `${target.name} (Emulator)`
-    if (target.isSimulator) return `${target.name} (Simulator)`
-    return target.name
+    const status = target.available ? "Available" : "Unavailable"
+    return `${target.name} (${status})`
   }
 
   return (
@@ -406,13 +424,13 @@ function TargetSelector(props: { run: ReturnType<typeof useRunService>; onRun: (
         onClick={() => setIsOpen(!isOpen())}
         aria-label="Select target"
       >
-        <Icon name={selectedTarget?.icon as any || "terminal"} size="small" />
-        <span class="truncate max-w-[100px]">{selectedTarget ? targetLabel(selectedTarget) : "Select Target"}</span>
+        <Icon name={props.run.selectedTarget()?.icon as any || "terminal"} size="small" />
+        <span class="truncate max-w-[100px]">{props.run.selectedTarget() ? targetLabel(props.run.selectedTarget()) : "Select Target"}</span>
         <Icon name="chevron-down" size="small" />
       </Button>
       <Show when={isOpen()}>
         <div class="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-        <div class="absolute top-full left-0 mt-1 z-50 w-[220px] max-h-[300px] overflow-auto shadow-xl border border-border-weak-base bg-background-base rounded-md">
+        <div class="absolute top-full left-0 mt-1 z-50 w-[220px] max-h-[300px] overflow-auto shadow-xl border border-border-weak-base bg-background-base rounded-[10px]">
           <For each={Object.entries(targetsByCategory())}>
             {([category, targets]) => (
               <div class="p-1">
@@ -422,20 +440,18 @@ function TargetSelector(props: { run: ReturnType<typeof useRunService>; onRun: (
                     <button
                       class="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-11-medium hover:bg-background-hover transition-colors"
                       classList={{
-                        "bg-background-hover": target.id === selectedTarget?.id,
-                        "opacity-50": !target.available,
+                        "bg-background-hover": target.id === props.run.selectedTarget()?.id,
+                        "opacity-40 cursor-not-allowed pointer-events-none": !target.available,
                       }}
+                      disabled={!target.available}
                       onClick={() => handleSelect(target)}
                     >
-                      <Show when={target.id === selectedTarget?.id} fallback={<Icon name={target.icon as any} size="small" class="text-text-weak" />}>
+                      <Show when={target.id === props.run.selectedTarget()?.id} fallback={<Icon name={target.icon as any} size="small" class="text-text-weak" />}>
                         <Icon name="check-small" size="small" class="text-green-500" />
                       </Show>
                       <span class="truncate flex-1">{targetLabel(target)}</span>
                       <Show when={!target.available}>
                         <span class="text-9-regular text-amber-500">Disabled</span>
-                      </Show>
-                      <Show when={target.isEmulator || target.isSimulator}>
-                        <span class="text-9-regular text-blue-500">Virtual</span>
                       </Show>
                     </button>
                   )}
@@ -457,9 +473,8 @@ function TargetsSection(props: {
   const categories = run.targetsByCategory
 
   const targetLabel = (target: any) => {
-    if (target.isEmulator) return `${target.name} (Emulator)`
-    if (target.isSimulator) return `${target.name} (Simulator)`
-    return target.name
+    const status = target.available ? "Available" : "Unavailable"
+    return `${target.name} (${status})`
   }
 
   return (
@@ -476,8 +491,9 @@ function TargetsSection(props: {
                     class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-background-hover text-left transition-colors"
                     classList={{
                       "bg-background-hover": isSelected(),
-                      "opacity-50": !target.available,
+                      "opacity-40 cursor-not-allowed pointer-events-none": !target.available,
                     }}
+                    disabled={!target.available}
                     onClick={() => props.onSelect(target)}
                   >
                     <Show

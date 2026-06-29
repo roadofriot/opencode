@@ -1,4 +1,4 @@
-import { For, Match, Show, Switch, createEffect, createMemo, onCleanup, type JSX } from "solid-js"
+import { For, Match, Show, Switch, createEffect, createMemo, createSignal, on, onCleanup, type JSX } from "solid-js"
 import { createStore } from "solid-js/store"
 import { createMediaQuery } from "@solid-primitives/media"
 import { Tabs } from "@mindsparq-ai/ui/tabs"
@@ -6,6 +6,7 @@ import { IconButton } from "@mindsparq-ai/ui/icon-button"
 import { TooltipKeybind } from "@mindsparq-ai/ui/tooltip"
 import { ResizeHandle } from "@mindsparq-ai/ui/resize-handle"
 import { Mark } from "@mindsparq-ai/ui/logo"
+import { Icon } from "@mindsparq-ai/ui/icon"
 import { DragDropProvider, DragDropSensors, DragOverlay, SortableProvider, closestCenter } from "@thisbeyond/solid-dnd"
 import type { DragEvent } from "@thisbeyond/solid-dnd"
 import type { SnapshotFileDiff, VcsFileDiff } from "@mindsparq-ai/sdk/v2"
@@ -39,6 +40,50 @@ function renderDiff(value: SnapshotFileDiff | VcsFileDiff): value is RenderDiff 
   return typeof value.file === "string"
 }
 
+function CollapsibleSection(props: {
+  title: string
+  icon?: string
+  count?: number
+  isOpen: boolean
+  onToggle: () => void
+  children: JSX.Element
+  badge?: JSX.Element
+}) {
+  return (
+    <div class="border-b border-border-weaker-base">
+      <button
+        type="button"
+        class="w-full flex items-center gap-2.5 px-3 py-2.5 text-12-medium text-text-base
+               hover:bg-surface-base transition-colors duration-150 select-none border-0 bg-transparent cursor-pointer"
+        onClick={props.onToggle}
+        aria-expanded={props.isOpen}
+      >
+        <span class="text-text-weak shrink-0 text-[10px] w-3 text-center">
+          {props.isOpen ? "▼" : "▶"}
+        </span>
+        {props.icon && <Icon name={props.icon as any} size="small" class="text-text-weak shrink-0" />}
+        <span class="flex-1 text-left truncate font-semibold">{props.title}</span>
+        {props.badge}
+        <Show when={props.count !== undefined && props.count > 0}>
+          <span class="px-1.5 py-0.5 rounded-full text-9-medium bg-surface-base text-text-weak">
+            {props.count}
+          </span>
+        </Show>
+      </button>
+      <Show when={props.isOpen}>
+        <div
+          class="overflow-hidden"
+          style={{
+            "animation": "collapsible-expand 200ms cubic-bezier(0.22, 1, 0.36, 1) both",
+          }}
+        >
+          {props.children}
+        </div>
+      </Show>
+    </div>
+  )
+}
+
 export function SessionSidePanel(props: {
   canReview: () => boolean
   diffs: () => (SnapshotFileDiff | VcsFileDiff)[]
@@ -60,6 +105,30 @@ export function SessionSidePanel(props: {
   const command = useCommand()
   const dialog = useDialog()
   const { sessionKey, tabs, view, params } = useSessionLayout()
+
+  // State persistence & auto-collapse logic (Feature 2)
+  const sessionKeyStr = () => `sidepanel:session:open:${params.dir || 'global'}`
+  const changesKeyStr = () => `sidepanel:changes:open:${params.dir || 'global'}`
+
+  const [sessionOpen, setSessionOpen] = createSignal(
+    localStorage.getItem(sessionKeyStr()) === "true"
+  )
+  const [changesOpen, setChangesOpen] = createSignal(
+    localStorage.getItem(changesKeyStr()) === "true"
+  )
+
+  createEffect(() => {
+    localStorage.setItem(sessionKeyStr(), sessionOpen() ? "true" : "false")
+  })
+  createEffect(() => {
+    localStorage.setItem(changesKeyStr(), changesOpen() ? "true" : "false")
+  })
+
+  // Auto-collapse when switching workspaces
+  createEffect(on(() => params.dir, () => {
+    setSessionOpen(false)
+    setChangesOpen(false)
+  }, { defer: true }))
 
   const isDesktop = createMediaQuery("(min-width: 768px)")
   const shown = settings.visibility.fileTree
@@ -224,7 +293,7 @@ export function SessionSidePanel(props: {
           "pointer-events-none": !open(),
           "transition-[width] duration-[240ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[width] motion-reduce:transition-none":
             !props.size.active() && !props.reviewSnap,
-          "rounded-[10px] shadow-[var(--v2-elevation-raised)] overflow-hidden": settings.general.newLayoutDesigns(),
+          "rounded-[12px] shadow-[var(--v2-elevation-raised)] overflow-hidden border border-border-weaker-base": settings.general.newLayoutDesigns(),
           "flex-1": reviewOpen(),
         }}
         style={{ width: panelWidth() }}
@@ -244,7 +313,62 @@ export function SessionSidePanel(props: {
                 "pointer-events-none": !reviewOpen(),
               }}
             >
-              <div class="size-full min-w-0 h-full bg-background-base">
+              <div class="size-full min-w-0 h-full bg-background-base flex flex-col">
+                <CollapsibleSection
+                  title={language.t("session.tab.session") || "Session"}
+                  icon="session"
+                  isOpen={sessionOpen()}
+                  onToggle={() => setSessionOpen(!sessionOpen())}
+                >
+                  <div class="px-3 pb-3 flex flex-col gap-2">
+                    <div class="flex items-center justify-between">
+                      <span class="text-11-regular text-text-weak">{language.t("session.info.project") || "Project"}</span>
+                      <span class="text-11-medium text-text-base truncate max-w-120">{params.dir || "—"}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-11-regular text-text-weak">{language.t("session.info.branch") || "Branch"}</span>
+                      <span class="text-11-medium text-text-base">{sync().data.vcs?.branch || "—"}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-11-regular text-text-weak">{language.t("session.info.session") || "Session"}</span>
+                      <span class="text-11-medium text-text-base truncate max-w-120">{params.id ? `${params.id.slice(0, 8)}...` : "—"}</span>
+                    </div>
+                  </div>
+                </CollapsibleSection>
+                <Show when={props.canReview()}>
+                  <CollapsibleSection
+                    title={language.t("session.tab.review") || "Changes"}
+                    icon="git-commit"
+                    count={props.reviewCount()}
+                    isOpen={changesOpen()}
+                    onToggle={() => setChangesOpen(!changesOpen())}
+                  >
+                    <div class="px-3 pb-3 max-h-40 overflow-y-auto no-scrollbar">
+                      <Show
+                        when={props.hasReview()}
+                        fallback={
+                          <div class="text-11-regular text-text-weak py-2 text-center">
+                            {language.t("session.review.noChanges") || "No changes"}
+                          </div>
+                        }
+                      >
+                        <For each={props.diffs().filter(renderDiff)}>
+                          {(diff) => (
+                            <button
+                              type="button"
+                              class="w-full flex items-center gap-2 px-2 py-1 rounded text-left text-11-regular
+                                     hover:bg-surface-base transition-colors duration-100"
+                              onClick={() => props.focusReviewDiff(diff.file)}
+                            >
+                              <Icon name={"file" as any} size="small" class="text-text-weak shrink-0" />
+                              <span class="truncate text-text-base">{diff.file}</span>
+                            </button>
+                          )}
+                        </For>
+                      </Show>
+                    </div>
+                  </CollapsibleSection>
+                </Show>
                 <DragDropProvider
                   onDragStart={handleDragStart}
                   onDragEnd={handleDragEnd}

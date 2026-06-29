@@ -402,7 +402,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   })
   const buttons = createMemo(() => motion(buttonsSpring()))
   const shell = createMemo(() => motion(1 - buttonsSpring()))
-  const control = createMemo(() => ({ height: "28px", ...buttons() }))
+  const control = createMemo(() => ({ height: "24px", ...buttons() }))
 
   const commentCount = createMemo(() => {
     if (store.mode === "shell") return 0
@@ -2108,7 +2108,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                         keybind={command.keybind("model.variant.cycle")}
                       >
                         <Select
-                          size="normal"
+                          size="small"
                           options={variants()}
                           current={props.controls.model.selection.variant.current() ?? "default"}
                           label={(x) => (x === "default" ? language.t("common.default") : x)}
@@ -2117,8 +2117,8 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                             props.controls.model.selection.variant.set(value === "default" ? undefined : value)
                             restoreFocus()
                           }}
-                          class="capitalize max-w-[160px] justify-start text-v2-text-text-faint"
-                          valueClass="truncate text-[13px] font-[440] leading-5 text-v2-text-text-faint"
+                          class="capitalize max-w-[120px] justify-start text-v2-text-text-faint"
+                          valueClass="truncate text-[11px] font-[440] leading-4 text-v2-text-text-faint"
                           triggerStyle={control()}
                           triggerProps={{ "data-action": "prompt-model-variant" }}
                           variant="ghost"

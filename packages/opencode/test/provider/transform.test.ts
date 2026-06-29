@@ -4051,7 +4051,7 @@ describe("ProviderTransform.variants", () => {
   })
 
   describe("@ai-sdk/groq", () => {
-    test("returns none and WIDELY_SUPPORTED_EFFORTS with thinkingLevel", () => {
+    test("returns WIDELY_SUPPORTED_EFFORTS with reasoningEffort", () => {
       const model = createMockModel({
         id: "groq/llama-4",
         providerID: "groq",
@@ -4062,12 +4062,12 @@ describe("ProviderTransform.variants", () => {
         },
       })
       const result = ProviderTransform.variants(model)
-      expect(Object.keys(result)).toEqual(["none", "low", "medium", "high"])
-      expect(result.none).toEqual({
-        reasoningEffort: "none",
-      })
+      expect(Object.keys(result)).toEqual(["low", "medium", "high"])
       expect(result.low).toEqual({
         reasoningEffort: "low",
+      })
+      expect(result.high).toEqual({
+        reasoningEffort: "high",
       })
     })
   })
