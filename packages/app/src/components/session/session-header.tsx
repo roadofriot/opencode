@@ -49,6 +49,10 @@ const OPEN_APPS = [
   "sublime-text",
 ] as const
 
+type SessionHeaderProps = {
+  activeFile?: string | undefined
+}
+
 type OpenApp = (typeof OPEN_APPS)[number]
 type OS = "macos" | "windows" | "linux" | "unknown"
 
@@ -135,7 +139,7 @@ const showRequestError = (language: ReturnType<typeof useLanguage>, err: unknown
   })
 }
 
-export function SessionHeader() {
+export function SessionHeader(props: SessionHeaderProps) {
   const layout = useLayout()
   const command = useCommand()
   const server = useServer()
@@ -255,6 +259,22 @@ export function SessionHeader() {
     setOpenRequest("app", app)
     platform
       .openPath(directory, openWith)
+      .catch((err: unknown) => showRequestError(language, err))
+      .finally(() => {
+        setOpenRequest("app", undefined)
+      })
+  }
+
+  const openFile = (app: OpenApp) => {
+    if (opening() || !canOpen() || !platform.openPath) return
+    const filePath = props.activeFile
+    if (!filePath) return
+
+    const item = options().find((o) => o.id === app)
+    const openWith = item && "openWith" in item ? item.openWith : undefined
+    setOpenRequest("app", app)
+    platform
+      .openPath(filePath, openWith)
       .catch((err: unknown) => showRequestError(language, err))
       .finally(() => {
         setOpenRequest("app", undefined)
@@ -414,6 +434,30 @@ export function SessionHeader() {
                                       </For>
                                     </DropdownMenu.RadioGroup>
                                   </DropdownMenu.Group>
+                                  <Show when={props.activeFile}>
+                                    <DropdownMenu.Separator />
+                                    <DropdownMenu.Group>
+                                      <DropdownMenu.GroupLabel class="!px-1 !py-1">
+                                        {language.t("session.header.openFileIn")}
+                                      </DropdownMenu.GroupLabel>
+                                      <For each={options()}>
+                                        {(o) => (
+                                          <DropdownMenu.Item
+                                            disabled={opening() || !("openWith" in o)}
+                                            onSelect={() => {
+                                              setMenu("open", false)
+                                              openFile(o.id)
+                                            }}
+                                          >
+                                            <div class="flex size-5 shrink-0 items-center justify-center [&_[data-component=app-icon]]:size-5">
+                                              <AppIcon id={o.icon} />
+                                            </div>
+                                            <DropdownMenu.ItemLabel>{o.label}</DropdownMenu.ItemLabel>
+                                          </DropdownMenu.Item>
+                                        )}
+                                      </For>
+                                    </DropdownMenu.Group>
+                                  </Show>
                                   <DropdownMenu.Separator />
                                   <DropdownMenu.Item
                                     onSelect={() => {

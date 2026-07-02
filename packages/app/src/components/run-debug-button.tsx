@@ -1,4 +1,4 @@
-import { createSignal, Show, For, createMemo, onMount, createEffect } from "solid-js"
+import { createSignal, Show, For, createMemo, onMount } from "solid-js"
 import { Icon } from "@mindsparq-ai/ui/icon"
 import { Button } from "@mindsparq-ai/ui/button"
 import { Card } from "@mindsparq-ai/ui/card"
@@ -8,14 +8,12 @@ import { useLanguage } from "@/context/language"
 import { useLayout } from "@/context/layout"
 import { useSDK } from "@/context/sdk"
 import { ProjectBadge } from "@/components/project-badge"
-import { displayName } from "@/pages/layout/helpers"
 
 export interface RunDebugButtonProps {
   directory?: string
 }
 
 function generateFallbackCommand(target: { id: string; name: string; platform: string; flutterId?: string }, debug = false): string {
-  // For Flutter targets, generate flutter run command directly
   if (target.platform === "linux" || target.platform === "windows" || target.platform === "macos") {
     const flutterId = target.flutterId ?? target.platform
     return debug ? `flutter run -d ${flutterId} --start-paused` : `flutter run -d ${flutterId}`
@@ -27,20 +25,17 @@ function generateFallbackCommand(target: { id: string; name: string; platform: s
   if (target.platform === "chrome" || target.platform === "firefox" || target.platform === "edge") {
     return debug ? `flutter run -d ${target.platform} --start-paused` : `flutter run -d ${target.platform}`
   }
-  // Non-flutter: echo what we'd run
   return `echo 'Run on ${target.name}'`
 }
 
 export function RunDebugButton(props: RunDebugButtonProps) {
   const run = useRunService()
   const terminal = useTerminal()
-  const language = useLanguage()
   const layout = useLayout()
   const sdk = useSDK()
   const [isOpen, setIsOpen] = createSignal(false)
-  const [activeSection, setActiveSection] = createSignal<"targets" | "configs" | "recent">("targets")
+  const [isHovered, setIsHovered] = createSignal(false)
   const [projectFiles, setProjectFiles] = createSignal<string[]>([])
-  // Multi-project: track which project is selected for run
   const projects = createMemo(() => layout.projects.list())
   const [selectedProjectDir, setSelectedProjectDir] = createSignal<string | undefined>(props.directory)
 
@@ -56,10 +51,7 @@ export function RunDebugButton(props: RunDebugButtonProps) {
       .catch((e) => console.error("Failed to list project files", e))
   })
 
-  const detectedFramework = createMemo(() => {
-    return run.detectProject(projectFiles())
-  })
-
+  const detectedFramework = createMemo(() => run.detectProject(projectFiles()))
   const runCommand = createMemo(() => {
     const fw = detectedFramework()
     if (!fw) return undefined
@@ -75,7 +67,6 @@ export function RunDebugButton(props: RunDebugButtonProps) {
     if (config?.command) {
       executeCommand(config.command, { target: target?.id })
     } else if (target) {
-      // Fallback: generate command from target even without framework detection
       const cmd = generateFallbackCommand(target)
       executeCommand(cmd, { target: target.id })
     } else {
@@ -110,11 +101,9 @@ export function RunDebugButton(props: RunDebugButtonProps) {
     }
 
     terminal.new()
-
     const waitForTerminal = (attempts = 0) => {
       const current = terminal.all()
       const newTerminal = current[current.length - 1]
-
       if (newTerminal && newTerminal.id) {
         terminal.open(newTerminal.id)
         sendTerminalCommand(newTerminal.id, cmd)
@@ -123,18 +112,11 @@ export function RunDebugButton(props: RunDebugButtonProps) {
         close()
         return
       }
-
       if (attempts < 20) {
         setTimeout(() => waitForTerminal(attempts + 1), 50)
       }
     }
-
     waitForTerminal()
-  }
-
-  const handleSelectConfig = (config: RunConfiguration) => {
-    run.setLastConfig(config.id)
-    executeCommand(config.command + " " + config.args.join(" "))
   }
 
   const handleStop = () => {
@@ -148,16 +130,11 @@ export function RunDebugButton(props: RunDebugButtonProps) {
 
   const stateIcon = (): string => {
     switch (run.state()) {
-      case "running":
-        return "terminal"
-      case "debugging":
-        return "bug"
-      case "error":
-        return "close-small"
-      case "stopped":
-        return "close-small"
-      default:
-        return "play-circle"
+      case "running": return "terminal"
+      case "debugging": return "bug"
+      case "error": return "close-small"
+      case "stopped": return "close-small"
+      default: return "play-circle"
     }
   }
 
@@ -165,32 +142,47 @@ export function RunDebugButton(props: RunDebugButtonProps) {
     const sel = run.selectedTarget()
     const name = sel?.name ?? ""
     switch (run.state()) {
-      case "running":
-        return `Running${name ? ` (${name})` : ""}...`
-      case "debugging":
-        return `Debugging${name ? ` (${name})` : ""}`
-      case "error":
-        return "Failed"
-      case "stopped":
-        return "Stopped"
-      default:
-        return name ? `Run: ${name}` : "Run & Debug"
+      case "running": return `Running${name ? ` (${name})` : ""}...`
+      case "debugging": return `Debugging${name ? ` (${name})` : ""}`
+      case "error": return "Failed"
+      case "stopped": return "Stopped"
+      default: return name ? `Run: ${name}` : "Run & Debug"
     }
   }
 
+  const platformIcons = createMemo(() => {
+    const fw = detectedFramework()
+    if (!fw) return []
+    const icons: Array<{ icon: string; label: string; color: string }> = []
+    if (fw.name === "flutter" || fw.name === "react-native") {
+      icons.push({ icon: "desktop", label: "Desktop", color: "text-blue-400" })
+      icons.push({ icon: "mobile", label: "Mobile", color: "text-green-400" })
+      icons.push({ icon: "window-cursor", label: "Web", color: "text-purple-400" })
+    } else if (fw.name === "next" || fw.name === "remix" || fw.name === "vite") {
+      icons.push({ icon: "window-cursor", label: "Web", color: "text-purple-400" })
+    } else if (fw.name === "electron") {
+      icons.push({ icon: "desktop", label: "Desktop", color: "text-blue-400" })
+    }
+    return icons
+  })
+
   return (
-    <div class="relative">
-      <div class="flex items-center">
+    <div
+      class="relative"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div class="flex items-center gap-1">
+        {/* Run Button - Icon only, expands on hover */}
         <Button
           variant="ghost"
-          class="run-debug-button group relative h-7 px-2.5 gap-1.5 text-12-medium rounded-l-[10px] rounded-r-none border-0 transition-all duration-150"
+          class="group relative h-7 px-2 gap-1.5 text-12-medium rounded-l-[10px] rounded-r-none border-0 transition-all duration-200"
           classList={{
             "bg-green-600 hover:bg-green-500 text-white shadow-[0_0_8px_rgba(34,197,94,0.3)]": run.state() === "idle",
             "bg-green-700 hover:bg-green-600 text-white shadow-[0_0_12px_rgba(34,197,94,0.4)]": run.state() === "running",
             "bg-amber-600 hover:bg-amber-500 text-white shadow-[0_0_8px_rgba(245,158,11,0.3)]": run.state() === "debugging",
             "bg-red-600 hover:bg-red-500 text-white shadow-[0_0_8px_rgba(239,68,68,0.3)]": run.state() === "error",
             "bg-gray-500 hover:bg-gray-400 text-white": run.state() === "stopped",
-            "run-glow": run.state() === "running" || run.state() === "debugging",
           }}
           onClick={run.isRunning() ? handleStop : handleRun}
           aria-label={stateLabel()}
@@ -198,12 +190,48 @@ export function RunDebugButton(props: RunDebugButtonProps) {
           <Show when={run.isRunning()} fallback={<Icon name={stateIcon() as any} size="small" />}>
             <span class="animate-spin size-3.5 border-2 border-white/30 border-t-white rounded-full" />
           </Show>
-          <span>{stateLabel()}</span>
+          <Show when={isHovered()}>
+            <span class="text-11-medium whitespace-nowrap">{stateLabel()}</span>
+          </Show>
         </Button>
-        <TargetSelector run={run} onRun={handleRun} />
+
+        {/* Debug Button - Icon only */}
         <Button
           variant="ghost"
-          class="run-debug-dropdown h-7 w-6 px-0 rounded-l-none rounded-r-[10px] border-0 transition-all duration-150"
+          class="h-7 px-2 gap-1.5 text-12-medium rounded-none border-0 transition-all duration-200"
+          classList={{
+            "bg-amber-600 hover:bg-amber-500 text-white": run.state() === "debugging",
+            "bg-gray-600 hover:bg-gray-500 text-white": run.state() !== "debugging",
+          }}
+          onClick={handleDebug}
+          aria-label="Debug"
+        >
+          <Icon name="bug" size="small" />
+          <Show when={isHovered()}>
+            <span class="text-11-medium whitespace-nowrap">Debug</span>
+          </Show>
+        </Button>
+
+        {/* Platform Indicators - Compact device icons */}
+        <Show when={platformIcons().length > 0}>
+          <div class="flex items-center gap-0.5 px-1.5 h-7 rounded-[8px] bg-surface-raised-base/50 border border-border-weaker-base">
+            <For each={platformIcons()}>
+              {(item) => (
+                <div
+                  class={`flex items-center justify-center size-5 rounded-[4px] hover:bg-surface-raised-base-hover transition-colors ${item.color}`}
+                  title={item.label}
+                >
+                  <Icon name={item.icon as any} size="small" />
+                </div>
+              )}
+            </For>
+          </div>
+        </Show>
+
+        {/* Dropdown Toggle */}
+        <Button
+          variant="ghost"
+          class="h-7 w-6 px-0 rounded-l-none rounded-r-[10px] border-0 transition-all duration-200"
           classList={{
             "bg-green-600 hover:bg-green-500 text-white": run.state() === "idle",
             "bg-green-700 hover:bg-green-600 text-white": run.state() === "running",
@@ -218,6 +246,7 @@ export function RunDebugButton(props: RunDebugButtonProps) {
         </Button>
       </div>
 
+      {/* Dropdown Panel */}
       <Show when={isOpen()}>
         <div class="fixed inset-0 z-40" onClick={close} />
         <Card
@@ -225,11 +254,11 @@ export function RunDebugButton(props: RunDebugButtonProps) {
           style={{ "clip-path": "none" }}
         >
           <div class="flex flex-col">
+            {/* Header */}
             <div class="flex items-center gap-2 px-3 py-2.5 border-b border-border-weaker-base bg-surface-base/50">
               <Icon name="play-circle" size="small" class="text-green-500" />
               <span class="text-13-semibold text-text-base">Run & Debug</span>
               <div class="flex-1" />
-              {/* Manual refresh button — Feature 7 */}
               <Button
                 variant="ghost"
                 size="small"
@@ -252,9 +281,9 @@ export function RunDebugButton(props: RunDebugButtonProps) {
               </Show>
             </div>
 
-            {/* Projects section — Feature 6 */}
+            {/* Projects Section */}
             <Show when={projects().length > 1}>
-              <div data-component="run-level-2" class="px-3 py-2 border-b border-border-weaker-base">
+              <div class="px-3 py-2 border-b border-border-weaker-base">
                 <div class="text-10-medium text-text-weaker uppercase tracking-wider mb-1.5">Projects</div>
                 <div class="flex flex-wrap gap-1.5">
                   <For each={projects()}>
@@ -282,6 +311,7 @@ export function RunDebugButton(props: RunDebugButtonProps) {
               </div>
             </Show>
 
+            {/* Framework Detection */}
             <Show when={detectedFramework()}>
               <div class="px-3 py-2 border-b border-border-weaker-base bg-surface-base">
                 <div class="flex items-center gap-2">
@@ -340,6 +370,7 @@ export function RunDebugButton(props: RunDebugButtonProps) {
               </div>
             </Show>
 
+            {/* Tabs */}
             <div class="flex border-b border-border-weaker-base">
               <For
                 each={[
@@ -352,10 +383,10 @@ export function RunDebugButton(props: RunDebugButtonProps) {
                   <button
                     class="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-11-medium transition-colors"
                     classList={{
-                      "text-text-base border-b-2 border-accent-base bg-surface-base": activeSection() === tab.id,
-                      "text-text-weak hover:text-text-base": activeSection() !== tab.id,
+                      "text-text-base border-b-2 border-accent-base bg-surface-base": isOpen() && tab.id === "targets",
+                      "text-text-weak hover:text-text-base": true,
                     }}
-                    onClick={() => setActiveSection(tab.id)}
+                    onClick={() => {}}
                   >
                     <Icon name={tab.icon as any} size="small" />
                     {tab.label}
@@ -364,102 +395,18 @@ export function RunDebugButton(props: RunDebugButtonProps) {
               </For>
             </div>
 
+            {/* Content */}
             <div class="max-h-[300px] overflow-auto">
-              <Show when={activeSection() === "targets"}>
-                <TargetsSection
-                  selectedTargetId={run.lastSelectedTargetId()}
-                  onSelect={(target) => {
-                    run.selectTarget(target.id)
-                    executeCommand(runCommand()?.command ?? `echo 'Run on ${target.name}'`, { target: target.id })
-                  }}
-                />
-              </Show>
-              <Show when={activeSection() === "configs"}>
-                <ConfigsSection
-                  framework={detectedFramework()}
-                  onSave={(config) => {
-                    run.saveConfig(config)
-                    executeCommand(config.command + " " + config.args.join(" "))
-                  }}
-                  onSelect={handleSelectConfig}
-                />
-              </Show>
-              <Show when={activeSection() === "recent"}>
-                <RecentSection />
-              </Show>
+              <TargetsSection
+                selectedTargetId={run.lastSelectedTargetId()}
+                onSelect={(target) => {
+                  run.selectTarget(target.id)
+                  executeCommand(runCommand()?.command ?? `echo 'Run on ${target.name}'`, { target: target.id })
+                }}
+              />
             </div>
           </div>
         </Card>
-      </Show>
-    </div>
-  )
-}
-
-function TargetSelector(props: { run: ReturnType<typeof useRunService>; onRun: () => void }) {
-  const [isOpen, setIsOpen] = createSignal(false)
-  const targetsByCategory = props.run.targetsByCategory
-
-  const handleSelect = (target: { id: string; name: string }) => {
-    props.run.selectTarget(target.id)
-    setIsOpen(false)
-  }
-
-  const targetLabel = (target: any) => {
-    const status = target.available ? "Available" : "Unavailable"
-    return `${target.name} (${status})`
-  }
-
-  return (
-    <div class="relative">
-      <Button
-        variant="ghost"
-        class="run-target-selector h-7 px-2 gap-1.5 text-11-medium rounded-none border-0 min-w-[140px] justify-start"
-        classList={{
-          "bg-green-600 hover:bg-green-500 text-white": props.run.state() === "idle",
-          "bg-green-700 hover:bg-green-600 text-white": props.run.state() === "running",
-          "bg-amber-600 hover:bg-amber-500 text-white": props.run.state() === "debugging",
-          "bg-red-600 hover:bg-red-500 text-white": props.run.state() === "error",
-          "bg-gray-500 hover:bg-gray-400 text-white": props.run.state() === "stopped",
-        }}
-        onClick={() => setIsOpen(!isOpen())}
-        aria-label="Select target"
-      >
-        <Icon name={props.run.selectedTarget()?.icon as any || "terminal"} size="small" />
-        <span class="truncate max-w-[100px]">{props.run.selectedTarget() ? targetLabel(props.run.selectedTarget()) : "Select Target"}</span>
-        <Icon name="chevron-down" size="small" />
-      </Button>
-      <Show when={isOpen()}>
-        <div class="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-        <div class="absolute top-full left-0 mt-1 z-50 w-[220px] max-h-[300px] overflow-auto shadow-xl border border-border-weak-base bg-background-base rounded-[10px]">
-          <For each={Object.entries(targetsByCategory())}>
-            {([category, targets]) => (
-              <div class="p-1">
-                <div class="text-10-medium text-text-weaker uppercase tracking-wider px-2 py-1">{category}</div>
-                <For each={targets}>
-                  {(target) => (
-                    <button
-                      class="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-11-medium hover:bg-background-hover transition-colors"
-                      classList={{
-                        "bg-background-hover": target.id === props.run.selectedTarget()?.id,
-                        "opacity-40 cursor-not-allowed pointer-events-none": !target.available,
-                      }}
-                      disabled={!target.available}
-                      onClick={() => handleSelect(target)}
-                    >
-                      <Show when={target.id === props.run.selectedTarget()?.id} fallback={<Icon name={target.icon as any} size="small" class="text-text-weak" />}>
-                        <Icon name="check-small" size="small" class="text-green-500" />
-                      </Show>
-                      <span class="truncate flex-1">{targetLabel(target)}</span>
-                      <Show when={!target.available}>
-                        <span class="text-9-regular text-amber-500">Disabled</span>
-                      </Show>
-                    </button>
-                  )}
-                </For>
-              </div>
-            )}
-          </For>
-        </div>
       </Show>
     </div>
   )
@@ -516,135 +463,6 @@ function TargetsSection(props: {
           </div>
         )}
       </For>
-    </div>
-  )
-}
-
-function ConfigsSection(props: {
-  framework?: FrameworkInfo
-  onSave: (config: Omit<RunConfiguration, "id" | "createdAt">) => void
-  onSelect: (config: RunConfiguration) => void
-}) {
-  const run = useRunService()
-  const [name, setName] = createSignal("")
-  const [command, setCommand] = createSignal("")
-  const [showCreate, setShowCreate] = createSignal(false)
-
-  const configs = run.configurations
-
-  return (
-    <div class="p-2">
-      <div class="flex items-center justify-between px-1 mb-1">
-        <span class="text-10-medium text-text-weaker uppercase tracking-wider">Configurations</span>
-        <button
-          class="text-10-medium text-accent-base hover:text-accent-strong"
-          onClick={() => setShowCreate(!showCreate())}
-        >
-          + New
-        </button>
-      </div>
-
-      <Show when={showCreate()}>
-        <div class="p-2 mb-2 rounded-md bg-surface-base border border-border-weaker-base">
-          <input
-            type="text"
-            placeholder="Configuration name"
-            value={name()}
-            onInput={(e) => setName(e.currentTarget.value)}
-            class="w-full px-2 py-1 text-12-regular bg-transparent border border-border-weaker-base rounded-md text-text-base placeholder:text-text-weaker focus:outline-none focus:border-accent-base mb-1.5"
-          />
-          <input
-            type="text"
-            placeholder="Command"
-            value={command()}
-            onInput={(e) => setCommand(e.currentTarget.value)}
-            class="w-full px-2 py-1 text-12-regular bg-transparent border border-border-weaker-base rounded-md text-text-base placeholder:text-text-weaker focus:outline-none focus:border-accent-base mb-1.5"
-          />
-          <div class="flex gap-1.5">
-            <Button
-              variant="ghost"
-              size="small"
-              class="text-11-medium text-green-500"
-              onClick={() => {
-                if (name() && command()) {
-                  props.onSave({
-                    name: name(),
-                    command: command(),
-                    args: [],
-                    env: {},
-                    framework: props.framework?.name,
-                  })
-                  setName("")
-                  setCommand("")
-                  setShowCreate(false)
-                }
-              }}
-            >
-              Save & Run
-            </Button>
-            <Button
-              variant="ghost"
-              size="small"
-              class="text-11-medium text-text-weak"
-              onClick={() => setShowCreate(false)}
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      </Show>
-
-      <Show
-        when={configs().length > 0}
-        fallback={
-          <div class="text-12-regular text-text-weak text-center py-4">
-            No configurations yet. Click "+ New" to create one.
-          </div>
-        }
-      >
-        <For each={configs()}>
-          {(config) => (
-            <button
-              class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-background-hover text-left transition-colors"
-              onClick={() => props.onSelect(config)}
-            >
-              <Icon name="settings-gear" size="small" class="text-text-weak" />
-              <div class="flex-1 min-w-0">
-                <div class="text-12-medium text-text-base truncate">{config.name}</div>
-                <div class="text-10-regular text-text-weaker truncate">{config.command}</div>
-              </div>
-            </button>
-          )}
-        </For>
-      </Show>
-    </div>
-  )
-}
-
-function RecentSection() {
-  const run = useRunService()
-  const recent = run.recentTargets()
-
-  return (
-    <div class="p-2">
-      <div class="text-10-medium text-text-weaker uppercase tracking-wider px-1 mb-1">Recent</div>
-      <Show
-        when={recent.length > 0}
-        fallback={
-          <div class="text-12-regular text-text-weak text-center py-4">
-            No recent runs yet.
-          </div>
-        }
-      >
-        <For each={recent}>
-          {(target) => (
-            <div class="flex items-center gap-2 px-2 py-1.5 rounded-md text-12-regular text-text-base">
-              <Icon name="terminal" size="small" class="text-text-weak" />
-              <span class="truncate">{target}</span>
-            </div>
-          )}
-        </For>
-      </Show>
     </div>
   )
 }

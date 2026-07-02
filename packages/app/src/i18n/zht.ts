@@ -546,6 +546,7 @@ export const dict = {
   "session.header.search.placeholder": "搜尋 {{project}}",
   "session.header.searchFiles": "搜尋檔案",
   "session.header.openIn": "開啟於",
+  "session.header.openFileIn": "在以下位置開啟檔案",
   "session.header.open.action": "開啟 {{app}}",
   "session.header.open.ariaLabel": "在 {{app}} 中開啟",
   "session.header.open.menu": "開啟選項",

@@ -155,8 +155,8 @@ const defaultSettings: Settings = {
   },
   voice: {
     engine: "local",
-    model: "Xenova/whisper-tiny",
-    language: "auto",
+    model: "Xenova/whisper-small",
+    language: "ne",
     openaiApiKey: "",
     geminiApiKey: "",
     groqApiKey: "",
@@ -199,6 +199,20 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
       if (typeof document === "undefined") return
       const show = store.general?.showScrollbars ?? false
       document.body.classList.toggle("show-scrollbars", show)
+    })
+
+    // One-time migration: upgrade legacy voice defaults that cause language hallucination.
+    // whisper-tiny + auto → whisper-small + ne (Nepali)
+    createEffect(() => {
+      if (!ready()) return
+      const lang = store.voice?.language
+      const model = store.voice?.model
+      if (lang === "auto" || lang === undefined) {
+        setStore("voice", "language", "ne")
+      }
+      if (model === "Xenova/whisper-tiny" || model === undefined) {
+        setStore("voice", "model", "Xenova/whisper-small")
+      }
     })
 
     return {

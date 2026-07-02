@@ -40,6 +40,12 @@ export type FatalRendererError = {
   os?: string
 }
 
+export type AdbDevice = {
+  serial: string
+  state: "device" | "offline" | "unauthorized" | "no permissions"
+  model: string
+}
+
 export type ElectronAPI = {
   killSidecar: () => Promise<void>
   installCli: () => Promise<string>
@@ -105,5 +111,10 @@ export type ElectronAPI = {
     signOut: () => Promise<void>
     getUser: () => Promise<{ id: string; email: string | null; name: string | null; avatar: string | null } | null>
     onAuthStateChange: (cb: (user: { id: string; email: string | null; name: string | null; avatar: string | null } | null) => void) => () => void
+  }
+
+  adb: {
+    listDevices: () => Promise<AdbDevice[]>
+    onDevicesChanged: (cb: (devices: AdbDevice[]) => void) => () => void
   }
 }

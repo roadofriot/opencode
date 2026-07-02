@@ -56,6 +56,7 @@ import { createWslServersController } from "./wsl/servers"
 import { registerWslIpcHandlers } from "./wsl/ipc"
 import { spawnWslSidecar } from "./wsl/sidecar"
 import { migrate } from "./migrate"
+import { startAdbWatcher, stopAdbWatcher } from "./adb"
 
 const APP_NAMES: Record<string, string> = {
   dev: "MindSparQ AI Dev",
@@ -231,6 +232,7 @@ const main = Effect.gen(function* () {
   })
 
   app.on("before-quit", () => {
+    stopAdbWatcher()
     void stopSidecars()
   })
 
@@ -292,6 +294,7 @@ const main = Effect.gen(function* () {
     recordFatalRendererError: (error) => writeLog("renderer", "fatal renderer error", { ...error }, "error"),
   })
   registerWslIpcHandlers(wslServers)
+  startAdbWatcher()
   void updater.start()
   const updateTimer = setInterval(() => void updater.check(), 10 * 60 * 1000)
   updateTimer.unref()

@@ -1,7 +1,7 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@100..900&display=swap");
+
 @import "@mindsparq-ai/ui/styles/tailwind";
 @import "@mindsparq-ai/ui/v2/styles/tailwind.css";
-
-@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@100..900&display=swap");
 
 @font-face {
   font-family: "JetBrainsMono Nerd Font Mono";

@@ -128,6 +128,16 @@ const api: ElectronAPI = {
       return () => ipcRenderer.removeListener("auth:state-changed", handler)
     },
   },
+
+  adb: {
+    listDevices: () => ipcRenderer.invoke("adb:list-devices"),
+    onDevicesChanged: (cb) => {
+      const handler = (_: unknown, devices: any) => cb(devices)
+      ipcRenderer.on("adb:devices", handler)
+      void ipcRenderer.invoke("adb:subscribe")
+      return () => ipcRenderer.removeListener("adb:devices", handler)
+    },
+  },
 }
 
 contextBridge.exposeInMainWorld("api", api)

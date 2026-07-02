@@ -494,6 +494,7 @@ export const dict = {
   "session.header.search.placeholder": "بحث {{project}}",
   "session.header.searchFiles": "بحث عن الملفات",
   "session.header.openIn": "فتح في",
+  "session.header.openFileIn": "فتح الملف في",
   "session.header.open.action": "فتح {{app}}",
   "session.header.open.ariaLabel": "فتح في {{app}}",
   "session.header.open.menu": "خيارات الفتح",

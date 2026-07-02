@@ -1579,10 +1579,16 @@ export default function Page() {
     />
   )
 
+  const activeFilePath = createMemo(() => {
+    const tab = activeFileTab()
+    if (!tab) return undefined
+    return file.pathFromTab(tab)
+  })
+
   return (
     <div class="relative size-full overflow-hidden flex flex-col">
       {sessionSync() ?? ""}
-      <SessionHeader />
+      <SessionHeader activeFile={activeFilePath()} />
       <div
         class="flex-1 min-h-0 flex flex-col md:flex-row "
         classList={{

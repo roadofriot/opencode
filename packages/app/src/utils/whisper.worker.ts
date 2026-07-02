@@ -71,6 +71,11 @@ self.onmessage = async (event: MessageEvent) => {
         language: payload.language && payload.language !== "auto"
           ? (languageMap[payload.language] ?? payload.language)
           : undefined,
+        // Prevent hallucination — Nepali is often misidentified as Chinese/Urdu
+        // when confidence is low. These options force the model to be conservative.
+        no_speech_threshold: 0.6,
+        condition_on_previous_text: false,
+        compression_ratio_threshold: 2.4,
       }
 
       console.log("[WHISPER_WORKER] Running transcriber model inference...")

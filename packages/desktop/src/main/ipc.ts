@@ -13,6 +13,7 @@ import { getPinchZoomEnabled, setPinchZoomEnabled, setTitlebar, updateTitlebar }
 import type { UpdaterController } from "./updater-controller"
 import { createUpdaterSubscriptions } from "./updater-subscriptions"
 import { Auth } from "./auth"
+import { listAdbDevices } from "./adb"
 
 const pickerFilters = (ext?: string[]) => {
   if (!ext || ext.length === 0) return undefined
@@ -247,6 +248,17 @@ export function registerIpcHandlers(deps: Deps) {
     }
   })
   ipcMain.handle("auth:get-user", () => Auth.getUser())
+
+  // ADB device detection
+  ipcMain.handle("adb:list-devices", () => listAdbDevices())
+  ipcMain.handle("adb:subscribe", (event) => {
+    // Renderer will receive "adb:devices" push events from startAdbWatcher broadcast
+    // Nothing to do here — watcher already broadcasts to all windows
+    // Just do an immediate fetch so the subscribing renderer gets current state now
+    void listAdbDevices().then((devices) => {
+      if (!event.sender.isDestroyed()) event.sender.send("adb:devices", devices)
+    })
+  })
 }
 
 export function sendMenuCommand(win: BrowserWindow, id: string) {

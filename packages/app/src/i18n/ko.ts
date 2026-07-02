@@ -493,6 +493,7 @@ export const dict = {
   "session.header.search.placeholder": "{{project}} 검색",
   "session.header.searchFiles": "파일 검색",
   "session.header.openIn": "다음에서 열기",
+  "session.header.openFileIn": "파일을 다음에서 열기",
   "session.header.open.action": "{{app}} 열기",
   "session.header.open.ariaLabel": "{{app}}에서 열기",
   "session.header.open.menu": "열기 옵션",

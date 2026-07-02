@@ -104,6 +104,7 @@ export function DebugBar() {
 
   const [minimized, setMinimized] = createSignal(localStorage.getItem("mindsparq:debug-bar-minimized") === "true")
   const [position, setPosition] = createSignal<{ x: number; y: number } | undefined>(undefined)
+  const [adbDevices, setAdbDevices] = createSignal<any[]>([])
 
   createEffect(() => {
     localStorage.setItem("mindsparq:debug-bar-minimized", minimized() ? "true" : "false")
@@ -301,6 +302,9 @@ export function DebugBar() {
   })
 
   onMount(() => {
+    // ADB device monitoring
+    void (window as any).api?.adb?.listDevices().then(setAdbDevices);
+    const adbUnsub = (window as any).api?.adb?.onDevicesChanged(setAdbDevices);
     const obs: PerformanceObserver[] = []
     const fps: Array<{ at: number; dur: number }> = []
     const long: Array<{ at: number; dur: number }> = []
@@ -628,14 +632,20 @@ export function DebugBar() {
               state.heap.used === undefined
                 ? language.t("debugBar.mem.tipUnavailable")
                 : language.t("debugBar.mem.tip", {
-                    used: mb(state.heap.used) ?? na(),
-                    limit: mb(state.heap.limit) ?? na(),
-                  })
+                  used: mb(state.heap.used) ?? na(),
+                  limit: mb(state.heap.limit) ?? na(),
+                })
             }
             value={heapv()}
             bad={bad(heap(), 0.8)}
             dim={state.heap.used === undefined}
             wide
+          />
+          <Cell
+            label={"Android"}
+            tip={adbDevices().length ? `${adbDevices().map((d) => d.serial).join(", ")}` : language.t("debugBar.android.none")}
+            value={adbDevices().length ? `${adbDevices().length}` : language.t("debugBar.android.none")}
+            bad={false}
           />
         </div>
       </aside>
