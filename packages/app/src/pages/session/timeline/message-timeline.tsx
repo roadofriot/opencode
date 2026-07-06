@@ -426,7 +426,9 @@ export function MessageTimeline(props: {
     scrollToFn: (offset, options, instance) => {
       // Expose the computed range before core writes an anchor correction so the browser does not clamp it to the old height.
       if (virtualContent) virtualContent.style.height = `${instance.getTotalSize()}px`
-      elementScroll(offset, options, instance)
+      const isInitial = listRoot() && listRoot()!.scrollTop === 0 && listRoot()!.dataset.initialized !== "true"
+      const behavior = isInitial ? "auto" : (options.behavior ?? "smooth")
+      elementScroll(offset, { behavior }, instance)
     },
     get getItemKey() {
       const rows = timelineRows()
@@ -499,6 +501,8 @@ export function MessageTimeline(props: {
         overscanFrame = undefined
         if (renderOverscan() < 20) setRenderOverscan(20)
         if (props.shouldAnchorBottom()) virtualizer.scrollToEnd()
+        const el = listRoot()
+        if (el) el.dataset.initialized = "true"
       })
     })
   })

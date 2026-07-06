@@ -6,6 +6,7 @@ import {
   For,
   Match,
   onMount,
+  onCleanup,
   Show,
   Switch,
   untrack,
@@ -43,7 +44,7 @@ import { decode64 } from "@/utils/base64"
 import { ServerConnection, useServer } from "@/context/server"
 import { tabHref, useTabs, type Tab } from "@/context/tabs"
 import { useAuth } from "@/context/auth"
-import { UserMenu } from "@/components/auth/user-menu"
+import { sessionTitle } from "@/utils/session-title"
 import "./titlebar.css"
 
 type TauriDesktopWindow = {
@@ -819,7 +820,6 @@ function ThemeToggleButton() {
 }
 
 function TitlebarV2Right(props: { state: TitlebarV2RightState }) {
-  const auth = useAuth()
   const command = useCommand()
 
   const toggleTerminal = () => {
@@ -844,22 +844,6 @@ function TitlebarV2Right(props: { state: TitlebarV2RightState }) {
         />
       </TooltipV2>
       <div id="mindsparq-titlebar-right" class="flex shrink-0 items-center justify-end gap-0" />
-      <Show when={auth.isAuthenticated()}>
-        <UserMenu />
-      </Show>
-      <Show when={!auth.isAuthenticated()}>
-        <TooltipV2 placement="bottom" value="Sign In" class="shrink-0">
-          <IconButtonV2
-            type="button"
-            variant="ghost-muted"
-            size="large"
-            class="!w-9 shrink-0"
-            icon={<IconV2 name="person_outline" />}
-            onClick={() => auth.setShowLogin(true)}
-            aria-label="Sign In"
-          />
-        </TooltipV2>
-      </Show>
     </div>
   )
 }
@@ -895,7 +879,6 @@ function TitlebarUpdateIconButton(props: { state: TitlebarUpdatePillState }) {
 }
 
 function LegacyTitlebarRight() {
-  const auth = useAuth()
   const command = useCommand()
 
   const toggleTerminal = () => {
@@ -914,21 +897,6 @@ function LegacyTitlebarRight() {
           <Icon size="small" name="terminal" />
         </Button>
       </Tooltip>
-      <Show when={auth.isAuthenticated()}>
-        <UserMenu />
-      </Show>
-      <Show when={!auth.isAuthenticated()}>
-        <Tooltip placement="bottom" value="Sign In">
-          <Button
-            variant="ghost"
-            class="titlebar-icon w-8 h-6 p-0 box-border"
-            onClick={() => auth.setShowLogin(true)}
-            aria-label="Sign In"
-          >
-            <Icon size="small" name="person_outline" />
-          </Button>
-        </Tooltip>
-      </Show>
     </div>
   )
 }
@@ -1007,7 +975,7 @@ function TabNavItem(props: {
               <span data-slot="project-badge-in-tab" class="shrink-0">
                 <ProjectBadge project={project() as LocalProject | undefined} size="xs" />
               </span>
-              <span class="min-w-0 flex-1 truncate">{session().title}</span>
+              <span class="min-w-0 flex-1 truncate">{sessionTitle(session().title)}</span>
             </a>
           )
         }}
@@ -1152,9 +1120,123 @@ function NewSessionTabItem(props: { ref?: HTMLDivElement; href: string; title: s
 }
 
 function ChannelIndicator() {
+  const auth = useAuth()
+  const [open, setOpen] = createSignal(false)
+  let dropdownRef!: HTMLDivElement
+  let buttonRef!: HTMLDivElement
+
+  const handleDocumentClick = (e: MouseEvent) => {
+    if (
+      dropdownRef &&
+      !dropdownRef.contains(e.target as Node) &&
+      buttonRef &&
+      !buttonRef.contains(e.target as Node)
+    ) {
+      setOpen(false)
+    }
+  }
+
+  createEffect(() => {
+    if (open()) {
+      document.addEventListener("mousedown", handleDocumentClick)
+    } else {
+      document.removeEventListener("mousedown", handleDocumentClick)
+    }
+  })
+
+  onCleanup(() => {
+    document.removeEventListener("mousedown", handleDocumentClick)
+  })
+
+  const toggleDropdown = (e: MouseEvent) => {
+    e.stopPropagation()
+    setOpen(!open())
+  }
+
+  const handleSignInClick = (e: MouseEvent) => {
+    e.stopPropagation()
+    setOpen(false)
+    auth.setShowLogin(true)
+  }
+
+  const handleSignOutClick = async (e: MouseEvent) => {
+    e.stopPropagation()
+    setOpen(false)
+    await auth.signOut()
+  }
+
   return (
-    <div class="bg-icon-interactive-base text-[#FFF] font-medium px-2 rounded-sm uppercase font-mono whitespace-nowrap">
-      MindSparq AI
+    <div class="relative inline-block">
+      <div
+        ref={buttonRef}
+        onClick={toggleDropdown}
+        class="bg-icon-interactive-base text-[#FFF] font-medium px-2 py-0.5 rounded-sm uppercase font-mono whitespace-nowrap cursor-pointer hover:opacity-90 select-none flex items-center gap-1.5 text-[11px]"
+      >
+        <span>MindSparq AI</span>
+        <Show when={auth.isAuthenticated()}>
+          <div class="size-1.5 rounded-full bg-green-400 animate-pulse" />
+        </Show>
+      </div>
+
+      <Show when={open()}>
+        <div
+          ref={dropdownRef}
+          class="absolute left-0 mt-1.5 z-[9999] w-64 rounded-lg border border-border-base bg-surface-raised-stronger-non-alpha p-3 text-text-strong shadow-[var(--shadow-lg-border-base)] backdrop-blur-md"
+        >
+          <Show
+            when={auth.user()}
+            fallback={
+              <div class="flex flex-col gap-2">
+                <div class="text-11-medium text-text-weak uppercase font-mono tracking-wider">Account Status</div>
+                <div class="text-13-regular text-text-base">Not signed in. Sync is currently disabled.</div>
+                <button
+                  onClick={handleSignInClick}
+                  class="w-full mt-1.5 h-8 rounded-lg bg-icon-interactive-base hover:bg-icon-interactive-base-hover text-white text-12-medium cursor-pointer transition-colors"
+                >
+                  Sign In with Google / GitHub
+                </button>
+              </div>
+            }
+          >
+            {(user) => (
+              <div class="flex flex-col gap-3">
+                <div class="text-11-medium text-text-weak uppercase font-mono tracking-wider">Authenticated Profile</div>
+                
+                <div class="flex items-center gap-3">
+                  <div class="size-9 rounded-full bg-surface-raised-base flex items-center justify-center overflow-hidden border border-border-base">
+                    <Show
+                      when={user().avatar}
+                      fallback={
+                        <span class="text-13-medium text-text-strong uppercase">
+                          {user().name?.substring(0, 1) ?? user().email?.substring(0, 1) ?? "U"}
+                        </span>
+                      }
+                    >
+                      <img src={user().avatar} alt="Profile" class="size-full object-cover" />
+                    </Show>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-13-semibold text-text-strong truncate">{user().name ?? "User"}</div>
+                    <div class="text-11-regular text-text-weak truncate">{user().email ?? ""}</div>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between py-1 border-t border-b border-border-base/30 text-11-regular text-text-weak">
+                  <span>Provider Connection:</span>
+                  <span class="capitalize text-text-strong font-medium">{user().provider}</span>
+                </div>
+
+                <button
+                  onClick={handleSignOutClick}
+                  class="w-full h-8 rounded-lg bg-danger-base hover:bg-danger-base-hover text-white text-12-medium cursor-pointer transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </Show>
+        </div>
+      </Show>
     </div>
   )
 }

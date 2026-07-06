@@ -1,4 +1,5 @@
 import { createSignal, For, Show, createMemo } from "solid-js"
+import { ContextMenu } from "@mindsparq-ai/ui/context-menu"
 import { Icon } from "@mindsparq-ai/ui/icon"
 import { IconButton } from "@mindsparq-ai/ui/icon-button"
 
@@ -119,7 +120,7 @@ export function ProblemsPanel() {
           aria-label="Clear problems"
         />
       </div>
-      <div class="flex-1 overflow-auto">
+      <div class="flex-1 overflow-auto select-text" style="user-select: text; -webkit-user-select: text;">
         <Show
           when={filteredProblems().length > 0}
           fallback={
@@ -130,25 +131,54 @@ export function ProblemsPanel() {
           }
         >
           <For each={filteredProblems()}>
-            {(problem) => (
-              <div class="flex items-start gap-2 px-3 py-1.5 border-b border-border-weaker-base hover:bg-background-hover cursor-pointer text-12-regular">
-                <Icon name={SEVERITY_ICONS[problem.severity] as any} size="small" class={`mt-0.5 ${SEVERITY_COLORS[problem.severity]}`} />
-                <div class="flex-1 min-w-0">
-                  <span class="text-text-base">{problem.message}</span>
-                  <Show when={problem.file}>
-                    <span class="text-text-weak ml-2">
-                      {problem.file}
-                      <Show when={problem.line}>
-                        <span class="text-text-weaker">:{problem.line}</span>
+            {(problem) => {
+              const text = `${problem.message}${problem.file ? ` — ${problem.file}${problem.line ? `:${problem.line}` : ""}` : ""}${problem.source ? ` (${problem.source})` : ""}`
+              const copy = async () => {
+                try {
+                  await navigator.clipboard.writeText(text)
+                } catch {
+                  // ignore
+                }
+              }
+              const sendToChat = () => window.dispatchEvent(new CustomEvent("send-to-chat", { detail: { text } }))
+
+              return (
+                <ContextMenu>
+                  <ContextMenu.Trigger as="div" class="w-full">
+                    <div class="flex items-start gap-2 px-3 py-1.5 border-b border-border-weaker-base hover:bg-background-hover cursor-pointer text-12-regular">
+                      <Icon name={SEVERITY_ICONS[problem.severity] as any} size="small" class={`mt-0.5 ${SEVERITY_COLORS[problem.severity]}`} />
+                      <div class="flex-1 min-w-0">
+                        <span class="text-text-base">{problem.message}</span>
+                        <Show when={problem.file}>
+                          <span class="text-text-weak ml-2">
+                            {problem.file}
+                            <Show when={problem.line}>
+                              <span class="text-text-weaker">:{problem.line}</span>
+                            </Show>
+                          </span>
+                        </Show>
+                      </div>
+                      <Show when={problem.source}>
+                        <span class="text-10-regular text-text-weaker shrink-0">{problem.source}</span>
                       </Show>
-                    </span>
-                  </Show>
-                </div>
-                <Show when={problem.source}>
-                  <span class="text-10-regular text-text-weaker shrink-0">{problem.source}</span>
-                </Show>
-              </div>
-            )}
+                    </div>
+                  </ContextMenu.Trigger>
+                  <ContextMenu.Portal>
+                    <ContextMenu.Content>
+                      <ContextMenu.Item onSelect={copy}>
+                        <ContextMenu.ItemLabel>Copy</ContextMenu.ItemLabel>
+                      </ContextMenu.Item>
+                      <ContextMenu.Item onSelect={() => navigator.clipboard.writeText(problem.message)}>
+                        <ContextMenu.ItemLabel>Copy message</ContextMenu.ItemLabel>
+                      </ContextMenu.Item>
+                      <ContextMenu.Item onSelect={sendToChat}>
+                        <ContextMenu.ItemLabel>Send to chat</ContextMenu.ItemLabel>
+                      </ContextMenu.Item>
+                    </ContextMenu.Content>
+                  </ContextMenu.Portal>
+                </ContextMenu>
+              )
+            }}
           </For>
         </Show>
       </div>

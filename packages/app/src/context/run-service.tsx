@@ -2,9 +2,11 @@ import { createStore } from "solid-js/store"
 import { createSimpleContext } from "@mindsparq-ai/ui/context"
 import { createMemo, batch, createEffect } from "solid-js"
 import { Persist, persisted } from "@/utils/persist"
-import { deviceStore, startDeviceDiscovery, stopDeviceDiscovery, detectFlutterProject } from "@/services/device-discovery"
+import { deviceStore, startDeviceDiscovery, stopDeviceDiscovery, detectFlutterProject, setCommandExecutor } from "@/services/device-discovery"
 import { browserStore } from "@/services/browser-discovery"
 import type { DiscoveredDevice, DiscoveredBrowser, FlutterConfig, FlutterProjectInfo } from "@/services/device-models"
+import { useSDK } from "@/context/sdk"
+import { terminalWebSocketURL } from "@/utils/terminal-websocket-url"
 
 export type RunState = "idle" | "running" | "debugging" | "paused" | "stopped" | "error"
 
@@ -487,6 +489,64 @@ export const { use: useRunService, provider: RunServiceProvider } = createSimple
 
     const setLastConfig = (id: string) => setStore("lastConfig", id)
     const setLastBrowser = (name: string) => setStore("lastBrowser", name)
+
+    const sdk = useSDK()
+    createEffect(() => {
+      const currentSdk = sdk()
+      if (!currentSdk) return
+
+      setCommandExecutor(async (command: string) => {
+        const client = currentSdk.client
+        const pty = await client.pty.create({ title: "device-discovery" })
+        if (pty.error) return ""
+        const ptyID = pty.data.id
+
+        const ticket = await client.pty.connectToken({ ptyID }).then((r) => r.data?.ticket).catch(() => undefined)
+
+        return new Promise<string>((resolve) => {
+          const wsUrl = terminalWebSocketURL({
+            url: currentSdk.url,
+            id: ptyID,
+            directory: currentSdk.directory,
+            cursor: 0,
+            ticket,
+          })
+          const ws = new WebSocket(wsUrl.toString())
+          let output = ""
+          let timer: any
+
+          const cleanup = () => {
+            clearTimeout(timer)
+            ws.close()
+            client.pty.remove({ ptyID }).catch(() => {})
+          }
+
+          ws.onopen = () => {
+            ws.send(`${command}\n`)
+            timer = setTimeout(() => {
+              cleanup()
+              resolve(output)
+            }, 3000)
+          }
+
+          ws.onmessage = (event) => {
+            if (typeof event.data === "string") {
+              output += event.data
+            }
+          }
+
+          ws.onclose = () => {
+            cleanup()
+            resolve(output)
+          }
+
+          ws.onerror = () => {
+            cleanup()
+            resolve(output)
+          }
+        })
+      })
+    })
 
     createEffect(() => {
       startDeviceDiscovery()

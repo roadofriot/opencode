@@ -3,6 +3,7 @@ import { useTheme } from "@mindsparq-ai/ui/theme/context"
 import { resolveThemeVariant } from "@mindsparq-ai/ui/theme/resolve"
 import type { HexColor } from "@mindsparq-ai/ui/theme/types"
 import { showToast } from "@/utils/toast"
+import { ContextMenu } from "@mindsparq-ai/ui/context-menu"
 import type { FitAddon, Ghostty, Terminal as Term } from "ghostty-web"
 import { type ComponentProps, createEffect, createMemo, onCleanup, onMount, splitProps } from "solid-js"
 import { SerializeAddon } from "@/addons/serialize"
@@ -653,20 +654,54 @@ export const Terminal = (props: TerminalProps) => {
     output.flush(finalize)
   })
 
+  const copySelection = () => {
+    if (!term) return
+    const selection = term.getSelection()
+    if (selection) {
+      navigator.clipboard.writeText(selection).catch(() => {})
+    }
+  }
+
+  const pasteClipboard = async () => {
+    if (!term) return
+    try {
+      const text = await navigator.clipboard.readText()
+      if (text) {
+        term.paste(text)
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   return (
-    <div
-      ref={container}
-      data-component="terminal"
-      data-prevent-autofocus
-      tabIndex={-1}
-      style={{ "background-color": terminalColors().background }}
-      classList={{
-        ...local.classList,
-        "select-text": true,
-        "size-full px-6 py-3 font-mono relative overflow-hidden": true,
-        [local.class ?? ""]: !!local.class,
-      }}
-      {...others}
-    />
+    <ContextMenu>
+      <ContextMenu.Trigger as="div" class="size-full">
+        <div
+          ref={container}
+          data-component="terminal"
+          data-prevent-autofocus
+          tabIndex={-1}
+          style={{ "background-color": terminalColors().background, "user-select": "text", "-webkit-user-select": "text" }}
+          classList={{
+            ...local.classList,
+            "select-text": true,
+            "size-full px-6 py-3 font-mono relative overflow-hidden": true,
+            [local.class ?? ""]: !!local.class,
+          }}
+          {...others}
+        />
+      </ContextMenu.Trigger>
+      <ContextMenu.Portal>
+        <ContextMenu.Content>
+          <ContextMenu.Item onSelect={copySelection}>
+            <ContextMenu.ItemLabel>Copy</ContextMenu.ItemLabel>
+          </ContextMenu.Item>
+          <ContextMenu.Item onSelect={pasteClipboard}>
+            <ContextMenu.ItemLabel>Paste</ContextMenu.ItemLabel>
+          </ContextMenu.Item>
+        </ContextMenu.Content>
+      </ContextMenu.Portal>
+    </ContextMenu>
   )
 }

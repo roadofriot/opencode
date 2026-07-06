@@ -1,4 +1,5 @@
 import { createSignal, For, Show, createMemo, onCleanup, onMount } from "solid-js"
+import { ContextMenu } from "@mindsparq-ai/ui/context-menu"
 import { Icon } from "@mindsparq-ai/ui/icon"
 import { IconButton } from "@mindsparq-ai/ui/icon-button"
 
@@ -102,7 +103,7 @@ export function DebugConsolePanel() {
           aria-label="Clear console"
         />
       </div>
-      <div ref={scrollRef} class="flex-1 overflow-auto font-mono text-11-regular">
+      <div ref={scrollRef} class="flex-1 overflow-auto font-mono text-11-regular select-text" style="user-select: text; -webkit-user-select: text;">
         <Show
           when={entries().length > 0}
           fallback={
@@ -113,27 +114,56 @@ export function DebugConsolePanel() {
           }
         >
           <For each={entries()}>
-            {(entry) => (
-              <div class="flex items-start gap-2 px-3 py-0.5 hover:bg-background-hover">
-                <span class="text-text-weaker shrink-0">{formatTime(entry.timestamp)}</span>
-                <Show when={entry.type === "input"}>
-                  <span class="text-text-weak shrink-0">&gt;</span>
-                  <span class="text-text-base">{entry.content}</span>
-                </Show>
-                <Show when={entry.type === "output"}>
-                  <span class="text-blue-400 shrink-0">&lt;</span>
-                  <span class="text-text-base">{entry.content}</span>
-                </Show>
-                <Show when={entry.type === "error"}>
-                  <span class="text-red-500 shrink-0">!</span>
-                  <span class="text-red-500">{entry.content}</span>
-                </Show>
-                <Show when={entry.type === "info"}>
-                  <span class="text-text-weak shrink-0">i</span>
-                  <span class="text-text-weak">{entry.content}</span>
-                </Show>
-              </div>
-            )}
+            {(entry) => {
+              const text = `${entry.type.toUpperCase()} ${formatTime(entry.timestamp)} — ${entry.content}`
+              const copy = async () => {
+                try {
+                  await navigator.clipboard.writeText(text)
+                } catch {
+                  // ignore
+                }
+              }
+              const sendToChat = () => window.dispatchEvent(new CustomEvent("send-to-chat", { detail: { text: entry.content } }))
+
+              return (
+                <ContextMenu>
+                  <ContextMenu.Trigger as="div" class="w-full">
+                    <div class="flex items-start gap-2 px-3 py-0.5 hover:bg-background-hover">
+                      <span class="text-text-weaker shrink-0">{formatTime(entry.timestamp)}</span>
+                      <Show when={entry.type === "input"}>
+                        <span class="text-text-weak shrink-0">&gt;</span>
+                        <span class="text-text-base">{entry.content}</span>
+                      </Show>
+                      <Show when={entry.type === "output"}>
+                        <span class="text-blue-400 shrink-0">&lt;</span>
+                        <span class="text-text-base">{entry.content}</span>
+                      </Show>
+                      <Show when={entry.type === "error"}>
+                        <span class="text-red-500 shrink-0">!</span>
+                        <span class="text-red-500">{entry.content}</span>
+                      </Show>
+                      <Show when={entry.type === "info"}>
+                        <span class="text-text-weak shrink-0">i</span>
+                        <span class="text-text-weak">{entry.content}</span>
+                      </Show>
+                    </div>
+                  </ContextMenu.Trigger>
+                  <ContextMenu.Portal>
+                    <ContextMenu.Content>
+                      <ContextMenu.Item onSelect={copy}>
+                        <ContextMenu.ItemLabel>Copy</ContextMenu.ItemLabel>
+                      </ContextMenu.Item>
+                      <ContextMenu.Item onSelect={() => navigator.clipboard.writeText(entry.content)}>
+                        <ContextMenu.ItemLabel>Copy content</ContextMenu.ItemLabel>
+                      </ContextMenu.Item>
+                      <ContextMenu.Item onSelect={sendToChat}>
+                        <ContextMenu.ItemLabel>Send to chat</ContextMenu.ItemLabel>
+                      </ContextMenu.Item>
+                    </ContextMenu.Content>
+                  </ContextMenu.Portal>
+                </ContextMenu>
+              )
+            }}
           </For>
         </Show>
       </div>
