@@ -72,9 +72,27 @@ import { PromptImageAttachments } from "./prompt-input/image-attachments"
 import { PromptDragOverlay } from "./prompt-input/drag-overlay"
 import { promptPlaceholder } from "./prompt-input/placeholder"
 import { showToast } from "@/utils/toast"
+import {
+  ComposerPicker,
+  ComposerPickerTrigger,
+  ComposerAgentControl,
+  ComposerModelControl,
+  type ComposerModelControlState,
+  type ComposerPickerState,
+  type ComposerAgentControlState,
+  type ComposerPickerTriggerState,
+} from "./prompt-input/composer-controls"
 import { ImagePreview } from "@mindsparq-ai/ui/image-preview"
 import { pathKey } from "@/utils/path-key"
 import { displayName } from "@/pages/layout/helpers"
+import {
+  encodeWAV,
+  validateTranscriptScript,
+  transcribeWithOpenAI,
+  transcribeWithGemini,
+  transcribeWithGroq,
+  transcribeWithHuggingFace,
+} from "@/utils/voice-transcription"
 
 export type PromptInputState = ReturnType<typeof usePrompt>
 
@@ -537,8 +555,8 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       if (progress.status === "initiate" || progress.status === "downloading") {
         const percent = Math.round(progress.progress)
         const filename = progress.file.split("/").pop() ?? ""
-        const title = "Downloading Local AI Model"
-        const description = `Loading ${filename}... (${percent}%)`
+        const title = "Loading Voice Model"
+        const description = `Preparing ${filename}... (${percent}%)`
 
         if (downloadToastId !== null) {
           toaster.dismiss(downloadToastId)
@@ -556,8 +574,8 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
           downloadToastId = null
         }
         showToast({
-          title: "Model Loaded",
-          description: "Local Whisper model is ready.",
+          title: "Voice Model Ready",
+          description: "Transcription model is ready for use.",
           variant: "success",
           duration: 3000,
         })
@@ -719,18 +737,25 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     const voiceEngine = settings.voice.engine()
     if (voiceEngine === "local" || voiceEngine === "openai" || voiceEngine === "gemini" || voiceEngine === "groq" || voiceEngine === "huggingface") {
       if (voiceEngine === "local") {
-        try {
-          setIsTranscribing(true)
-          // Ensure Whisper model is preloaded/cached (offline ready)
-          await WhisperTranscriber.preloadModel(settings.voice.model())
-          setIsTranscribing(false)
-        } catch (err: any) {
-          setIsTranscribing(false)
-          showToast({
-            title: "Local Speech Model Failed to Load",
-            description: `Could not load local transcription model: ${err?.message ?? String(err)}. Check your internet connection.`,
-          })
-          return
+        const model = settings.voice.model()
+        // Only preload if not already cached — avoids re-downloading on every mic press
+        if (!WhisperTranscriber.isModelLoaded(model)) {
+          try {
+            setIsTranscribing(true)
+            showToast({
+              title: "Loading Voice Model",
+              description: "Downloading Whisper model for the first time. This may take a moment...",
+            })
+            await WhisperTranscriber.preloadModel(model)
+            setIsTranscribing(false)
+          } catch (err: any) {
+            setIsTranscribing(false)
+            showToast({
+              title: "Voice Model Failed to Load",
+              description: `Could not load the local transcription model: ${err?.message ?? String(err)}. Check your internet connection or switch to a cloud engine in Settings → AI Features.`,
+            })
+            return
+          }
         }
       }
 
@@ -1934,13 +1959,13 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
         void addProject()
       },
     },
-    onOpenChange: (open) => {
+    onOpenChange: (open: boolean) => {
       setPicker("projectOpen", open)
       if (open) requestAnimationFrame(() => projectSearchRef?.focus())
     },
-    onSearchInput: (value) => setPicker("projectSearch", value),
+    onSearchInput: (value: string) => setPicker("projectSearch", value),
     onSearchClear: () => setPicker("projectSearch", ""),
-    searchRef: (el) => (projectSearchRef = el),
+    searchRef: (el: HTMLInputElement | null) => { if (el) projectSearchRef = el },
   }))
   const agentControlState = createMemo<ComposerAgentControlState>(() => ({
     title: language.t("command.agent.cycle"),
@@ -1948,7 +1973,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     options: props.controls.agents.options,
     current: props.controls.agents.current,
     style: control(),
-    onSelect: (value) => {
+    onSelect: (value: string | undefined) => {
       props.controls.agents.select(value)
       restoreFocus()
     },
@@ -2573,470 +2598,5 @@ type ComposerPickerItemState = {
   onSelect: () => void
 }
 
-type ComposerPickerTriggerState = {
-  action: string
-  icon?: IconProps["name"]
-  label: string
-  class?: string
-  style: JSX.CSSProperties | undefined
-  onPress: () => void
-}
 
-type ComposerPickerState = {
-  open: boolean
-  trigger: ComposerPickerTriggerState
-  search: string
-  searchPlaceholder: string
-  clearLabel: string
-  items: ComposerPickerItemState[]
-  action: ComposerPickerItemState
-  listClass?: string
-  searchRef: (el: HTMLInputElement) => void
-  onOpenChange: (open: boolean) => void
-  onSearchInput: (value: string) => void
-  onSearchClear: () => void
-}
 
-type ComposerAgentControlState = {
-  title: string
-  keybind: string
-  options: string[]
-  current: string
-  style: JSX.CSSProperties | undefined
-  onSelect: (value: string | undefined) => void
-}
-
-type ComposerModelControlState = {
-  loading: boolean
-  paid: boolean
-  title: string
-  keybind: string
-  model: ReturnType<typeof useLocal>["model"]
-  providerID?: string
-  modelName: string
-  style: JSX.CSSProperties | undefined
-  onClose: () => void
-  onUnpaidClick: () => void
-}
-
-function ComposerPickerTrigger(props: ComponentProps<"button"> & { state: ComposerPickerTriggerState }) {
-  const [local, rest] = splitProps(props, ["state", "class", "style", "onClick"])
-  return (
-    <button
-      {...rest}
-      data-action={local.state.action}
-      type="button"
-      class={`flex h-7 min-w-0 items-center gap-1.5 rounded px-2 text-[13px] font-[440] leading-5 tracking-[-0.04px] text-v2-text-text-faint transition-colors hover:bg-v2-overlay-simple-overlay-hover focus-visible:bg-v2-overlay-simple-overlay-hover focus-visible:outline-none ${local.state.class ?? ""}`}
-      style={local.state.style}
-      onClick={() => local.state.onPress()}
-    >
-      <Show when={local.state.icon}>
-        {(icon) => <Icon name={icon()} size="small" class="shrink-0 text-v2-icon-icon-muted" />}
-      </Show>
-      <span class="min-w-0 truncate leading-5">{local.state.label}</span>
-      <Icon name="chevron-down" size="small" class="shrink-0 text-v2-icon-icon-muted" />
-    </button>
-  )
-}
-
-function ComposerPickerMenuItem(props: { state: ComposerPickerItemState }) {
-  return (
-    <button
-      type="button"
-      class="flex h-7 w-full items-center gap-2 rounded px-3 text-left text-[13px] font-[440] leading-5 tracking-[-0.04px] text-v2-text-text-base hover:bg-v2-overlay-simple-overlay-hover focus-visible:bg-v2-overlay-simple-overlay-hover focus-visible:outline-none"
-      onClick={props.state.onSelect}
-    >
-      <Icon name={props.state.icon} size="small" class="shrink-0 text-v2-icon-icon-base" />
-      <span class="min-w-0 flex-1 truncate leading-5">{props.state.label}</span>
-      <Show when={props.state.selected}>
-        <Icon name="check-small" size="small" class="shrink-0 text-v2-icon-icon-base" />
-      </Show>
-    </button>
-  )
-}
-
-function ComposerPicker(props: { state: ComposerPickerState }) {
-  return (
-    <KobaltePopover
-      open={props.state.open}
-      placement="bottom-start"
-      gutter={4}
-      modal={false}
-      onOpenChange={props.state.onOpenChange}
-    >
-      <KobaltePopover.Trigger as={ComposerPickerTrigger} state={props.state.trigger} />
-      <KobaltePopover.Portal>
-        <KobaltePopover.Content
-          class="w-[243px] overflow-hidden rounded-md bg-v2-background-bg-layer-01 shadow-[var(--v2-elevation-floating)] focus:outline-none"
-          onOpenAutoFocus={(event) => event.preventDefault()}
-        >
-          <div class={`flex flex-col p-0.5 ${props.state.listClass ?? ""}`}>
-            <div class="flex h-7 items-center gap-2 rounded px-3 text-v2-icon-icon-muted">
-              <Icon name="magnifying-glass" size="small" class="shrink-0" />
-              <input
-                ref={props.state.searchRef}
-                value={props.state.search}
-                placeholder={props.state.searchPlaceholder}
-                class="h-7 min-w-0 flex-1 border-0 bg-transparent text-[13px] font-[440] leading-5 tracking-[-0.04px] text-v2-text-text-base outline-none placeholder:text-v2-text-text-faint"
-                onInput={(event) => props.state.onSearchInput(event.currentTarget.value)}
-              />
-              <Show when={props.state.search.trim()}>
-                <button
-                  type="button"
-                  class="flex size-5 items-center justify-center rounded text-v2-icon-icon-muted hover:bg-v2-overlay-simple-overlay-hover"
-                  onClick={props.state.onSearchClear}
-                  aria-label={props.state.clearLabel}
-                >
-                  <Icon name="close-small" size="small" />
-                </button>
-              </Show>
-            </div>
-            <For each={props.state.items}>{(item) => <ComposerPickerMenuItem state={item} />}</For>
-          </div>
-          <div class="h-px bg-v2-border-border-muted" />
-          <div class="flex flex-col p-0.5">
-            <ComposerPickerMenuItem state={props.state.action} />
-          </div>
-        </KobaltePopover.Content>
-      </KobaltePopover.Portal>
-    </KobaltePopover>
-  )
-}
-
-function ComposerAgentControl(props: { state: ComposerAgentControlState }) {
-  return (
-    <div class="relative">
-      <div class="pointer-events-none absolute left-2 top-1/2 z-10 flex size-4 -translate-y-1/2 items-center justify-center text-v2-icon-icon-muted">
-        <Icon name="sliders" size="small" />
-      </div>
-      <TooltipKeybind placement="top" gutter={4} title={props.state.title} keybind={props.state.keybind}>
-        <Select
-          size="normal"
-          options={props.state.options}
-          current={props.state.current}
-          onSelect={props.state.onSelect}
-          class="max-w-[175px] justify-start text-v2-text-text-faint [&_[data-component=icon]]:text-v2-icon-icon-muted"
-          valueClass="truncate pl-5 text-[13px] font-[440] leading-5 text-v2-text-text-faint"
-          triggerStyle={props.state.style}
-          triggerProps={{ "data-action": "prompt-agent" }}
-          variant="ghost"
-        />
-      </TooltipKeybind>
-    </div>
-  )
-}
-
-function ComposerModelControl(props: { state: ComposerModelControlState }) {
-  return (
-    <Show when={!props.state.loading}>
-      <Show
-        when={props.state.paid}
-        fallback={
-          <TooltipKeybind placement="top" gutter={4} title={props.state.title} keybind={props.state.keybind}>
-            <Button
-              data-action="prompt-model"
-              as="div"
-              variant="ghost"
-              size="normal"
-              class="min-w-0 max-w-[220px] justify-start text-[13px] font-[440] leading-5 text-v2-text-text-faint group"
-              style={props.state.style}
-              onClick={props.state.onUnpaidClick}
-            >
-              <Show when={props.state.providerID}>
-                {(providerID) => (
-                  <ProviderIcon
-                    id={providerID()}
-                    class="size-4 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity duration-150"
-                    style={{ "will-change": "opacity", transform: "translateZ(0)" }}
-                  />
-                )}
-              </Show>
-              <span class="truncate">{props.state.modelName}</span>
-              <Icon name="chevron-down" size="small" class="shrink-0 text-v2-icon-icon-muted" />
-            </Button>
-          </TooltipKeybind>
-        }
-      >
-        <TooltipKeybind placement="top" gutter={4} title={props.state.title} keybind={props.state.keybind}>
-          <ModelSelectorPopover
-            model={props.state.model}
-            triggerAs={Button}
-            triggerProps={{
-              variant: "ghost",
-              size: "normal",
-              style: props.state.style,
-              class:
-                "min-w-0 max-w-[220px] justify-start text-[13px] font-[440] leading-5 text-v2-text-text-faint group",
-              "data-action": "prompt-model",
-            }}
-            onClose={props.state.onClose}
-          >
-            <Show when={props.state.providerID}>
-              {(providerID) => (
-                <ProviderIcon
-                  id={providerID()}
-                  class="size-4 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity duration-150"
-                  style={{ "will-change": "opacity", transform: "translateZ(0)" }}
-                />
-              )}
-            </Show>
-            <span class="truncate">{props.state.modelName}</span>
-            <Icon name="chevron-down" size="small" class="shrink-0 text-v2-icon-icon-muted" />
-          </ModelSelectorPopover>
-        </TooltipKeybind>
-      </Show>
-    </Show>
-  )
-}
-
-function encodeWAV(samples: Float32Array): Blob {
-  const buffer = new ArrayBuffer(44 + samples.length * 2)
-  const view = new DataView(buffer)
-
-  writeString(view, 0, "RIFF")
-  view.setUint32(4, 36 + samples.length * 2, true)
-  writeString(view, 8, "WAVE")
-  writeString(view, 12, "fmt ")
-  view.setUint32(16, 16, true)
-  view.setUint16(20, 1, true)
-  view.setUint16(22, 1, true)
-  view.setUint32(24, 16000, true)
-  view.setUint32(28, 16000 * 2, true)
-  view.setUint16(32, 2, true)
-  view.setUint16(34, 16, true)
-  writeString(view, 36, "data")
-  view.setUint32(40, samples.length * 2, true)
-
-  floatTo16BitPCM(view, 44, samples)
-
-  return new Blob([view], { type: "audio/wav" })
-}
-
-function writeString(view: DataView, offset: number, string: string) {
-  for (let i = 0; i < string.length; i++) {
-    view.setUint8(offset + i, string.charCodeAt(i))
-  }
-}
-
-function floatTo16BitPCM(output: DataView, offset: number, input: Float32Array) {
-  for (let i = 0; i < input.length; i++, offset += 2) {
-    const s = Math.max(-1, Math.min(1, input[i]))
-    output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true)
-  }
-}
-
-// Script ranges for detecting misidentified language output
-const DEVANAGARI_RE = /[\u0900-\u097F]/
-// CJK: Chinese, Japanese Kanji, Korean Hangul, and other East Asian scripts
-const CJK_RE = /[\u4E00-\u9FFF\u3400-\u4DBF\u3000-\u303F\uFF00-\uFFEF\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F\uA960-\uA97F\uD7B0-\uD7FF]/
-// Arabic script covers Urdu, Arabic, Persian, etc.
-const ARABIC_RE = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/
-// Thai, Lao, Myanmar etc. — also commonly confused with Devanagari by small models
-const OTHER_ASIAN_RE = /[\u0E00-\u0E7F\u0E80-\u0EFF\u1000-\u109F]/
-
-/**
- * When the user has selected Nepali (ne), check if the transcription output
- * is in a completely wrong script (Chinese/CJK, Korean, Arabic/Urdu, Thai etc.).
- * Returns empty string to discard hallucinated output silently.
- */
-function validateTranscriptScript(text: string, languageCode: string): string {
-  if (!text || !languageCode || languageCode === "auto") return text
-  if (languageCode !== "ne" && languageCode !== "hi") return text
-
-  const chars = [...text.trim()]
-  if (chars.length === 0) return text
-
-  const cjkCount = chars.filter((c) => CJK_RE.test(c)).length
-  const arabicCount = chars.filter((c) => ARABIC_RE.test(c)).length
-  const otherAsianCount = chars.filter((c) => OTHER_ASIAN_RE.test(c)).length
-  const devanagariCount = chars.filter((c) => DEVANAGARI_RE.test(c)).length
-  const wrongScript = cjkCount + arabicCount + otherAsianCount
-
-  // If more than 20% of characters are wrong-script and almost no Devanagari, reject
-  if (wrongScript / chars.length > 0.2 && devanagariCount < 2) {
-    console.warn(
-      `[VOICE] Script mismatch detected for language "${languageCode}". ` +
-      `CJK/Korean: ${cjkCount}, Arabic/Urdu: ${arabicCount}, Thai/Other: ${otherAsianCount}, Devanagari: ${devanagariCount}. ` +
-      `Discarding hallucinated output: "${text.slice(0, 60)}"`
-    )
-    return ""
-  }
-  return text
-}
-
-async function transcribeWithOpenAI(wavBlob: Blob, apiKey: string, languageCode: string): Promise<string> {
-  const formData = new FormData()
-  formData.append("file", wavBlob, "recording.wav")
-  formData.append("model", "whisper-1")
-  if (languageCode && languageCode !== "auto") {
-    formData.append("language", languageCode)
-  }
-
-  const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`
-    },
-    body: formData
-  })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    console.error("[OPENAI_SPEECH] API error response:", errorText)
-    throw new Error(`OpenAI API failed: ${response.status} - ${errorText}`)
-  }
-
-  const result = await response.json()
-  return result.text || ""
-}
-
-const geminiLanguagePromptMap: Record<string, string> = {
-  ne: "The audio is in Nepali. Transcribe it exactly as spoken in Nepali Devanagari script (नेपाली देवनागरी लिपिमा). Do not transliterate into Roman letters. Do not translate into English.",
-  hi: "The audio is in Hindi. Transcribe it exactly as spoken in Hindi Devanagari script. Do not transliterate or translate.",
-  en: "The audio is in English. Transcribe it exactly as spoken in English.",
-  es: "The audio is in Spanish. Transcribe it exactly as spoken in Spanish.",
-  fr: "The audio is in French. Transcribe it exactly as spoken in French.",
-  de: "The audio is in German. Transcribe it exactly as spoken in German.",
-  ja: "The audio is in Japanese. Transcribe it exactly as spoken in Japanese script.",
-  zh: "The audio is in Chinese (Mandarin). Transcribe it exactly as spoken in Chinese characters.",
-}
-
-async function transcribeWithGemini(wavBlob: Blob, apiKey: string, languageCode: string): Promise<string> {
-  const arrayBuffer = await wavBlob.arrayBuffer()
-  const bytes = new Uint8Array(arrayBuffer)
-  let binary = ""
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i])
-  }
-  const base64Data = btoa(binary)
-
-  const languageInstruction =
-    languageCode && languageCode !== "auto"
-      ? (geminiLanguagePromptMap[languageCode] ?? `The audio is in language code "${languageCode}". Transcribe it exactly as spoken in its native script.`)
-      : "Detect the language automatically and transcribe exactly as spoken in the original script. If Nepali, use Devanagari (नेपाली). If Hindi, use Devanagari. If Chinese or Japanese, use their respective scripts."
-
-  const transcriptionPrompt = `${languageInstruction} Output only the raw transcription — no translations, no summaries, no notes, no headers, no explanations.`
-
-  const payload = {
-    contents: [{
-      parts: [
-        {
-          inlineData: {
-            mimeType: "audio/wav",
-            data: base64Data
-          }
-        },
-        {
-          text: transcriptionPrompt
-        }
-      ]
-    }],
-    generationConfig: {
-      temperature: 0.0
-    }
-  }
-
-  const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-latest"]
-  let lastError: Error | null = null
-
-  for (const model of models) {
-    try {
-      console.log(`[GEMINI_SPEECH] Attempting transcription with model: ${model}, language: ${languageCode}`)
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        }
-      )
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.warn(`[GEMINI_SPEECH] Model ${model} failed: ${response.status} - ${errorText}`)
-        lastError = new Error(`Gemini API failed for model ${model}: ${response.status} - ${errorText}`)
-        continue
-      }
-
-      const result = await response.json()
-      const text = result.candidates?.[0]?.content?.parts?.[0]?.text
-      if (text) {
-        console.log(`[GEMINI_SPEECH] Transcription successful with model: ${model}`)
-        return text
-      }
-    } catch (err: any) {
-      console.warn(`[GEMINI_SPEECH] Error with model ${model}:`, err)
-      lastError = err instanceof Error ? err : new Error(String(err))
-    }
-  }
-
-  throw lastError || new Error("All Gemini models failed to transcribe the audio.")
-}
-
-async function transcribeWithGroq(wavBlob: Blob, apiKey: string, languageCode: string): Promise<string> {
-  const formData = new FormData()
-  formData.append("file", wavBlob, "recording.wav")
-  formData.append("model", "whisper-large-v3-turbo")
-  if (languageCode && languageCode !== "auto") {
-    formData.append("language", languageCode)
-  }
-
-  const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`
-    },
-    body: formData
-  })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    console.error("[GROQ_SPEECH] API error response:", errorText)
-    throw new Error(`Groq API failed: ${response.status} - ${errorText}`)
-  }
-
-  const result = await response.json()
-  return result.text || ""
-}
-
-async function transcribeWithHuggingFace(wavBlob: Blob, token: string | undefined, languageCode: string): Promise<string> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  }
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`
-  }
-
-  // Convert wav blob to base64 for the JSON payload
-  const arrayBuffer = await wavBlob.arrayBuffer()
-  const bytes = new Uint8Array(arrayBuffer)
-  let binary = ""
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i])
-  }
-  const base64Audio = btoa(binary)
-
-  // whisper-large-v3-turbo supports Nepali and 99 other languages
-  // Pass language as ISO 639-1 code so HF routes to the correct decoder
-  const parameters: Record<string, unknown> = { return_timestamps: false }
-  if (languageCode && languageCode !== "auto") {
-    parameters.language = languageCode
-  }
-
-  const response = await fetch("https://api-inference.huggingface.co/models/openai/whisper-large-v3-turbo", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ inputs: base64Audio, parameters }),
-  })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    console.error("[HF_SPEECH] API error response:", errorText)
-    throw new Error(`Hugging Face API failed: ${response.status} - ${errorText}`)
-  }
-
-  const result = await response.json()
-  return result.text || ""
-}

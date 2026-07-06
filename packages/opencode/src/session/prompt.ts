@@ -60,8 +60,12 @@ import { SessionTable } from "@mindsparq-ai/core/session/sql"
 import { SessionReminders } from "./reminders"
 import { SessionTools } from "./tools"
 import { LLMEvent } from "@mindsparq-ai/llm"
+import { ContextClassifier } from "@/context-classifier"
 
-// @ts-ignore
+// Suppress noisy AI SDK warnings about experimental features we intentionally use.
+declare global {
+  var AI_SDK_LOG_WARNINGS: boolean | undefined
+}
 globalThis.AI_SDK_LOG_WARNINGS = false
 
 const decodeMessageInfo = Schema.decodeUnknownExit(SessionV1.Info)
@@ -658,7 +662,26 @@ export const layer = Layer.effect(
               .getModel(model.providerID, model.modelID)
               .pipe(Effect.catchIf(Provider.ModelNotFoundError.isInstance, () => Effect.succeed(undefined)))
           : undefined
-      const variant = input.variant ?? (ag.variant && full?.variants?.[ag.variant] ? ag.variant : undefined)
+
+      // When the caller does not specify a variant, consult the context
+      // classifier. Casual or simple messages skip expensive thinking variants
+      // to reduce latency and cost. Complex messages inherit the agent default.
+      const classifiedVariant = input.variant
+        ? input.variant
+        : (() => {
+            if (ag.variant && full?.variants?.[ag.variant]) {
+              // Agent has a preferred variant — let the classifier override it
+              // only when the message is clearly casual/simple.
+              const msgs = input.parts
+                .filter((p) => p.type === "text")
+                .map((p) => ({ role: "user" as const, content: (p as { text: string }).text }))
+              const suggestion = ContextClassifier.suggestVariant(msgs)
+              if (suggestion === "none" || suggestion === "low") return suggestion
+              return ag.variant && full?.variants?.[ag.variant] ? ag.variant : undefined
+            }
+            return undefined
+          })()
+      const variant = classifiedVariant
 
       const info: SessionV1.User = {
         id: input.messageID ?? MessageID.ascending(),

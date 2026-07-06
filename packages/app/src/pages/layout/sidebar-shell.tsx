@@ -10,13 +10,13 @@ import {
 import { ConstrainDragXAxis } from "@/utils/solid-dnd"
 import { IconButton } from "@mindsparq-ai/ui/icon-button"
 import { Tooltip, TooltipKeybind } from "@mindsparq-ai/ui/tooltip"
-import { UserMenu } from "@/components/auth/user-menu"
 import { type LocalProject } from "@/context/layout"
 import { WorkspaceOverview } from "@/pages/layout/workspace-overview"
 
 export const SidebarContent = (props: {
   mobile?: boolean
   opened: Accessor<boolean>
+  onClose?: () => void
   aimMove: (event: MouseEvent) => void
   projects: Accessor<LocalProject[]>
   renderProject: (project: LocalProject) => JSX.Element
@@ -47,6 +47,20 @@ export const SidebarContent = (props: {
     }
     el.setAttribute("inert", "")
   })
+
+  const handlePanelClick = (event: MouseEvent) => {
+    // Only close on mobile when clicking in the panel area (not interactive elements)
+    if (!props.mobile || !props.onClose) return
+    
+    const target = event.target as HTMLElement
+    // Don't close if clicking on interactive elements
+    if (target.closest("button, a, [role='button'], input, textarea")) return
+    
+    // Close drawer on click outside interactive content
+    if (target === panel || target.closest("[data-session-item], .p-2, .px-4, .py-1")) {
+      props.onClose()
+    }
+  }
 
   return (
     <div class="flex h-full w-full min-w-0 overflow-hidden">
@@ -92,7 +106,6 @@ export const SidebarContent = (props: {
           </DragDropProvider>
         </div>
         <div class="shrink-0 w-full pt-3 pb-6 flex flex-col items-center gap-2">
-          <UserMenu />
           <TooltipKeybind placement={placement()} title={props.settingsLabel()} keybind={props.settingsKeybind() ?? ""}>
             <IconButton
               icon="settings-gear"
@@ -118,6 +131,7 @@ export const SidebarContent = (props: {
         ref={(el) => {
           panel = el
         }}
+        onClick={handlePanelClick}
         classList={{ "flex-1 flex flex-col h-full min-h-0 min-w-0 overflow-hidden": true, "pointer-events-none": !expanded() }}
         aria-hidden={!expanded()}
       >

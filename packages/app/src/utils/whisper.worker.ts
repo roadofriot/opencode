@@ -1,7 +1,9 @@
 import { env, pipeline } from "@xenova/transformers"
 
+// Disable local model lookup conflicts to prevent Unsupported Model Type errors
 env.allowLocalModels = false
-env.backends.onnx.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/"
+// Use latest stable ONNX runtime for better compatibility
+env.backends.onnx.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.0/dist/"
 
 let pipelineInstance: unknown = null
 let currentModel: string | null = null

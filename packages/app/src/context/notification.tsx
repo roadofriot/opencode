@@ -369,6 +369,31 @@ export const { use: useNotification, provider: NotificationProvider } = createSi
           })
         },
       },
+      // Utility actions for UI to copy or send notification contents to chat
+      actions: {
+        copy(notification: Notification) {
+          try {
+            const text =
+              notification.type === "error"
+                ? `Error${notification.session ? ` in session ${notification.session}` : ""}: ${
+                    (notification as ErrorNotification).error ?? ""
+                  }${notification.directory ? ` (${notification.directory})` : ""}`
+                : `Session complete${notification.session ? `: ${notification.session}` : ""}${notification.directory ? ` (${notification.directory})` : ""}`
+            void navigator.clipboard.writeText(text)
+          } catch {
+            // ignore
+          }
+        },
+        sendToChat(notification: Notification) {
+          const text =
+            notification.type === "error"
+              ? `Error${notification.session ? ` in session ${notification.session}` : ""}: ${
+                  (notification as ErrorNotification).error ?? ""
+                }`
+              : `Session complete${notification.session ? `: ${notification.session}` : ""}`
+          window.dispatchEvent(new CustomEvent("send-to-chat", { detail: { text } }))
+        },
+      },
     }
   },
 })

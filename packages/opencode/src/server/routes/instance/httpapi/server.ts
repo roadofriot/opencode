@@ -1,6 +1,6 @@
 import { Config as EffectConfig, Context, Effect, Layer } from "effect"
 import { HttpApiBuilder, OpenApi } from "effect/unstable/httpapi"
-import { HttpClient, HttpMiddleware, HttpRouter, HttpServer, HttpServerResponse } from "effect/unstable/http"
+import { HttpClient, HttpMiddleware, HttpRouter, HttpServer, HttpServerResponse, HttpServerRequest } from "effect/unstable/http"
 import * as Socket from "effect/unstable/socket/Socket"
 import { FSUtil } from "@mindsparq-ai/core/fs-util"
 import * as Observability from "@mindsparq-ai/core/observability"
@@ -115,6 +115,46 @@ const cors = (corsOptions?: CorsOptions) =>
       allowedOrigins: (origin) => isAllowedCorsOrigin(origin, corsOptions),
       maxAge: 86_400,
     }),
+    { global: true },
+  )
+
+const rateLimits = new Map<string, { count: number; resetTime: number }>()
+
+const rateLimiter = () =>
+  HttpRouter.middleware(
+    (app) =>
+      Effect.gen(function* () {
+        const request = yield* HttpServerRequest.HttpServerRequest
+        const clientIp = request.headers["x-forwarded-for"] || request.headers["x-real-ip"] || "unknown-ip"
+
+        // Bypass rate limiting for local loopback connections
+        if (clientIp === "127.0.0.1" || clientIp === "::1" || clientIp === "localhost" || clientIp === "unknown-ip") {
+          return yield* app
+        }
+
+        const now = Date.now()
+        const windowMs = 60_000 // 1 minute
+        const maxRequests = 120 // 120 requests per minute
+
+        let record = rateLimits.get(clientIp)
+        if (!record || now > record.resetTime) {
+          record = { count: 0, resetTime: now + windowMs }
+          rateLimits.set(clientIp, record)
+        }
+
+        record.count++
+
+        if (record.count > maxRequests) {
+          return HttpServerResponse.text("Too Many Requests", {
+            status: 429,
+            headers: {
+              "Retry-After": Math.ceil((record.resetTime - now) / 1000).toString(),
+            },
+          })
+        }
+
+        return yield* app
+      }),
     { global: true },
   )
 
@@ -260,7 +300,7 @@ const app = LayerNode.group([
 
 export function createRoutes(
   corsOptions?: CorsOptions,
-): Layer.Layer<never, EffectConfig.ConfigError, RouteRequirements> {
+) {
   return Layer.mergeAll(
     rootApiRoutes,
     eventApiRoutes,
@@ -276,6 +316,7 @@ export function createRoutes(
       corsVaryFix,
       fenceLayer,
       cors(corsOptions),
+      rateLimiter(),
       MoveSession.defaultLayer,
       HttpServer.layerServices,
     ]),

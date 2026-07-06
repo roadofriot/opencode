@@ -31,65 +31,7 @@ import { ModelV2 } from "@mindsparq-ai/core/model"
 import { ModelStatus } from "./model-status"
 import { RuntimeFlags } from "@/effect/runtime-flags"
 import { ProviderError } from "./error"
-
-const OPENAI_HEADER_TIMEOUT_DEFAULT = 10_000
-
-function wrapSSE(res: Response, ms: number, ctl: AbortController) {
-  if (typeof ms !== "number" || ms <= 0) return res
-  if (!res.body) return res
-  if (!res.headers.get("content-type")?.includes("text/event-stream")) return res
-
-  const reader = res.body.getReader()
-  const body = new ReadableStream<Uint8Array>({
-    async pull(ctrl) {
-      const part = await new Promise<Awaited<ReturnType<typeof reader.read>>>((resolve, reject) => {
-        const id = setTimeout(() => {
-          const err = new ProviderError.ResponseStreamError("SSE read timed out")
-          ctl.abort(err)
-          void reader.cancel(err)
-          reject(err)
-        }, ms)
-
-        reader.read().then(
-          (part) => {
-            clearTimeout(id)
-            resolve(part)
-          },
-          (err) => {
-            clearTimeout(id)
-            reject(err)
-          },
-        )
-      })
-
-      if (part.done) {
-        ctrl.close()
-        return
-      }
-
-      ctrl.enqueue(part.value)
-    },
-    async cancel(reason) {
-      ctl.abort(reason)
-      await reader.cancel(reason)
-    },
-  })
-
-  return new Response(body, {
-    headers: new Headers(res.headers),
-    status: res.status,
-    statusText: res.statusText,
-  })
-}
-
-function timeoutController(ms: number) {
-  const ctl = new AbortController()
-  const id = setTimeout(() => ctl.abort(new ProviderError.HeaderTimeoutError(ms)), ms)
-  return {
-    signal: ctl.signal,
-    clear: () => clearTimeout(id),
-  }
-}
+import { OPENAI_HEADER_TIMEOUT_DEFAULT, wrapSseStreamWithTimeout, timeoutController } from "./sse-util"
 
 function googleVertexAnthropicBaseURL(project: string | undefined, location: string | undefined) {
   if (!project) return
@@ -1580,8 +1522,17 @@ export const layer = Layer.effect(
               delete provider.models[modelID]
             if (model.status === "alpha" && !runtimeFlags.enableExperimentalModels) delete provider.models[modelID]
             if (model.status === "deprecated") delete provider.models[modelID]
-            // Filter out non-chat models (e.g. whisper STT, audio-only models)
-            if (!model.capabilities.input.text || !model.capabilities.toolcall) {
+            // Keep audio-only/Speech-to-Text models (e.g. whisper) and multimodal models
+            const isAudioModel = !model.capabilities.input.text && model.capabilities.input.audio
+            const isMultimodal = model.capabilities.input.audio || model.capabilities.output.audio
+            if (!isAudioModel && !model.capabilities.input.text) {
+              delete provider.models[modelID]
+              continue
+            }
+            // Allow STT/audio models even without toolcall - they're needed for voice-to-text
+            // Allow multimodal models for rich interactions
+            // Only filter out models that have text input but lack toolcall capability (if toolcall is expected)
+            if (!isAudioModel && !isMultimodal && !model.capabilities.toolcall) {
               delete provider.models[modelID]
               continue
             }
@@ -1724,7 +1675,7 @@ export const layer = Layer.effect(
           }).finally(() => headerTimeoutCtl?.clear())
 
           if (!chunkAbortCtl) return res
-          return wrapSSE(res, chunkTimeout, chunkAbortCtl)
+          return wrapSseStreamWithTimeout(res, chunkTimeout, chunkAbortCtl)
         }
 
         const bundledLoader = BUNDLED_PROVIDERS[model.api.npm]
@@ -1955,7 +1906,24 @@ export const defaultLayer = Layer.suspend(() =>
   ),
 )
 
-const priority = ["gpt-5", "claude-sonnet-4", "big-pickle", "gemini-3-pro"]
+// Free/open models prioritized first, then paid models
+// Order: OpenCode free models → Gemini → OpenRouter → Korra → other free models → paid models
+const freeModelPriority = [
+  "opencode",
+  "korra",
+  "gemini",
+  "openrouter",
+  "deepseek",
+  "llama",
+  "mistral",
+  "qwen",
+  "groq",
+]
+
+const paidModelPriority = ["gpt-5", "claude-sonnet-4", "big-pickle"]
+
+const priority = [...freeModelPriority, ...paidModelPriority]
+
 export function sort<T extends { id: string }>(models: T[]) {
   return sortBy(
     models,

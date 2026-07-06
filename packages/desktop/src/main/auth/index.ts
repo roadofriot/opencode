@@ -92,6 +92,7 @@ export async function signInWithProvider(provider: "github" | "google"): Promise
 
       if (!code) {
         res.writeHead(400).end("Missing code")
+        server?.close()
         return
       }
 
@@ -170,9 +171,18 @@ export async function signInWithProvider(provider: "github" | "google"): Promise
     })
 
     authWindow.webContents.on("will-redirect", (_event, url) => {
-      if (url.startsWith(`http://127.0.0.1:${port}`)) {
-        _event.preventDefault()
-        fetch(url).catch(() => {})
+      try {
+        const parsed = new URL(url)
+        if (parsed.hostname === "127.0.0.1" && parsed.port === String(port)) {
+          if (parsed.pathname === "/auth/callback") {
+            _event.preventDefault()
+            fetch(url).catch((err) => {
+              reject(new Error(`Local callback fetch failed: ${err instanceof Error ? err.message : String(err)}`))
+            })
+          }
+        }
+      } catch (e) {
+        // Safe fallback for external URLs
       }
     })
   })

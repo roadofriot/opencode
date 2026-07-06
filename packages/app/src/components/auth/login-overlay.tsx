@@ -3,28 +3,24 @@ import { Button } from "@mindsparq-ai/ui/button"
 import { Card } from "@mindsparq-ai/ui/card"
 import { Mark } from "@mindsparq-ai/ui/logo"
 import { useAuth } from "@/context/auth"
-import type { AuthProvider } from "@/auth/types"
-import { isSupabaseConfigured } from "@/auth/supabase-service"
+import { isSupabaseConfigured } from "@/lib/auth/client"
 import { showToast } from "@mindsparq-ai/ui/toast"
 
 export function LoginOverlay() {
   const auth = useAuth()
-  const [loading, setLoading] = createSignal<AuthProvider | null>(null)
-  const [, setError] = createSignal<string | null>(null)
+  const [loading, setLoading] = createSignal<"google" | "github" | null>(null)
   const [isVisible, setIsVisible] = createSignal(false)
 
   onMount(() => {
     requestAnimationFrame(() => setIsVisible(true))
   })
 
-  const handleSignIn = async (provider: AuthProvider) => {
+  const handleSignIn = async (provider: "google" | "github") => {
     setLoading(provider)
-    setError(null)
     try {
       await auth.signIn(provider)
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Sign in failed"
-      setError(msg)
       showToast({
         title: "Authentication failed",
         description: msg,
@@ -35,7 +31,7 @@ export function LoginOverlay() {
     }
   }
 
-  const configured = isSupabaseConfigured() || ("api" in window && (window as any).api?.auth)
+  const configured = isSupabaseConfigured()
 
   return (
     <div
@@ -84,14 +80,11 @@ export function LoginOverlay() {
                   Sign in to sync data across devices.
                 </p>
                 <Card variant="info" class="max-w-[300px]">
-                  <p class="text-12-medium text-text-base mb-1">To enable auth, create a .env file with:</p>
+                  <p class="text-12-medium text-text-base mb-1">To enable auth, populate your .env file with:</p>
                   <code class="text-11-regular text-text-weak block leading-relaxed">
                     VITE_SUPABASE_URL=https://your-project.supabase.co<br />
                     VITE_SUPABASE_ANON_KEY=your-anon-key
                   </code>
-                  <p class="text-11-regular text-text-weak mt-1.5">
-                    Then enable Google/GitHub auth in your Supabase dashboard.
-                  </p>
                 </Card>
               </div>
             }
@@ -147,9 +140,7 @@ export function LoginOverlay() {
           }}
         >
           <div class="flex gap-3">
-            <ServiceIndicator name="Supabase" active={false} />
-            <ServiceIndicator name="Firebase" active={false} />
-            <ServiceIndicator name="GitHub" active={false} />
+            <ServiceIndicator name="Supabase" active={configured} />
           </div>
         </div>
 

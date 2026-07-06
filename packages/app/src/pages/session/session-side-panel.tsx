@@ -116,6 +116,12 @@ export function SessionSidePanel(props: {
   const [changesOpen, setChangesOpen] = createSignal(
     localStorage.getItem(changesKeyStr()) === "true"
   )
+  const [notesOpen, setNotesOpen] = createSignal(
+    localStorage.getItem("sidepanel:notes:open") === "true"
+  )
+  const [notesText, setNotesText] = createSignal(
+    localStorage.getItem("sidepanel:notes:text") ?? ""
+  )
 
   createEffect(() => {
     localStorage.setItem(sessionKeyStr(), sessionOpen() ? "true" : "false")
@@ -123,12 +129,25 @@ export function SessionSidePanel(props: {
   createEffect(() => {
     localStorage.setItem(changesKeyStr(), changesOpen() ? "true" : "false")
   })
+  createEffect(() => {
+    localStorage.setItem("sidepanel:notes:open", notesOpen() ? "true" : "false")
+  })
+  createEffect(() => {
+    localStorage.setItem("sidepanel:notes:text", notesText())
+  })
 
   // Auto-collapse when switching workspaces
   createEffect(on(() => params.dir, () => {
     setSessionOpen(false)
     setChangesOpen(false)
+    setNotesOpen(false)
   }, { defer: true }))
+
+  const sendNotesToChat = () => {
+    const text = notesText().trim()
+    if (!text) return
+    window.dispatchEvent(new CustomEvent("send-to-chat", { detail: { text } }))
+  }
 
   const isDesktop = createMediaQuery("(min-width: 768px)")
   const shown = settings.visibility.fileTree
@@ -332,6 +351,37 @@ export function SessionSidePanel(props: {
                     <div class="flex items-center justify-between">
                       <span class="text-11-regular text-text-weak">{language.t("session.info.session") || "Session"}</span>
                       <span class="text-11-medium text-text-base truncate max-w-120">{params.id ? `${params.id.slice(0, 8)}...` : "—"}</span>
+                    </div>
+                  </div>
+                </CollapsibleSection>
+                <CollapsibleSection
+                  title="Notes"
+                  icon="session"
+                  isOpen={notesOpen()}
+                  onToggle={() => setNotesOpen(!notesOpen())}
+                >
+                  <div class="px-3 pb-3 flex flex-col gap-2">
+                    <textarea
+                      value={notesText()}
+                      onInput={(e) => setNotesText(e.currentTarget.value)}
+                      placeholder="Type quick notes, ideas, or reminders..."
+                      class="w-full h-24 p-2 text-11-regular bg-surface-base border border-border-weaker-base rounded-md focus:border-primary-base focus:ring-1 focus:ring-primary-base outline-none resize-none font-sans"
+                    />
+                    <div class="flex items-center gap-1.5 justify-end">
+                      <IconButton
+                        icon="enter"
+                        variant="ghost"
+                        class="size-6 text-text-weak"
+                        onClick={sendNotesToChat}
+                        aria-label="Send to chat"
+                      />
+                      <IconButton
+                        icon="close-small"
+                        variant="ghost"
+                        class="size-6 text-text-weak"
+                        onClick={() => setNotesText("")}
+                        aria-label="Clear notes"
+                      />
                     </div>
                   </div>
                 </CollapsibleSection>

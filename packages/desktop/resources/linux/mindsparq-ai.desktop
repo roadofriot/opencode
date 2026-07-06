@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=MindSparQ AI
-Exec=/opt/MindSparQ/mindsparq-ai.desktop %U
+Exec=/opt/MindSparQ/MindSparQ.desktop %U
 Terminal=false
 Type=Application
 Icon=MindSparQ.desktop

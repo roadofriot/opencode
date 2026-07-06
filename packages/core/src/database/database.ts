@@ -24,6 +24,11 @@ export const layer = Layer.effect(
   Effect.gen(function* () {
     const db = yield* makeDatabase
 
+    const dbKey = process.env.OPENCODE_DB_KEY
+    if (dbKey) {
+      yield* db.run(`PRAGMA key = ${JSON.stringify(dbKey)}`)
+    }
+
     yield* db.run("PRAGMA journal_mode = WAL")
     yield* db.run("PRAGMA synchronous = NORMAL")
     yield* db.run("PRAGMA busy_timeout = 5000")

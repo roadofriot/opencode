@@ -84,18 +84,18 @@ export function NewSessionView(props: NewSessionViewProps) {
             </div>
 
             {/* Path metadata pill */}
-            <div class="flex flex-col gap-2 items-center bg-v2-background-bg-layer-02/50 border border-border-weaker-base/60 rounded-xl px-4 py-3 min-w-[280px]">
-              <div class="flex items-center justify-center gap-1.5 text-11-medium text-text-weak">
-                <span>{getDirectory(projectRoot())}</span>
-                <span class="text-text-strong font-semibold">{getFilename(projectRoot())}</span>
+            <div class="flex flex-col gap-2 items-center bg-v2-background-bg-layer-02/50 border border-border-weaker-base/60 rounded-xl px-4 py-3 min-w-[280px] max-w-[400px]">
+              <div class="flex items-center justify-center gap-1.5 text-11-medium text-text-weak min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-text-weak scrollbar-track-transparent hover:scrollbar-thumb-text-base">
+                <span class="shrink-0">{getDirectory(projectRoot())}</span>
+                <span class="text-text-strong font-semibold truncate">{getFilename(projectRoot())}</span>
               </div>
-              <div class="flex items-center justify-center gap-1.5 text-11-medium text-text-weak">
+              <div class="flex items-center justify-center gap-1.5 text-11-medium text-text-weak min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-text-weak scrollbar-track-transparent hover:scrollbar-thumb-text-base">
                 <Icon name="branch" size="small" class="shrink-0 text-accent-base" />
-                <span>{label(current())}</span>
+                <span class="truncate">{label(current())}</span>
               </div>
               <Show when={sync().project}>
                 {(project) => (
-                  <div class="text-[10px] text-text-weaker mt-0.5">
+                  <div class="text-[10px] text-text-weaker mt-0.5 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-text-weaker scrollbar-track-transparent">
                     {language.t("session.new.lastModified")}:{" "}
                     <span class="font-medium text-text-weak">
                       {DateTime.fromMillis(project().time.updated ?? project().time.created)

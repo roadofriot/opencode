@@ -175,6 +175,23 @@ export default function Layout(props: ParentProps) {
     return state.version
   }
   const installUpdate = () => void platform.updater?.install()
+  createEffect(() => {
+    const status = platform.updater?.state().status
+    if (status === "ready") {
+      const version = (platform.updater?.state() as any).version || ""
+      showToast({
+        title: "Update Available",
+        description: `Version ${version} has been downloaded and is ready to install.`,
+        actions: [
+          {
+            label: "Restart & Update",
+            onClick: () => platform.updater?.install(),
+          },
+        ],
+      })
+    }
+  })
+
   const titlebarUpdate: TitlebarUpdate = {
     version: updateVersion,
     installing: () => platform.updater?.state().status === "installing",
@@ -2331,6 +2348,7 @@ export default function Layout(props: ParentProps) {
     <SidebarContent
       mobile={mobile}
       opened={() => layout.sidebar.opened()}
+      onClose={() => layout.sidebar.close()}
       aimMove={aim.move}
       projects={projects}
       renderProject={(project) => (

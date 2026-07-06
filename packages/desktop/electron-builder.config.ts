@@ -32,11 +32,8 @@ const channel = (() => {
   return "dev"
 })()
 
-const APP_IDS = {
-  dev: "MindSparQ.desktop.dev",
-  beta: "MindSparQ.desktop.beta",
-  prod: "MindSparQ.desktop",
-} as const
+const APP_NAME = "MindSparQ AI"
+const APP_ID_BASE = "MindSparQ.desktop"
 
 const getBase = (appId: string): Configuration => ({
   artifactName: "MindSparQ AI-${os}-${arch}.${ext}",
@@ -107,7 +104,7 @@ const getBase = (appId: string): Configuration => ({
 })
 
 function getConfig() {
-  const appId = APP_IDS[channel]
+  const appId = channel === "prod" ? APP_ID_BASE : `${APP_ID_BASE}.${channel}`
   const base = getBase(appId)
 
   switch (channel) {
@@ -115,7 +112,7 @@ function getConfig() {
       return {
         ...base,
         appId,
-        productName: "MindSparQ AI Dev",
+        productName: `${APP_NAME} Dev`,
         rpm: { packageName: "mindsparq-ai-dev" },
       }
     }
@@ -123,8 +120,8 @@ function getConfig() {
       return {
         ...base,
         appId,
-        productName: "MindSparQ AI Beta",
-        protocols: { name: "MindSparQ AI Beta", schemes: ["mindsparq"] },
+        productName: `${APP_NAME} Beta`,
+        protocols: { name: `${APP_NAME} Beta`, schemes: ["mindsparq"] },
         publish: { provider: "github", owner: "anomalyco", repo: "mindsparq-beta", channel: "latest" },
         rpm: { packageName: "mindsparq-ai-beta" },
       }
@@ -133,11 +130,15 @@ function getConfig() {
       return {
         ...base,
         appId,
-        productName: "MindSparQ AI",
-        protocols: { name: "MindSparQ AI", schemes: ["mindsparq"] },
+        productName: APP_NAME,
+        protocols: { name: APP_NAME, schemes: ["mindsparq"] },
         publish: { provider: "github", owner: "anomalyco", repo: "mindsparq", channel: "latest" },
-        deb: { fpm: [legacyDesktopEntryFpm] },
-        rpm: { packageName: "mindsparq-ai", fpm: [legacyDesktopEntryFpm] },
+        deb: {
+          packageName: "mindsparq-ai",
+          maintainer: "Anomaly Innovations Inc. <hello@mindsparq.ai>",
+          homepage: "https://mindsparq.ai",
+        },
+        rpm: { packageName: "mindsparq-ai" },
       }
     }
   }

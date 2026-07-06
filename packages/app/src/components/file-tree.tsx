@@ -3,6 +3,15 @@ import { encodeFilePath } from "@/context/file/path"
 import { Collapsible } from "@mindsparq-ai/ui/collapsible"
 import { FileIcon } from "@mindsparq-ai/ui/file-icon"
 import { Icon } from "@mindsparq-ai/ui/icon"
+import { DropdownMenu } from "@mindsparq-ai/ui/dropdown-menu"
+import { useSDK } from "@/context/sdk"
+import {
+  createNewFile,
+  createNewFolder,
+  renameFileOrFolder,
+  deleteFileOrFolder,
+} from "@/utils/file-operations"
+
 import {
   createEffect,
   createMemo,
@@ -134,6 +143,8 @@ const FileTreeNode = (
     "class",
     "classList",
   ])
+  const sdk = useSDK()
+  const fileContext = useFile()
   const kind = () => visibleKind(local.node, local.kinds, local.marks)
   const active = () => !!kind() && !local.node.ignored
   const color = () => {
@@ -142,11 +153,52 @@ const FileTreeNode = (
     return kindTextColor(value)
   }
 
+  const [menuOpen, setMenuOpen] = createSignal(false)
+
+  const handleNewFile = async (e: Event) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const name = prompt("Enter new file name:")
+    if (!name) return
+    const parent = local.node.type === "directory" ? local.node.path : local.node.path.slice(0, local.node.path.lastIndexOf("/"))
+    await createNewFile(sdk(), parent, name)
+    void fileContext.tree.refresh(parent)
+  }
+
+  const handleNewFolder = async (e: Event) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const name = prompt("Enter new folder name:")
+    if (!name) return
+    const parent = local.node.type === "directory" ? local.node.path : local.node.path.slice(0, local.node.path.lastIndexOf("/"))
+    await createNewFolder(sdk(), parent, name)
+    void fileContext.tree.refresh(parent)
+  }
+
+  const handleRename = async (e: Event) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const name = prompt("Enter new name:", local.node.name)
+    if (!name) return
+    const parent = local.node.path.slice(0, local.node.path.lastIndexOf("/"))
+    await renameFileOrFolder(sdk(), local.node.path, name)
+    void fileContext.tree.refresh(parent)
+  }
+
+  const handleDelete = async (e: Event) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!confirm(`Are you sure you want to delete ${local.node.name}?`)) return
+    const parent = local.node.path.slice(0, local.node.path.lastIndexOf("/"))
+    await deleteFileOrFolder(sdk(), local.node.path)
+    void fileContext.tree.refresh(parent)
+  }
+
   return (
     <Dynamic
       component={local.as ?? "div"}
       classList={{
-        "w-full min-w-0 h-6 flex items-center justify-start gap-x-1.5 rounded-md px-1.5 py-0 text-left hover:bg-surface-raised-base-hover active:bg-surface-base-active transition-colors cursor-pointer": true,
+        "w-full min-w-0 h-7 flex items-center justify-start gap-x-1.5 rounded-md px-1.5 py-0 text-left hover:bg-surface-raised-base-hover active:bg-surface-base-active transition-colors cursor-pointer group/node": true,
         "bg-surface-base-active": local.node.path === local.active,
         ...local.classList,
         [local.class ?? ""]: !!local.class,
@@ -174,6 +226,33 @@ const FileTreeNode = (
       >
         {local.node.name}
       </span>
+      <div class="flex items-center gap-1 opacity-0 pointer-events-none group-hover/node:opacity-100 group-hover/node:pointer-events-auto">
+        <DropdownMenu open={menuOpen()} onOpenChange={setMenuOpen}>
+          <DropdownMenu.Trigger
+            as={IconButton}
+            icon="dot-grid"
+            variant="ghost"
+            class="size-5 rounded-md"
+            onClick={(e) => { e.stopPropagation(); setMenuOpen(true); }}
+          />
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content>
+              <DropdownMenu.Item onSelect={handleNewFile}>
+                <DropdownMenu.ItemLabel>New File</DropdownMenu.ItemLabel>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item onSelect={handleNewFolder}>
+                <DropdownMenu.ItemLabel>New Folder</DropdownMenu.ItemLabel>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item onSelect={handleRename}>
+                <DropdownMenu.ItemLabel>Rename</DropdownMenu.ItemLabel>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item onSelect={handleDelete}>
+                <DropdownMenu.ItemLabel>Delete</DropdownMenu.ItemLabel>
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu>
+      </div>
       {(() => {
         const value = kind()
         if (!value) return null

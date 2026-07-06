@@ -88,7 +88,11 @@ function defaultDirectory(request: HttpServerRequest.HttpServerRequest, url: URL
 }
 
 function shouldStayOnControlPlane(request: HttpServerRequest.HttpServerRequest, url: URL): boolean {
-  return isLocalWorkspaceRoute(request.method, url.pathname) || url.pathname.startsWith("/console")
+  return (
+    isLocalWorkspaceRoute(request.method, url.pathname) ||
+    url.pathname.startsWith("/console") ||
+    url.pathname.startsWith("/agent")
+  )
 }
 
 function resolveWorkspace(

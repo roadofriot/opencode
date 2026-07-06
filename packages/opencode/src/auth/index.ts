@@ -58,7 +58,11 @@ export const layer = Layer.effect(
     const all = Effect.fn("Auth.all")(function* () {
       if (process.env.OPENCODE_AUTH_CONTENT) {
         try {
-          return JSON.parse(process.env.OPENCODE_AUTH_CONTENT)
+          const parsed = JSON.parse(process.env.OPENCODE_AUTH_CONTENT)
+          // Safe validation of the parsed environment configuration object
+          if (parsed && typeof parsed === "object") {
+            return Record.filterMap(parsed, (value) => Result.fromOption(decode(value), () => undefined))
+          }
         } catch (err) {}
       }
 

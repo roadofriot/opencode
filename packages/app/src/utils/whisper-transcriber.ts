@@ -11,6 +11,12 @@ export class WhisperTranscriber {
   private static onProgressCallbacks = new Set<(progress: DownloadProgress) => void>()
   private static activePreloadPromise: { resolve: () => void; reject: (err: Error) => void } | null = null
   private static activeTranscribePromise: { resolve: (text: string) => void; reject: (err: Error) => void } | null = null
+  // Track which models have been successfully loaded to avoid re-downloading on each mic press
+  private static loadedModels = new Set<string>()
+
+  static isModelLoaded(model: string): boolean {
+    return this.loadedModels.has(model)
+  }
 
   static subscribeProgress(cb: (progress: DownloadProgress) => void) {
     this.onProgressCallbacks.add(cb)
@@ -38,7 +44,7 @@ export class WhisperTranscriber {
       }
 
       if (type === "preload-done") {
-        console.log("[WHISPER] Preload complete");
+        console.log("[WHISPER] Preload complete")
         if (this.activePreloadPromise) {
           this.activePreloadPromise.resolve()
           this.activePreloadPromise = null
@@ -86,6 +92,12 @@ export class WhisperTranscriber {
   }
 
   static async preloadModel(model: string): Promise<void> {
+    // Skip if already loaded — avoids re-downloading on every mic press
+    if (this.loadedModels.has(model)) {
+      console.log(`[WHISPER] Model already loaded: ${model}, skipping preload`)
+      return
+    }
+
     console.log(`[WHISPER] Requesting model preload for: ${model}`)
     const worker = this.getWorker()
     if (this.activePreloadPromise) {
@@ -93,12 +105,21 @@ export class WhisperTranscriber {
       throw new Error("A model preload is already in progress")
     }
     return new Promise<void>((resolve, reject) => {
-      this.activePreloadPromise = { resolve, reject }
+      this.activePreloadPromise = {
+        resolve: () => {
+          this.loadedModels.add(model)
+          resolve()
+        },
+        reject,
+      }
       worker.postMessage({ type: "preload", payload: { model } })
     })
   }
 
   static async transcribe(audioData: Float32Array, model: string, language: string): Promise<string> {
+    if (audioData.length === 0) {
+      throw new Error("No audio was captured. Please try speaking again.")
+    }
     console.log(`[WHISPER] Requesting transcription. Model: ${model}, Language: ${language}, Audio sample length: ${audioData.length}`)
     const worker = this.getWorker()
     if (this.activeTranscribePromise) {
@@ -114,4 +135,3 @@ export class WhisperTranscriber {
     })
   }
 }
-

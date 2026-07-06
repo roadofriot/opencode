@@ -293,7 +293,7 @@ export const NewSessionItem = (props: {
       <div class="shrink-0 size-6 flex items-center justify-center">
         <Icon name="new-session" size="small" class="text-icon-weak" />
       </div>
-      <span class="text-14-regular text-text-strong min-w-0 flex-1 truncate">{label}</span>
+      <span class="text-14-regular text-text-strong min-w-0 flex-1 overflow-x-auto whitespace-nowrap scrollbar-thin scrollbar-thumb-text-weak scrollbar-track-transparent hover:scrollbar-thumb-text-base">{label}</span>
     </A>
   )
 

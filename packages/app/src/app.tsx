@@ -57,7 +57,6 @@ import { useCheckServerHealth } from "./utils/server-health"
 const HomeRoute = lazy(() => import("@/pages/home"))
 const Session = lazy(() => import("@/pages/session"))
 const NewSession = lazy(() => import("@/pages/new-session"))
-const AuthCallback = lazy(() => import("@/pages/auth-callback"))
 
 const SessionRoute = Object.assign(
   () => {
@@ -303,7 +302,7 @@ export function AppBaseProviders(props: ParentProps<{ locale?: Locale }>) {
           </UiI18nBridge>
         </LanguageProvider>
       </ThemeProvider>
-    </AuthProvider>
+      </AuthProvider>
     </MetaProvider>
   )
 }
@@ -450,36 +449,35 @@ export function AppInterface(props: {
 
   return (
     <Show when={!auth.showLogin()} fallback={<LoginOverlay />}>
-    <ServerProvider
-      defaultServer={props.defaultServer}
-      canonicalLocalServer={props.canonicalLocalServer}
-      servers={props.servers}
-    >
-      <GlobalProvider>
-        <ConnectionGate disableHealthCheck={props.disableHealthCheck}>
-          <Dynamic
-            component={props.router ?? Router}
-            root={(routerProps) => (
-              <TabsProvider>
-                <ServerShell>{routerProps.children}</ServerShell>
-              </TabsProvider>
-            )}
-          >
-            <Route path="/auth/callback" component={AuthCallback} />
-            <Route component={SelectedServerLayout}>
-              <Route path="/" component={HomeRoute} />
-              <Route path="/:dir" component={DirectoryLayout}>
-                <Route path="/" component={() => <Navigate href="session" />} />
-                <Route path="/session/:id?" component={SessionRoute} />
+      <ServerProvider
+        defaultServer={props.defaultServer}
+        canonicalLocalServer={props.canonicalLocalServer}
+        servers={props.servers}
+      >
+        <GlobalProvider>
+          <ConnectionGate disableHealthCheck={props.disableHealthCheck}>
+            <Dynamic
+              component={props.router ?? Router}
+              root={(routerProps) => (
+                <TabsProvider>
+                  <ServerShell>{routerProps.children}</ServerShell>
+                </TabsProvider>
+              )}
+            >
+              <Route component={SelectedServerLayout}>
+                <Route path="/" component={HomeRoute} />
+                <Route path="/:dir" component={DirectoryLayout}>
+                  <Route path="/" component={() => <Navigate href="session" />} />
+                  <Route path="/session/:id?" component={SessionRoute} />
+                </Route>
               </Route>
-            </Route>
-            <Route component={DraftServerLayout}>
-              <Route path="/new-session" component={DraftRoute} />
-            </Route>
-          </Dynamic>
-        </ConnectionGate>
-      </GlobalProvider>
-    </ServerProvider>
+              <Route component={DraftServerLayout}>
+                <Route path="/new-session" component={DraftRoute} />
+              </Route>
+            </Dynamic>
+          </ConnectionGate>
+        </GlobalProvider>
+      </ServerProvider>
     </Show>
   )
 }

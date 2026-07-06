@@ -288,10 +288,12 @@ export const SettingsAIFeatures: Component = () => {
                               options={[
                                 { value: "Xenova/whisper-tiny", label: "Tiny (~75 MB)" },
                                 { value: "Xenova/whisper-base", label: "Base (~140 MB)" },
+                                { value: "Xenova/whisper-small", label: "Small (~250 MB)" },
                               ]}
                               current={[
                                 { value: "Xenova/whisper-tiny", label: "Tiny (~75 MB)" },
                                 { value: "Xenova/whisper-base", label: "Base (~140 MB)" },
+                                { value: "Xenova/whisper-small", label: "Small (~250 MB)" },
                               ].find((o) => o.value === settings.voice.model())}
                               value={(o) => o.value}
                               label={(o) => o.label}

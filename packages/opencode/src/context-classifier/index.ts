@@ -58,8 +58,8 @@ function extractText(message: ModelMessage): string {
   if (typeof message.content === "string") return message.content
   if (Array.isArray(message.content)) {
     return message.content
-      .filter((part) => part.type === "text")
-      .map((part) => ("text" in part ? (part as any).text : ""))
+      .filter((part): part is { type: "text"; text: string } => part.type === "text")
+      .map((part) => part.text)
       .join(" ")
   }
   return ""

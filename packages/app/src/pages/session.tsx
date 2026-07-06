@@ -71,6 +71,8 @@ import { diffs as list } from "@/utils/diffs"
 import { Persist, persisted } from "@/utils/persist"
 import { extractPromptFromParts } from "@/utils/prompt"
 import { formatServerError } from "@/utils/server-errors"
+import { getFilename } from "@mindsparq-ai/core/util/path"
+import { base64Decode } from "@mindsparq-ai/core/util/encode"
 import { useUsageExceededDialogs } from "./session/usage-exceeded-dialogs"
 import { onRunPanelToggle } from "@/utils/run-panel-events"
 
@@ -1702,6 +1704,25 @@ export default function Page() {
             </div>
 
             <Show when={params.id || !newSessionDesign()}>{composerRegion("dock")}</Show>
+            
+            {/* Project name footer */}
+            <Show when={!!params.id && !!info()}>
+              {(session) => {
+                const projectName = createMemo(() => {
+                  const layout = useLayout()
+                  const dir = params.dir ? base64Decode(params.dir) : ""
+                  const project = layout.projects.list().find((p) => p.worktree === dir)
+                  if (project?.name) return project.name
+                  if (project?.worktree) return getFilename(project.worktree)
+                  return dir ? getFilename(dir) : ""
+                })
+                return (
+                  <div class="px-4 py-2 text-10-medium text-text-weaker border-t border-border-weaker-base/50 bg-v2-background-bg-layer-01/40">
+                    <span class="truncate inline-block max-w-full">{projectName()}</span>
+                  </div>
+                )
+              }}
+            </Show>
           </div>
 
           <Show when={desktopReviewOpen()}>

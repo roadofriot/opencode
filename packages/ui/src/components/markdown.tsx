@@ -71,8 +71,8 @@ if (typeof window !== "undefined" && DOMPurify.isSupported) {
 const config = {
   USE_PROFILES: { html: true, mathMl: true },
   SANITIZE_NAMED_PROPS: true,
-  FORBID_TAGS: ["style"],
-  FORBID_CONTENTS: ["style", "script"],
+  FORBID_TAGS: ["style", "script", "iframe", "object", "embed", "link", "meta", "base"],
+  FORBID_CONTENTS: ["style", "script", "iframe", "object", "embed", "link", "meta", "base"],
   ADD_TAGS: ["svg", "path"],
   ADD_ATTR: ["d", "viewBox", "preserveAspectRatio", "xmlns", "target"],
 }
@@ -566,6 +566,11 @@ function updateCodeBlock(
   next.dataset.markdownComplete = block.complete ? "true" : "false"
   next.style.display = "contents"
 
+  if (block.language === "mermaid") {
+    updateMermaidBlock(container, next, block, current)
+    return
+  }
+
   const code = existing?.querySelector("code")
   if (code instanceof HTMLElement) {
     code.className = `language-${block.language}`
@@ -627,4 +632,77 @@ function createTokenSpan(token: MarkdownToken) {
   span.setAttribute("style", token[1])
   span.textContent = token[0]
   return span
+}
+
+let mermaidPromise: Promise<any> | undefined
+
+function getMermaid() {
+  if (mermaidPromise) return mermaidPromise
+  mermaidPromise = import("https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs").then((m) => {
+    const mermaid = m.default
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: "dark",
+      securityLevel: "loose",
+    })
+    return mermaid
+  })
+  return mermaidPromise
+}
+
+function updateMermaidBlock(
+  container: HTMLDivElement,
+  next: HTMLDivElement,
+  block: Extract<RenderedBlock, { mode: "code" }>,
+  current: Element | undefined
+) {
+  if (next.dataset.markdownHash === block.hash && next.querySelector(".mermaid-svg")) {
+    return
+  }
+
+  let wrapper = next.querySelector('[data-component="markdown-mermaid"]') as HTMLDivElement | null
+  if (!wrapper) {
+    wrapper = document.createElement("div")
+    wrapper.setAttribute("data-component", "markdown-mermaid")
+    wrapper.className = "p-4 my-2 rounded-lg border border-v2-border bg-v2-bg-neutral/30 flex flex-col items-center justify-center min-h-[120px]"
+    next.appendChild(wrapper)
+  }
+
+  const rawCode = block.raw.trim()
+  if (!rawCode) {
+    wrapper.innerHTML = `<span class="text-xs text-v2-text-muted">Empty diagram</span>`
+    if (current) current.replaceWith(next)
+    else container.appendChild(next)
+    return
+  }
+
+  wrapper.innerHTML = `
+    <div class="flex items-center gap-2 text-xs text-v2-text-muted select-none">
+      <div class="animate-spin rounded-full h-3.5 w-3.5 border-2 border-primary border-t-transparent"></div>
+      <span>Rendering diagram...</span>
+    </div>
+  `
+
+  if (current) current.replaceWith(next)
+  else container.appendChild(next)
+
+  getMermaid()
+    .then(async (mermaid) => {
+      const id = `mermaid-${Math.random().toString(36).slice(2, 9)}`
+      try {
+        const { svg } = await mermaid.render(id, rawCode)
+        wrapper.innerHTML = `<div class="mermaid-svg w-full flex justify-center">${svg}</div>`
+      } catch (err: any) {
+        document.getElementById(id)?.remove()
+        wrapper.innerHTML = `
+          <div class="text-xs text-red-500 bg-red-500/10 border border-red-500/20 rounded p-2 w-full">
+            <div class="font-semibold mb-1">Mermaid Syntax Error:</div>
+            <pre class="overflow-x-auto text-[10px] leading-relaxed font-mono whitespace-pre-wrap">${escape(err?.message || String(err))}</pre>
+          </div>
+        `
+      }
+    })
+    .catch((err) => {
+      wrapper.innerHTML = `<span class="text-xs text-red-500 font-sans">Failed to load diagram renderer: ${err?.message || String(err)}</span>`
+    })
 }
