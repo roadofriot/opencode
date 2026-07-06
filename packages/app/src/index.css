@@ -369,7 +369,7 @@ body.show-scrollbars .settings-v2-panel::-webkit-scrollbar-thumb {
 }
 
 /* Premium chat container styling */
-[data-component="message-timeline"] {
+.scroll-view__viewport {
   scroll-behavior: smooth;
 }
 

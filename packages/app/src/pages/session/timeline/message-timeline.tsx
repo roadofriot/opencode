@@ -446,7 +446,7 @@ export function MessageTimeline(props: {
       return showHeader() ? 64 : 0
     },
     overscan: 50,
-    paddingEnd: 64,
+    paddingEnd: 96,
     rangeExtractor: (range) => {
       const id = activeMessageID()
       const active = id ? (messageLastRowIndex().get(id) ?? -1) : -1
@@ -1584,8 +1584,8 @@ export function MessageTimeline(props: {
             <div
               data-timeline-row="bottom-spacer"
               aria-hidden="true"
-              class="h-16 absolute top-0 left-0 w-full"
-              style={{ transform: `translateY(${virtualizer.getTotalSize() - 64}px)` }}
+              class="h-24 absolute top-0 left-0 w-full"
+              style={{ transform: `translateY(${virtualizer.getTotalSize() - 96}px)` }}
             />
           </Show>
         </div>
