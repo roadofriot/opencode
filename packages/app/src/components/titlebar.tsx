@@ -22,6 +22,7 @@ import { IconButtonV2 } from "@mindsparq-ai/ui/v2/icon-button-v2"
 import { Icon as IconV2 } from "@mindsparq-ai/ui/v2/icon"
 import { KeybindV2 } from "@mindsparq-ai/ui/v2/keybind-v2"
 import { TooltipV2 } from "@mindsparq-ai/ui/v2/tooltip-v2"
+import { DropdownMenu } from "@mindsparq-ai/ui/dropdown-menu"
 
 import { getProjectAvatarVariant, LayoutRoute, useLayout, type LocalProject } from "@/context/layout"
 import { ProjectBadge, ActiveProjectChip } from "@/components/project-badge"
@@ -682,19 +683,34 @@ export function Titlebar(props: { update?: TitlebarUpdate }) {
                           keybind={command.keybind("session.new")}
                           openDelay={2000}
                         >
-                          <Button
-                            variant="ghost"
-                            icon={creating() ? "new-session-active" : "new-session"}
-                            class="titlebar-icon w-8 h-6 p-0 box-border"
-                            disabled={layout.sidebar.opened()}
-                            tabIndex={layout.sidebar.opened() ? -1 : undefined}
-                            onClick={() => {
-                              if (!params.dir) return
-                              navigate(`/${params.dir}/session`)
-                            }}
-                            aria-label={language.t("command.session.new")}
-                            aria-current={creating() ? "page" : undefined}
-                          />
+                          <DropdownMenu gutter={4} placement="bottom-start">
+                            <DropdownMenu.Trigger
+                              as={Button}
+                              variant="ghost"
+                              icon={creating() ? "new-session-active" : "new-session"}
+                              class="titlebar-icon w-8 h-6 p-0 box-border"
+                              disabled={layout.sidebar.opened()}
+                              tabIndex={layout.sidebar.opened() ? -1 : undefined}
+                              aria-label={language.t("command.session.new")}
+                              aria-current={creating() ? "page" : undefined}
+                            />
+                            <DropdownMenu.Portal>
+                              <DropdownMenu.Content>
+                                <DropdownMenu.Item onSelect={() => {
+                                  if (!params.dir) return
+                                  navigate(`/${params.dir}/session`)
+                                }}>
+                                  <DropdownMenu.ItemLabel>New Session (Standard)</DropdownMenu.ItemLabel>
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item onSelect={() => {
+                                  if (!params.dir) return
+                                  navigate(`/${params.dir}/session?mode=plan`)
+                                }}>
+                                  <DropdownMenu.ItemLabel>New Session (Plan Mode)</DropdownMenu.ItemLabel>
+                                </DropdownMenu.Item>
+                              </DropdownMenu.Content>
+                            </DropdownMenu.Portal>
+                          </DropdownMenu>
                         </TooltipKeybind>
                       </div>
                     </div>

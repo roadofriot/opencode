@@ -153,6 +153,7 @@ const WorkspaceActions = (props: {
   root: string
   clearHoverProjectSoon: WorkspaceSidebarContext["clearHoverProjectSoon"]
   navigateToNewSession: () => void
+  navigateToNewPlanSession: () => void
 }): JSX.Element => (
   <div
     class="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 transition-opacity"
@@ -214,20 +215,36 @@ const WorkspaceActions = (props: {
     </DropdownMenu>
     <Show when={!props.touch()}>
       <Tooltip value={props.language.t("command.session.new")} placement="top">
-        <IconButton
-          icon="new-session"
-          variant="ghost"
-          class="size-6 rounded-md opacity-0 pointer-events-none group-hover/workspace:opacity-100 group-hover/workspace:pointer-events-auto group-focus-within/workspace:opacity-100 group-focus-within/workspace:pointer-events-auto"
-          data-action="workspace-new-session"
-          data-workspace={base64Encode(props.directory)}
-          aria-label={props.language.t("command.session.new")}
-          onClick={(event) => {
-            event.preventDefault()
-            event.stopPropagation()
-            props.clearHoverProjectSoon()
-            props.navigateToNewSession()
-          }}
-        />
+        <DropdownMenu gutter={4} placement="bottom-start">
+          <DropdownMenu.Trigger
+            as={IconButton}
+            icon="new-session"
+            variant="ghost"
+            class="size-6 rounded-md opacity-0 pointer-events-none group-hover/workspace:opacity-100 group-hover/workspace:pointer-events-auto group-focus-within/workspace:opacity-100 group-focus-within/workspace:pointer-events-auto"
+            data-action="workspace-new-session"
+            data-workspace={base64Encode(props.directory)}
+            aria-label={props.language.t("command.session.new")}
+            onClick={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              props.clearHoverProjectSoon()
+            }}
+          />
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content>
+              <DropdownMenu.Item onSelect={() => {
+                props.navigateToNewSession()
+              }}>
+                <DropdownMenu.ItemLabel>New Session (Standard)</DropdownMenu.ItemLabel>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item onSelect={() => {
+                props.navigateToNewPlanSession()
+              }}>
+                <DropdownMenu.ItemLabel>New Session (Plan Mode)</DropdownMenu.ItemLabel>
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu>
       </Tooltip>
     </Show>
   </div>
@@ -417,6 +434,7 @@ export const SortableWorkspace = (props: {
                 root={props.project.worktree}
                 clearHoverProjectSoon={props.ctx.clearHoverProjectSoon}
                 navigateToNewSession={() => navigate(`/${slug()}/session`)}
+                navigateToNewPlanSession={() => navigate(`/${slug()}/session?mode=plan`)}
               />
             </div>
           </div>

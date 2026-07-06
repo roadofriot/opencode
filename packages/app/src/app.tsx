@@ -62,7 +62,7 @@ const SessionRoute = Object.assign(
   () => {
     const settings = useSettings()
     const params = useParams()
-    const [search] = useSearchParams<{ draftId?: string; prompt?: string }>()
+    const [search] = useSearchParams<{ draftId?: string; prompt?: string; mode?: string }>()
     const sdk = useSDK()
     const server = useServer()
     const tabs = useTabs()
@@ -73,7 +73,7 @@ const SessionRoute = Object.assign(
       if (!settings.general.newLayoutDesigns()) return
       if (params.id || search.draftId) return
       if (!tabs.ready() || !sdk().directory) return
-      tabs.newDraft({ server: server.key, directory: sdk().directory }, search.prompt)
+      tabs.newDraft({ server: server.key, directory: sdk().directory, mode: search.mode }, search.prompt)
     })
 
     return (

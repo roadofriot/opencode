@@ -23,6 +23,7 @@ export type DraftTab = {
   server: ServerConnection.Key
   directory: string
   worktree?: string
+  mode?: string
 }
 
 export type Tab = SessionTab | DraftTab

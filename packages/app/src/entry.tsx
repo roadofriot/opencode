@@ -79,6 +79,14 @@ const notify: Platform["notify"] = async (title, description, href) => {
 }
 
 const openLink: Platform["openLink"] = (url) => {
+  if (url.startsWith("file:///")) {
+    let filePath = decodeURIComponent(url.slice(7))
+    if (filePath.startsWith("/") && filePath.match(/^\/[a-zA-Z]:/)) {
+      filePath = filePath.slice(1)
+    }
+    window.dispatchEvent(new CustomEvent("open-project-dir", { detail: { directory: filePath } }))
+    return
+  }
   window.open(url, "_blank")
 }
 

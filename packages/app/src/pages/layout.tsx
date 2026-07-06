@@ -1409,8 +1409,16 @@ export default function Layout(props: ParentProps) {
       handleDeepLinks(urls)
     }
 
+    const handleOpenProjectDir = (e: Event) => {
+      const detail = (e as CustomEvent<{ directory: string }>).detail
+      if (detail?.directory) {
+        void openProject(detail.directory)
+      }
+    }
+
     handleDeepLinks(drainPendingDeepLinks(window))
     makeEventListener(window, deepLinkEvent, handler as EventListener)
+    makeEventListener(window, "open-project-dir", handleOpenProjectDir as EventListener)
   })
 
   async function renameProject(project: LocalProject, next: string) {

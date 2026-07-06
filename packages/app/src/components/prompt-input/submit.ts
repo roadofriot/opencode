@@ -6,7 +6,7 @@ import { useNavigate, useParams, useSearchParams } from "@solidjs/router"
 import { batch, type Accessor } from "solid-js"
 import type { FileSelection } from "@/context/file"
 import { useServer } from "@/context/server"
-import { useTabs } from "@/context/tabs"
+import { useTabs, type DraftTab } from "@/context/tabs"
 import { useServerSync, type ServerSync } from "@/context/server-sync"
 import { useLanguage } from "@/context/language"
 import { useLayout } from "@/context/layout"
@@ -308,8 +308,9 @@ export function createPromptSubmit(input: PromptSubmitInput) {
       return
     }
 
+    const draftTab = search.draftId ? (tabs.store.find((item) => item.type === "draft" && item.draftID === search.draftId) as DraftTab | undefined) : undefined
     const currentModel = local.model.current()
-    const currentAgent = local.agent.current()
+    const currentAgent = draftTab?.mode === "plan" ? { name: "plan" } : local.agent.current()
     const variant = local.model.variant.current()
     if (!currentModel || !currentAgent) {
       showToast({
